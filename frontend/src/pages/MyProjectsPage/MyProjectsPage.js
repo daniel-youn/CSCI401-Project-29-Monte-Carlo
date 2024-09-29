@@ -1,20 +1,10 @@
 import React, { useState } from 'react';
-import { Box, Divider, Container, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, Grid } from '@mui/material';
-import ProjectForm from '../../components/ProjectForm/ProjectForm';
+import { Dialog, DialogActions, DialogTitle, DialogContent, Container, Typography, Box, Grid, Divider, Button } from '@mui/material';
 import ProjectThumbnail from '../../components/ProjectThumbnail/ProjectThumbnail';
+import ProjectForm from '../../components/ProjectForm/ProjectForm';
 
 const MyProjectsPage = () => {
-  const [openForm, setOpenForm] = useState(false);
-
-  const handleOpenForm = () => {
-    setOpenForm(true);
-  };
-
-  const handleCloseForm = () => {
-    setOpenForm(false);
-  };
-
-  const projects = [
+  const [projects, setProjects] = useState([
     {
       projectName: 'Project Alpha',
       description: 'A description for Project Alpha.',
@@ -31,38 +21,75 @@ const MyProjectsPage = () => {
       contributors: 8,
     },
     {
-      projectName: 'Project Delta',
-      description: 'A description for Project Delta.',
-      contributors: 3,
+      projectName: 'Project Long',
+      description:
+        'A long description A long description A long description A long description A long description A long description',
+      contributors: 8,
     },
-    {
-      projectName: 'Project Epsilon',
-      description: 'A description for Project Epsilon.',
-      contributors: 15,
-    },
-  ];
+  ]);
+
+  const [openForm, setOpenForm] = useState(false);
+
+  const handleOpenForm = () => {
+    setOpenForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setOpenForm(false);
+  };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
-      {/* Page Header */}
+    <Container maxWidth="lg">
+      {/* Page Title */}
       <Typography variant="h4" gutterBottom>
         My Projects
       </Typography>
-      <Divider sx={{ mb: 4 }} />
 
-      {/* Grid to organize projects */}
-      <Grid container spacing={4}>
-        {projects.map((project, index) => (
-          <Grid item xs={12} sm={6} md={4} key={index}>
-            <ProjectThumbnail
-              projectName={project.projectName}
-              description={project.description}
-              contributors={project.contributors}
-              onMoreDetails={() => console.log(`Details for ${project.projectName}`)}
-            />
+      {/* Header for Columns */}
+      <Box sx={{ mb: 2, mt: 2 }}>
+        <Grid container spacing={2} alignItems="center">
+          {/* Project Title Header */}
+          <Grid item xs={4}>
+            <Typography variant="body1" fontWeight="bold">
+              Title
+            </Typography>
           </Grid>
-        ))}
-      </Grid>
+
+          {/* Description Header */}
+          <Grid item xs={3}>
+            <Typography variant="body1" fontWeight="bold">
+              Description
+            </Typography>
+          </Grid>
+
+          {/* Contributors Header */}
+          <Grid item xs={2}>
+            <Typography variant="body1" fontWeight="bold" align="center">
+              Contributors
+            </Typography>
+          </Grid>
+
+          {/* Action Button Header */}
+          <Grid item xs={3} sx={{ textAlign: 'right' }}>
+            <Typography variant="body1" fontWeight="bold">
+              Actions
+            </Typography>
+          </Grid>
+        </Grid>
+      </Box>
+
+      <Divider sx={{ mb: 2 }} />
+
+      {/* Project Thumbnails */}
+      {projects.map((project, index) => (
+        <ProjectThumbnail
+          key={index}
+          projectName={project.projectName}
+          description={project.description}
+          contributors={project.contributors}
+          onMoreDetails={() => console.log(`More details for ${project.projectName}`)}
+        />
+      ))}
 
       {/* Button to open the new form */}
       <Box sx={{ mt: 4 }}>
