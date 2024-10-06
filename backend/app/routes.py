@@ -3,6 +3,9 @@ from app import db
 from app.models import validate_objectid
 from app.schemas import user_schema, simulation_schema, model_variables_schema, output_schema, summary_statistics_schema, volatility_distribution_schema, additional_calculations_schema # Import from schemas
 from marshmallow import ValidationError
+from werkzeug.security import generate_password_hash
+from werkzeug.security import check_password_hash
+
 
 # Define blueprints routes
 user_routes = Blueprint('user_routes', __name__)
@@ -22,16 +25,43 @@ summary_statistics_collection = db['summary_statistics']
 volatility_distribution_collection = db['volatility_distributions']
 additional_calculations_collection = db['additional_calculations']
 
-# Route to add a new product
+# Route for login: 
+@user_routes.route('/login', methods=['POST'])
+def login_user():
+    data = request.json
+    try:
+        # only email and password for login
+        user_data = user_schema.load(data, partial=True)
+
+        # find by email --
+        user = user_collection.find_one({'email': user_data['email']})
+        if not user:
+            return jsonify({'message': 'Invalid email or password'}), 401
+
+        # pass check
+        if not check_password_hash(user['password'], user_data['password']):
+            return jsonify({'message': 'Invalid email or password'}), 401
+
+        # 200 succ
+        return jsonify({'message': 'Login successful', 'user_id': str(user['_id'])}), 200
+
+    except ValidationError as err: # 400 err
+        return jsonify(err.messages), 400
+
+# route for regi
 @user_routes.route('/add', methods=['POST'])
 def add_user():
     data = request.json
     try:
-        # Validate and deserialize input
         user_data = user_schema.load(data)
-        # Insert validated data into MongoDB
+
+        # hash using werkzerg thing
+        user_data['password'] = generate_password_hash(user_data['password'])
+
+        # into mongodb
         result = user_collection.insert_one(user_data)
         return jsonify({'message': 'User added', 'id': str(result.inserted_id)}), 201
+
     except ValidationError as err:
         return jsonify(err.messages), 400
 
