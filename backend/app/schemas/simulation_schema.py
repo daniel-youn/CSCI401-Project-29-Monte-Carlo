@@ -10,4 +10,4 @@ class SimulationSchema(Schema):
     timesteps = fields.Int(required=True, validate=validate.Range(min=1))
     status = fields.Str(required=True, validate=validate.OneOf(["pending", "running", "completed", "failed"]))
 
-simualtion_schema = SimulationSchema()
+simulation_schema = SimulationSchema()

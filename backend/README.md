@@ -5,3 +5,9 @@ How to run python code:
 3. Activate the virtual environment by running `source venv/bin/activate`
 4. Install the required packages by running `pip install -r requirements.txt`
 5. Run the code by running `python3 main.py`
+6. Enter `deactivate` to quit the venv when done
+
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python3 main.py
