@@ -10,7 +10,6 @@ user_routes = Blueprint('user_routes', __name__)
 # MongoDB collection for users
 user_collection = db['users']
 
-# TODO: check for existing users?
 # 1. Create a new user
 @user_routes.route('/users', methods=['POST'])
 def create_user():
@@ -18,12 +17,17 @@ def create_user():
     try:
         user_data = user_schema.load(data)
 
+        # Check for existing user
+        existing_user = user_collection.find_one({'email': user_data['email']})  # Adjust the field as necessary
+        if existing_user:
+            return jsonify({'message': 'User already exists'}), 409  # Conflict status code
+
         # Hash the password
         user_data['password'] = generate_password_hash(user_data['password'])
 
         # Insert into MongoDB
         result = user_collection.insert_one(user_data)
-        return jsonify({'message': 'User created successfully', 'user_id': user_data['user_id']}), 201
+        return jsonify({'message': 'User created successfully', 'user_id': str(result.inserted_id)}), 201
 
     except ValidationError as err:
         return jsonify(err.messages), 400
