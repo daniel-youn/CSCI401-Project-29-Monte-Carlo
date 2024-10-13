@@ -1,0 +1,69 @@
+@font-face {
+    font-family: 'HelveticaNeueMedium';
+    src: url('../../assets/HelveticaNeueMedium.otf') format('opentype'); /* Path relative to the CSS/SCSS file */
+    font-weight: 500; /* Define the weight */
+    font-style: normal;
+  }
+  
+  .login-page-container {
+    display: flex;
+    height: 100vh; /* Full viewport height */
+    padding: 1.5rem; /* Padding around the entire page */
+    background-color: #000028; /* Dark background for the whole page */
+    gap: 2rem; /* Padding between the left and right containers */
+  }
+  
+  /* Left side with the graph image */
+  .graph-container {
+    width: 60%; /* Takes 60% of the screen */
+    background-color: #232439;
+    background-image: url('../../../public/graph.svg'); /* Path to the graph image */
+    background-size: cover; /* Ensures the image touches the edges */
+    background-repeat: no-repeat;
+    background-position: bottom; /* Pins the image to the bottom */
+    position: relative;
+    height: 100%; /* Ensures it takes full height */
+  }
+  
+  /* Top-left text overlay on the image */
+  .graph-header {
+    position: absolute;
+    top: 3rem;
+    left: 2rem;
+    text-align: left;
+  }
+  
+  .title {
+    font-weight: bold;
+    font-size: 2.5rem;
+    color: white;
+  }
+  
+  .subtitle {
+    width: 80%;
+    color: #D5D5D5;
+  }
+  
+  /* Right side with the form */
+  .form-container {
+    width: 40%; /* Takes the remaining 40% of the screen */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%; /* Ensures it takes full height */
+  }
+  
+  .login-box {
+    width: 80%;
+    padding: 3rem;
+    text-align: center; /* Centers content */
+    border-radius: 0px; /* No border radius */
+    height: auto; /* Adjust height as necessary */
+    margin: 0 auto; /* Horizontally centers the login-box */
+  }
+  
+  .welcome-text {
+    color: white;
+    margin-bottom: 2rem;
+  }
+  
