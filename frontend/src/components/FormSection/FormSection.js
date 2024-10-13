@@ -59,7 +59,11 @@ const chartOptions = {
     },
   },
 };
-
+{//implement header: add icon and design, 
+  //move font (scss files) to index,
+  //edit formpage.js to be more modular (must have content component (title and container) )
+  //create graph component for form page (extract from this file)
+}
 const FormSection = () => {
   return (
     <Box sx={{ padding: '2rem', paddingTop: '3.5rem' }}>

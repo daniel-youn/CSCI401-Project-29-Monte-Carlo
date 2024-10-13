@@ -12,3 +12,26 @@ body {
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+  font-family: 'HelveticaRegular';
+  src: url('./assets/HelveticaNeueRoman.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'HelveticaLight';
+  src: url('./assets/HelveticaNeueLight.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'HelveticaNeueMedium';
+  src: url('./assets/HelveticaNeueMedium.otf') format('opentype');
+  /* Path relative to the CSS/SCSS file */
+  font-weight: 500;
+  /* Define the weight */
+  font-style: normal;
+}

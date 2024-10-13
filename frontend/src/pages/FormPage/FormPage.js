@@ -2,8 +2,6 @@ import React from 'react';
 import { Box } from '@mui/material';
 import Header from '../../components/Header/Header'; // Import the Header component
 import FormSection from '../../components/FormSection/FormSection'; // Import the FormSection component
-import './_form-page.scss'; // Import the custom SCSS
-
 
 const FormPage = () => {
   return (
