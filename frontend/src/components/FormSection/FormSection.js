@@ -60,98 +60,82 @@ const chartOptions = {
   },
 };
 {//implement header: add icon and design, 
-  //move font (scss files) to index,
   //edit formpage.js to be more modular (must have content component (title and container) )
   //create graph component for form page (extract from this file)
 }
 const FormSection = () => {
   return (
-    <Box sx={{ padding: '2rem', paddingTop: '3.5rem' }}>
-      <Typography
-        variant="h5"
-        sx={{
-          color: '#D5D5D5',
-          fontFamily: 'HelveticaLight',
-          fontSize: '2.5rem',
-          mb: 6,
-        }}
-      >
-        My Project One
-      </Typography>
+    <>
+      <Grid container spacing={4}>
+        {/* Creating 6 graphs across 3 rows */}
+        {Array.from({ length: 6 }).map((_, index) => (
+          <Grid item xs={12} md={6} key={index}> {/* Each graph and title in the same grid item */}
+            {/* Graph Title placed above the graph */}
+            <Typography variant="h6" sx={{ color: '#D5D5D5', mb: 2, fontSize: '1.2rem' }}> {/* Increased font size */}
+              Estimate the Annual Willingness-to-Pay per Standard User
+            </Typography>
 
-      {/* The entire section is now inside a div with a background color */}
-      <Box sx={{ backgroundColor: '#232439', padding: '2rem', borderRadius: '8px' }}>
-        <Grid container spacing={4}>
-          {/* Creating 6 graphs across 3 rows */}
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Grid item xs={12} md={6} key={index}> {/* Each graph and title in the same grid item */}
-              {/* Graph Title placed above the graph */}
-              <Typography variant="h6" sx={{ color: '#D5D5D5', mb: 2, fontSize: '1.2rem' }}> {/* Increased font size */}
-                Estimate the Annual Willingness-to-Pay per Standard User
-              </Typography>
+            {/* Card containing the graph */}
+            <Card sx={{ backgroundColor: '#2b3245' }}>
+              <CardContent>
+                <Line data={chartData} options={chartOptions} />
 
-              {/* Card containing the graph */}
-              <Card sx={{ backgroundColor: '#2b3245' }}>
-                <CardContent>
-                  <Line data={chartData} options={chartOptions} />
-
-                  {/* Lower Bound and Upper Bound input boxes */}
-                  <Grid container spacing={2} sx={{ marginTop: '0.8rem', alignItems: 'flex-end' }}>
-                    <Grid item xs={6}>
-                      <TextField
-                        label="Lower Bound"
-                        variant="filled"
-                        size="small"  // Make the box smaller
-                        InputLabelProps={{
-                          style: { color: '#D5D5D5', fontSize: '0.8rem' },  // Smaller label font
-                        }}
-                        sx={{
-                          backgroundColor: '#2b3245',
-                          input: { color: '#D5D5D5', fontSize: '0.8rem' },  // Smaller input font
-                        }}
-                      />
-                    </Grid>
-                    <Grid item xs={6} sx={{ display: 'flex', justifyContent: 'flex-end' }}>  {/* Align to the right */}
-                      <TextField
-                        label="Upper Bound"
-                        variant="filled"
-                        size="small"  // Make the box smaller
-                        InputLabelProps={{
-                          style: { color: '#D5D5D5', fontSize: '0.8rem' },  // Smaller label font
-                        }}
-                        sx={{
-                          backgroundColor: '#2b3245',
-                          input: { color: '#D5D5D5', fontSize: '0.8rem' },  // Smaller input font
-                          width: '50%',  // Ensure it takes full width within its container
-                        }}
-                      />
-                    </Grid>
+                {/* Lower Bound and Upper Bound input boxes */}
+                <Grid container spacing={2} sx={{ marginTop: '0.8rem', alignItems: 'flex-end' }}>
+                  <Grid item xs={6}>
+                    <TextField
+                      label="Lower Bound"
+                      variant="filled"
+                      size="small"  // Make the box smaller
+                      InputLabelProps={{
+                        style: { color: '#D5D5D5', fontSize: '0.8rem' },  // Smaller label font
+                      }}
+                      sx={{
+                        backgroundColor: '#2b3245',
+                        input: { color: '#D5D5D5', fontSize: '0.8rem' },  // Smaller input font
+                      }}
+                    />
                   </Grid>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+                  <Grid item xs={6} sx={{ display: 'flex', justifyContent: 'flex-end' }}>  {/* Align to the right */}
+                    <TextField
+                      label="Upper Bound"
+                      variant="filled"
+                      size="small"  // Make the box smaller
+                      InputLabelProps={{
+                        style: { color: '#D5D5D5', fontSize: '0.8rem' },  // Smaller label font
+                      }}
+                      sx={{
+                        backgroundColor: '#2b3245',
+                        input: { color: '#D5D5D5', fontSize: '0.8rem' },  // Smaller input font
+                        width: '50%',  // Ensure it takes full width within its container
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
 
-        {/* Submit Button */}
-        <Box sx={{ textAlign: 'center', marginTop: '2rem' }}>
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: '#00bcd4',
-              color: 'white',
-              padding: '0.8rem 2rem',
-              fontSize: '1rem',
-              '&:hover': {
-                backgroundColor: '#0097a7',
-              },
-            }}
-          >
-            Submit
-          </Button>
-        </Box>
+      {/* Submit Button */}
+      <Box sx={{ textAlign: 'center', marginTop: '2rem' }}>
+        <Button
+          variant="contained"
+          sx={{
+            backgroundColor: '#00bcd4',
+            color: 'white',
+            padding: '0.8rem 2rem',
+            fontSize: '1rem',
+            '&:hover': {
+              backgroundColor: '#0097a7',
+            },
+          }}
+        >
+          Submit
+        </Button>
       </Box>
-    </Box>
+    </>
   );
 };
 
