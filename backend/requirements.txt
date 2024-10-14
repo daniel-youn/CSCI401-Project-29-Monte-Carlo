@@ -5,3 +5,4 @@ marshmallow
 werkzeug
 numpy
 scipy
+flask-cors
