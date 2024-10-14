@@ -5,3 +5,4 @@ from .output_schema import output_schema
 from .summary_statistics_schema import summary_statistics_schema
 from .volatility_distribution_schema import volatility_distribution_schema
 from .additional_calculations_schema import additional_calculations_schema
+from .distribution_graph_schema import distribution_graph_schema

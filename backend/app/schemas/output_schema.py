@@ -10,6 +10,7 @@ class OutputSchema(Schema):
     summary_statistics = fields.Str(required=True, validate=validate.Length(equal=24)) #SummaryStatistics ObjectID
     volatility_distribution = fields.Str(required=True, validate=validate.Length(equal=24)) #VolatilityDistribution ObjectID
     additional_calculation = fields.Str(required=True, validate=validate.Length(equal=24)) #AdditionalCalculation ObjectID
+    distribution_graph = fields.Str(required=True)
 
 # Instantiate the schema
 output_schema = OutputSchema()
