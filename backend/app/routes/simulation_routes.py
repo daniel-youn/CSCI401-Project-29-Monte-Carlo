@@ -6,6 +6,7 @@ from marshmallow import ValidationError
 from datetime import datetime
 import numpy as np
 from scipy.stats import uniform, norm, triang
+from app.schemas.simulation_schema import simulation_schema  # Adjust the import as necessary
 
 # Create a Blueprint for simulation-related routes
 simulation_routes = Blueprint('simulation_routes', __name__)
@@ -62,48 +63,44 @@ def get_all_simulations():
     simulations = list(simulation_collection.find({}, {'_id': False}))
     return jsonify(simulations), 200
 
-def get_distribution(distribution_type, min_val, max_val):
+# 6. Delete all outputs
+@simulation_routes.route('/simulations', methods=['DELETE'])
+def delete_all_outputs():
+    result = simulation_collection.delete_many({})  # This deletes all documents in the collection
+    return jsonify({'message': f'{result.deleted_count} simulations deleted successfully'}), 200
+
+def get_distribution(model_variables, factor_name):
     """Helper function to return the correct distribution based on user input."""
+    factor_params = model_variables["factors"][factor_name]
+    distribution_type = factor_params['distribution_type']
     if distribution_type == 'uniform':
+        min_val = factor_params["min_val"]
+        max_val = factor_params["max_val"]
         return uniform(loc=min_val, scale=max_val - min_val)
     elif distribution_type == 'normal':
-        mean = (min_val + max_val) / 2
-        stddev = (max_val - min_val) / 6  # Assuming ~99.7% of values fall within [min, max]
+        mean = factor_params["mean"]
+        stddev = factor_params["stddev"]
         return norm(loc=mean, scale=stddev)
-    elif distribution_type == 'triangular':
-        mid = (min_val + max_val) / 2
-        return triang(c=(mid - min_val) / (max_val - min_val), loc=min_val, scale=max_val - min_val)
+    # elif distribution_type == 'triangular':
+    #     mid = (min_val + max_val) / 2
+    #     return triang(c=(mid - min_val) / (max_val - min_val), loc=min_val, scale=max_val - min_val)
 
-@simulation_routes.route('/run_simulation', methods=['POST'])
-def run_simulation():
+@simulation_routes.route('/input_data', methods=['POST'])
+def input_data():
+    # maybe store in db the simulation state like running, error, finished, etc
     try:
         # Parse request data
-        data = request.get_json()
-        model_variables = data.get('model_variables')
+        model_variables = request.get_json()
 
-        # Validate input using the ModelVariablesSchema
-        errors = model_variables_schema.validate(model_variables)
-        if errors:
-            return jsonify(errors), 400
-
-        # Extract ranges and distribution type
-        distribution_type = model_variables['distribution_type']
-        
         # Revenue Parameters
-        wtp_standard_dist = get_distribution(distribution_type, *model_variables['willingness_to_pay_standard'])
-        wtp_premium_dist = get_distribution(distribution_type, *model_variables['willingness_to_pay_premium'])
-        num_standard_users_dist = get_distribution(distribution_type, *model_variables['num_standard_users_per_deal'])
-        num_premium_users_dist = get_distribution(distribution_type, *model_variables['num_premium_users_per_deal'])
-        num_deals_dist = get_distribution(distribution_type, *model_variables['num_deals_per_year'])
-        discount_dist = get_distribution(distribution_type, *model_variables['expected_discount_per_deal'])
+        wtp_standard_dist = get_distribution(model_variables, "willingness_to_pay_standard")
+        wtp_premium_dist = get_distribution(model_variables, "willingness_to_pay_premium")
+        num_standard_users_dist = get_distribution(model_variables, "num_standard_users_per_deal")
+        num_premium_users_dist = get_distribution(model_variables, "num_premium_users_per_deal")
+        num_deals_dist = get_distribution(model_variables, "num_deals_per_year")
+        discount_dist = get_distribution(model_variables, "expected_discount_per_deal")
 
-        # Cross-Check Factors
-        market_size_dist = get_distribution(distribution_type, *model_variables['initial_market_size'])
-        yoy_growth_rate_dist = get_distribution(distribution_type, *model_variables['yoy_growth_rate'])
-
-        # Number of simulations and timesteps (if needed)
-        number_of_simulations = data['number_of_simulations']
-        timesteps = data.get('timesteps', 1)  # Optional timesteps if needed
+        number_of_simulations = 10000
 
         # Run Monte Carlo simulations
         results = []
@@ -114,17 +111,13 @@ def run_simulation():
             num_premium_users = num_premium_users_dist.rvs()
             num_deals = num_deals_dist.rvs()
             discount = discount_dist.rvs()
-
-            market_size = market_size_dist.rvs()
-            growth_rate = yoy_growth_rate_dist.rvs()
-
-            # Example calculation of revenue for one simulation
+            
             total_revenue = (
                 num_deals * (
                     num_standard_users * wtp_standard +
                     num_premium_users * wtp_premium
                 ) * (1 - discount)
-            ) * (market_size * (1 + growth_rate))
+            )
 
             results.append(total_revenue)
 
@@ -166,6 +159,14 @@ def run_simulation():
             {'_id': output_id},
             {'$set': {'summary_statistics': str(summary_statistics_id)}}
         )
+        
+        db.simulations.update_one(
+            {'simulation_id': model_variables['simulation_id']},
+            {'$set': {
+                'output_id': str(output_id),
+                'status': 'finished',
+            }}
+        )
 
         # Return success response
         return jsonify({
@@ -177,3 +178,5 @@ def run_simulation():
         return jsonify({'error': ve.messages}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+    

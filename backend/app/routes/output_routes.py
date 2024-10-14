@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from app import db
 from app.schemas.output_schema import output_schema  # Adjust the import as necessary
 from marshmallow import ValidationError
+from bson import ObjectId
 
 # Create a Blueprint for output-related routes
 output_routes = Blueprint('output_routes', __name__)
@@ -27,10 +28,16 @@ def create_output():
 # 2. Get output by output_id
 @output_routes.route('/outputs/<output_id>', methods=['GET'])
 def get_output(output_id):
-    output = output_collection.find_one({'output_id': output_id}, {'_id': False})
-    if output:
-        return jsonify(output), 200
-    return jsonify({'message': 'Output not found'}), 404
+    try:
+        # Attempt to find by ObjectId if applicable
+        output = output_collection.find_one({'_id': ObjectId(output_id)}, {'_id': False})
+
+        if output:
+            return jsonify(output), 200
+        else:
+            return jsonify({'message': 'Output not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400 
 
 # 3. Update output by output_id
 @output_routes.route('/outputs/<output_id>', methods=['PUT'])
@@ -54,3 +61,9 @@ def delete_output(output_id):
 def get_all_outputs():
     outputs = list(output_collection.find({}, {'_id': False}))
     return jsonify(outputs), 200
+
+# 6. Delete all outputs
+@output_routes.route('/outputs', methods=['DELETE'])
+def delete_all_outputs():
+    result = output_collection.delete_many({})  # This deletes all documents in the collection
+    return jsonify({'message': f'{result.deleted_count} outputs deleted successfully'}), 200

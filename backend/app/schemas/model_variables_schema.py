@@ -1,24 +1,30 @@
 from marshmallow import Schema, fields, validate
 
+class FactorSchema(Schema):
+    factor_name = fields.Str(required=True)
+    distribution_type = fields.Str(required=True, 
+                                    validate=validate.OneOf(["normal", "uniform", "triangular"]))
+    min_val = fields.Float(allow_none=True)  # Optional for distributions without min_val
+    max_val = fields.Float(allow_none=True)  # Optional for distributions without max_val
+    mean = fields.Float(allow_none=True)      # Optional for normal distributions
+    stddev = fields.Float(allow_none=True)    # Optional for normal distributions
+
 class ModelVariablesSchema(Schema):
-    user_id = fields.Str(required=True, 
-                         validate=validate.Regexp(r'^[a-zA-Z0-9_]+$', error="user_id must be alphanumeric with underscores allowed"))
-    simulation_id = fields.Str(required=True, validate=validate.Regexp(r'^[a-zA-Z0-9_]+$', error="simulation_id must be alphanumeric with underscores allowed"))
+    user_id = fields.Str(
+        required=True, 
+        validate=validate.Regexp(r'^[a-zA-Z0-9_]+$', error="user_id must be alphanumeric with underscores allowed")
+    )
+    simulation_id = fields.Str(
+        required=True, 
+        validate=validate.Regexp(r'^[a-zA-Z0-9_]+$', error="simulation_id must be alphanumeric with underscores allowed")
+    )
 
-    # Revenue Parameters
-    willingness_to_pay_standard = fields.List(fields.Float(), required=True)  # [min, max]
-    willingness_to_pay_premium = fields.List(fields.Float(), required=True)  # [min, max]
-    num_standard_users_per_deal = fields.List(fields.Float(), required=True)  # [min, max]
-    num_premium_users_per_deal = fields.List(fields.Float(), required=True)  # [min, max]
-    num_deals_per_year = fields.List(fields.Float(), required=True)  # [min, max]
-    expected_discount_per_deal = fields.List(fields.Float(), required=True)  # [min, max]
-
-    # Cross-Check Factors
-    initial_market_size = fields.List(fields.Float(), required=True)  # [min, max]
-    yoy_growth_rate = fields.List(fields.Float(), required=True)  # [min, max]
-
-    # Dynamic Distribution Fields
-    distribution_type = fields.Str(required=True, validate=validate.OneOf(["normal", "uniform", "triangular"]))  # User chooses the distribution
+    # Define the factors as a dictionary with specific key and value types
+    factors = fields.Dict(
+        keys=fields.Str(),  # Each key in the dictionary will be a string (the factor names)
+        values=fields.Nested(FactorSchema),  # Use the nested schema for values
+        required=True
+    )
 
 # Instantiate the schema
 model_variables_schema = ModelVariablesSchema()

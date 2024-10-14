@@ -1,7 +1,8 @@
 from marshmallow import Schema, fields, validate
 
 class OutputSchema(Schema):
-    output_id = fields.Str(required=True, validate=validate.Regexp(r'^[a-zA-Z0-9_]+$', error="output_id must be alphanumeric with underscores allowed"))
+    output_id = fields.Str(required=True, 
+                           validate=validate.Regexp(r'^[0-9a-f]{24}$'))
     user_id = fields.Str(required=True, 
                          validate=validate.Regexp(r'^[a-zA-Z0-9_]+$', error="user_id must be alphanumeric with underscores allowed"))
     simulation_id = fields.Str(required=True, validate=validate.Regexp(r'^[a-zA-Z0-9_]+$', error="simulation_id must be alphanumeric with underscores allowed"))
