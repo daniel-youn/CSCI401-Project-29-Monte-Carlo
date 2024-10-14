@@ -1,15 +1,34 @@
 import React, { useState } from 'react';
 import { TextField, Button, Box, Typography, Container } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // Import useNavigate from react-router-dom
+import UserService from '../../apis/UserService'; // Import UserService
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);  // State to handle error messages
+  const navigate = useNavigate();  // Initialize useNavigate hook for navigation
 
-  const handleLogin = (event) => {
+  const handleLogin = async (event) => {
     event.preventDefault();
-    // Handle form submission logic here
-    console.log("Email:", email, "Password:", password);
+
+    // Create the login data object
+    const loginData = {
+      email,
+      password
+    };
+
+    try {
+      // Call the loginUser function from UserService
+      const response = await UserService.loginUser(loginData);
+      console.log("Login successful:", response);
+
+      // If login is successful, redirect to the projects page
+      navigate('/projects');  // Navigate to the MyProjectsPage route
+    } catch (err) {
+      console.error('Login failed:', err);
+      setError('Login failed. Please check your credentials.');  // Set error message on failure
+    }
   };
 
   return (
@@ -22,10 +41,17 @@ const LoginForm = () => {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'left',
-          fontFamily: 'HelveticaRegular, sans-serif', // Apply Helvetica Regular font
+          fontFamily: 'HelveticaRegular, sans-serif',
         }}
       >
-        {/* Smaller Input Boxes with Square Edges */}
+        {/* Error Message */}
+        {error && (
+          <Typography variant="body2" color="error" sx={{ mb: 2 }}>
+            {error}
+          </Typography>
+        )}
+
+        {/* Email Input */}
         <TextField
           margin="dense"
           required
@@ -38,14 +64,14 @@ const LoginForm = () => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           InputLabelProps={{
-            style: { color: '#D5D5D5', fontSize: '0.8rem' }, // Smaller label font size
+            style: { color: '#D5D5D5', fontSize: '0.8rem' },
           }}
           InputProps={{
-            style: { color: '#D5D5D5', fontSize: '0.8rem', height: '40px', padding: '10px' }, // Adjust padding for proper alignment
+            style: { color: '#D5D5D5', fontSize: '0.8rem', height: '40px', padding: '10px' },
           }}
           sx={{
             '& .MuiOutlinedInput-root': {
-              borderRadius: '0px', // Square edges for input box
+              borderRadius: '0px',
               '& fieldset': {
                 borderColor: '#D5D5D5',
               },
@@ -59,6 +85,7 @@ const LoginForm = () => {
           }}
         />
 
+        {/* Password Input */}
         <TextField
           margin="dense"
           required
@@ -71,14 +98,14 @@ const LoginForm = () => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           InputLabelProps={{
-            style: { color: '#D5D5D5', fontSize: '0.8rem' }, // Smaller label font size
+            style: { color: '#D5D5D5', fontSize: '0.8rem' },
           }}
           InputProps={{
-            style: { color: '#D5D5D5', fontSize: '0.8rem', height: '40px', padding: '10px' }, // Adjust padding for proper alignment
+            style: { color: '#D5D5D5', fontSize: '0.8rem', height: '40px', padding: '10px' },
           }}
           sx={{
             '& .MuiOutlinedInput-root': {
-              borderRadius: '0px', // Square edges for input box
+              borderRadius: '0px',
               '& fieldset': {
                 borderColor: '#D5D5D5',
               },
@@ -92,7 +119,7 @@ const LoginForm = () => {
           }}
         />
 
-        {/* Sign In Button with Green Background */}
+        {/* Sign In Button */}
         <Button
           type="submit"
           fullWidth
@@ -100,19 +127,19 @@ const LoginForm = () => {
           sx={{
             mt: 2,
             mb: 1,
-            backgroundColor: '#00CDCC', // Green background color
+            backgroundColor: '#00CDCC',
             color: 'white',
-            fontSize: '0.8rem', // Smaller button text size
-            borderRadius: '0px', // Square edges for button
+            fontSize: '0.8rem',
+            borderRadius: '0px',
             '&:hover': {
-              backgroundColor: '#00CDCC', // Darker green on hover
+              backgroundColor: '#00CDCC',
             },
           }}
         >
           Sign In
         </Button>
 
-        {/* New Account Button with Green Border */}
+        {/* New Account Button */}
         <Button
           component={Link}
           to="/register"
@@ -121,10 +148,10 @@ const LoginForm = () => {
           sx={{
             mt: 1,
             mb: 2,
-            borderColor: '#00CDCC', // Green border color
+            borderColor: '#00CDCC',
             color: 'white',
-            fontSize: '0.8rem', // Smaller button text size
-            borderRadius: '0px', // Square edges for button
+            fontSize: '0.8rem',
+            borderRadius: '0px',
             '&:hover': {
               borderColor: '#00CDCC',
             },
