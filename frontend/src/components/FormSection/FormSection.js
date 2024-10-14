@@ -5,22 +5,22 @@ import GraphForm from '../GraphForm/GraphForm';
 const FormSection = () => {
   // State to hold the input data for all six GraphForms
   const [formData, setFormData] = useState({
-    form1: {},
-    form2: {},
-    form3: {},
-    form4: {},
-    form5: {},
-    form6: {}
+    willingness_to_pay_standard: {},
+    willingness_to_pay_premium: {},
+    num_standard_users_per_deal: {},
+    num_premium_users_per_deal: {},
+    num_deals_per_year: {},
+    expected_discount_per_deal: {}
   });
 
   // State to handle error message
   const [errorMessage, setErrorMessage] = useState('');
 
   // Handler to update the state when a GraphForm's inputs change
-  const handleFormChange = (index, data) => {
+  const handleFormChange = (key, data) => {
     setFormData((prevState) => ({
       ...prevState,
-      [`form${index}`]: data
+      [key]: data
     }));
   };
 
@@ -44,7 +44,6 @@ const FormSection = () => {
       // You can send formData to the server here
     } else {
       Object.keys(formData).forEach((key) => console.log(formData[key]));
-
       setErrorMessage('Please fill in all required fields for each form.');
     }
   };
@@ -52,17 +51,55 @@ const FormSection = () => {
   return (
     <>
       <Grid container spacing={2}>
-        {/* Render 6 GraphForms */}
-        {Array.from({ length: 6 }).map((_, index) => (
-          <Grid item xs={12} md={6} key={index}>
-            <GraphForm
-              factorTitle={`Factor ${index + 1}`}
-              width={"40rem"}
-              height={"30rem"}
-              onFormChange={(data) => handleFormChange(index + 1, data)} // Pass form data to the handler
-            />
-          </Grid>
-        ))}
+        {/* Render 6 GraphForms with descriptive keys */}
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorTitle="Willingness to Pay (Standard)"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('willingness_to_pay_standard', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorTitle="Willingness to Pay (Premium)"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('willingness_to_pay_premium', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorTitle="Number of Standard Users per Deal"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('num_standard_users_per_deal', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorTitle="Number of Premium Users per Deal"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('num_premium_users_per_deal', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorTitle="Number of Deals per Year"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('num_deals_per_year', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorTitle="Expected Discount per Deal"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('expected_discount_per_deal', data)}
+          />
+        </Grid>
       </Grid>
 
       {/* Error Message */}
