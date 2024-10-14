@@ -1,17 +1,20 @@
+import ResizeObserver from 'resize-observer-polyfill';  // Import the polyfill at the top of the file
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+if (typeof window !== 'undefined') {
+  const ro = new ResizeObserver(() => {
+    // this empty callback will "consume" the undelivered notifications
+  });
+  ro.observe(document.body);
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+  <App />
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();
