@@ -1,0 +1,116 @@
+.project-view {
+  display: flex;
+  height: 100vh;
+  margin: 0;
+  background-color: #303144;
+  font-family: 'HelveticaRegular', sans-serif;
+  overflow: auto;
+
+  .sidebar {
+    width: 6%; // Adjusted width
+    background-color: #1C1D2E;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: start;
+    padding: 12px;
+    border-right: 1.2px solid #423D3D;
+
+    .switcher-btn {
+      font-family: 'HelveticaLight';
+      font-size: 12px;
+      color: #979797; // Update color of switcher elements
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+      text-transform: none;
+
+      svg {
+        font-size: 34px;
+        margin-bottom: 8px;
+      }
+    }
+  }
+
+  .content {
+    flex: 1;
+    display: flex;
+    background-color: #303144;
+
+    .aggregated-factors {
+      width: 30%;
+      background-color: #232439;
+      padding: 0 16px 16px 16px;
+      border-right: 1.2px solid #423D3D;
+
+      .header-box {
+        font-size: 16px;
+        display: flex;
+        padding: 16px;
+        background-color: #1C1D2E;
+        color: #D5D5D5;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        padding-bottom: 10px;
+        margin-left: -16px;  
+        margin-right: -16px; 
+        padding-left: 16px;  
+        padding-right: 16px; 
+        border-bottom: 1.2px solid #423D3D;
+      }
+
+      .factors-content {
+        overflow-y: auto;
+        max-height: calc(100vh - 100px);
+        padding-right: 10px;
+      }
+
+      .sub-heading {
+        color: #979797; // Sub-heading color
+        font-family: 'HelveticaLight'; // Lighter font weight for sub-heading
+        margin-bottom: 8px;
+      }
+
+      .chart-container {
+        padding: 16px;
+        background-color: #303144;
+        border: 1px solid #423D3D;
+        border-radius: 0px;
+      }
+    }
+
+    .estimated-revenue {
+      flex: 1;
+      background-color: #232439;
+      padding: 0 16px 16px 16px;
+      overflow: auto;
+
+      .header-box {
+        font-size: 16px;
+        display: flex;
+        padding: 16px;
+        background-color: #1C1D2E;
+        color: #D5D5D5;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        padding-bottom: 10px;
+        margin-left: -16px;  
+        margin-right: -16px; 
+        padding-left: 16px;  
+        padding-right: 16px; 
+        border-bottom: 1.2px solid #423D3D;
+      }
+
+      .chart-container {
+        padding: 16px;
+        background-color: #303144;
+        border: 1px solid #423D3D;
+        border-radius: 0px;
+      }
+    }
+  }
+}

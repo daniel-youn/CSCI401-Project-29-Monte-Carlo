@@ -18,7 +18,15 @@ const ContentContainer = ({ title, children, padding = '0rem', contentBackground
             {title}
           </Typography>
         </Box>
-        <Paper elevation={3} sx={{ backgroundColor: contentBackgroundColor, padding: contentPadding }}>
+        <Paper 
+          elevation={3} 
+          sx={{ 
+            backgroundColor: contentBackgroundColor, 
+            padding: contentPadding, 
+            maxWidth: '100%',  // Prevent Paper from exceeding parent width
+            overflowX: 'auto',  // Enable scrolling if necessary
+          }}
+        >
           {/* Header with changeable title */}
 
           {/* Children content passed as props */}
@@ -30,6 +38,5 @@ const ContentContainer = ({ title, children, padding = '0rem', contentBackground
     </>
   );
 };
-
 
 export default ContentContainer;
