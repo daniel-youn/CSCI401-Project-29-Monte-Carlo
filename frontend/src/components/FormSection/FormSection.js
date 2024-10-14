@@ -1,138 +1,95 @@
-import React from 'react';
-import { Box, Grid, Typography, Card, CardContent, TextField, Button } from '@mui/material';
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
+import React, { useState } from 'react';
+import { Box, Grid, Button, Typography } from '@mui/material';
+import GraphForm from '../GraphForm/GraphForm';
 
-// Register the required components for the Line chart
-ChartJS.register(
-  CategoryScale,  // Register the category scale
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
-
-// Example chart data with fill color under the curve
-const chartData = {
-  labels: [0, 20, 40, 60, 80, 100],
-  datasets: [
-    {
-      label: 'Value',
-      data: [10, 30, 50, 70, 90, 200],
-      borderColor: '#00bcd4',
-      backgroundColor: 'rgba(0, 188, 212, 0.2)', // Fill color under the curve
-      fill: true,  // Enable area fill
-      pointBackgroundColor: '#00bcd4',
-      pointBorderColor: '#fff',
-    },
-  ],
-};
-
-const chartOptions = {
-  scales: {
-    x: {
-      grid: {
-        display: false,
-      },
-    },
-    y: {
-      position: 'left',
-      grid: {
-        display: false,
-      },
-    },
-  },
-  plugins: {
-    legend: {
-      display: false,  // Disable the legend
-    },
-  },
-};
-{//implement header: add icon and design, 
-  //edit formpage.js to be more modular (must have content component (title and container) )
-  //create graph component for form page (extract from this file)
-}
 const FormSection = () => {
+  // State to hold the input data for all six GraphForms
+  const [formData, setFormData] = useState({
+    form1: {},
+    form2: {},
+    form3: {},
+    form4: {},
+    form5: {},
+    form6: {}
+  });
+
+  // State to handle error message
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Handler to update the state when a GraphForm's inputs change
+  const handleFormChange = (index, data) => {
+    setFormData((prevState) => ({
+      ...prevState,
+      [`form${index}`]: data
+    }));
+  };
+
+  // Function to validate if each form has all required inputs filled
+  const isFormComplete = (form) => {
+    if (form.distributionType === 'normal') {
+      return form.mean && form.stdDev;
+    } else if (form.distributionType === 'uniform') {
+      return form.min && form.max;
+    }
+    return false;
+  };
+
+  // Handler to submit all form data together
+  const handleSubmit = () => {
+    const allFormsComplete = Object.keys(formData).every((key) => isFormComplete(formData[key]));
+
+    if (allFormsComplete) {
+      console.log("Submitted data for all forms: ", formData);
+      setErrorMessage('');
+      // You can send formData to the server here
+    } else {
+      Object.keys(formData).forEach((key) => console.log(formData[key]));
+
+      setErrorMessage('Please fill in all required fields for each form.');
+    }
+  };
+
   return (
     <>
-      <Grid container spacing={4}>
-        {/* Creating 6 graphs across 3 rows */}
+      <Grid container spacing={2}>
+        {/* Render 6 GraphForms */}
         {Array.from({ length: 6 }).map((_, index) => (
-          <Grid item xs={12} md={6} key={index}> {/* Each graph and title in the same grid item */}
-            {/* Graph Title placed above the graph */}
-            <Typography variant="h6" sx={{ color: '#D5D5D5', mb: 2, fontSize: '1.2rem' }}> {/* Increased font size */}
-              Estimate the Annual Willingness-to-Pay per Standard User
-            </Typography>
-
-            {/* Card containing the graph */}
-            <Card sx={{ backgroundColor: '#2b3245' }}>
-              <CardContent>
-                <Line data={chartData} options={chartOptions} />
-
-                {/* Lower Bound and Upper Bound input boxes */}
-                <Grid container spacing={2} sx={{ marginTop: '0.8rem', alignItems: 'flex-end' }}>
-                  <Grid item xs={6}>
-                    <TextField
-                      label="Lower Bound"
-                      variant="filled"
-                      size="small"  // Make the box smaller
-                      InputLabelProps={{
-                        style: { color: '#D5D5D5', fontSize: '0.8rem' },  // Smaller label font
-                      }}
-                      sx={{
-                        backgroundColor: '#2b3245',
-                        input: { color: '#D5D5D5', fontSize: '0.8rem' },  // Smaller input font
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={6} sx={{ display: 'flex', justifyContent: 'flex-end' }}>  {/* Align to the right */}
-                    <TextField
-                      label="Upper Bound"
-                      variant="filled"
-                      size="small"  // Make the box smaller
-                      InputLabelProps={{
-                        style: { color: '#D5D5D5', fontSize: '0.8rem' },  // Smaller label font
-                      }}
-                      sx={{
-                        backgroundColor: '#2b3245',
-                        input: { color: '#D5D5D5', fontSize: '0.8rem' },  // Smaller input font
-                        width: '50%',  // Ensure it takes full width within its container
-                      }}
-                    />
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
+          <Grid item xs={12} md={6} key={index}>
+            <GraphForm
+              factorTitle={`Factor ${index + 1}`}
+              width={"40rem"}
+              height={"30rem"}
+              onFormChange={(data) => handleFormChange(index + 1, data)} // Pass form data to the handler
+            />
           </Grid>
         ))}
       </Grid>
+
+      {/* Error Message */}
+      {errorMessage && (
+        <Box sx={{ textAlign: 'center', marginTop: '1rem' }}>
+          <Typography variant="body1" color="error">
+            {errorMessage}
+          </Typography>
+        </Box>
+      )}
 
       {/* Submit Button */}
       <Box sx={{ textAlign: 'center', marginTop: '2rem' }}>
         <Button
           variant="contained"
+          onClick={handleSubmit}
           sx={{
             backgroundColor: '#00bcd4',
             color: 'white',
             padding: '0.8rem 2rem',
             fontSize: '1rem',
             '&:hover': {
-              backgroundColor: '#0097a7',
-            },
+              backgroundColor: '#0097a7'
+            }
           }}
         >
-          Submit
+          Submit All Forms
         </Button>
       </Box>
     </>
