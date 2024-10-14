@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from app import db
-from app.schemas.user_schema import user_schema  # Adjust the import as necessary
+from app.schemas.user_schema import user_schema
 from marshmallow import ValidationError
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -10,15 +10,18 @@ user_routes = Blueprint('user_routes', __name__)
 # MongoDB collection for users
 user_collection = db['users']
 
-# 1. Create a new user
 @user_routes.route('/users', methods=['POST'])
 def create_user():
     data = request.json
     try:
+        # Load the user data from the request
         user_data = user_schema.load(data)
 
-        # Check for existing user
-        existing_user = user_collection.find_one({'email': user_data['email']})  # Adjust the field as necessary
+        # Explicitly set user_id as the email
+        user_data['user_id'] = user_data['email']
+
+        # Check for existing user by email (now user_id)
+        existing_user = user_collection.find_one({'user_id': user_data['user_id']})
         if existing_user:
             return jsonify({'message': 'User already exists'}), 409  # Conflict status code
 
@@ -31,6 +34,7 @@ def create_user():
 
     except ValidationError as err:
         return jsonify(err.messages), 400
+
 
 # 2. Get user by user_id
 @user_routes.route('/users/<user_id>', methods=['GET'])
