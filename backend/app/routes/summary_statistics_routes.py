@@ -26,10 +26,16 @@ def create_summary_statistics():
 # 2. Get summary statistics by output_id
 @summary_statistics_routes.route('/summary_statistics/<output_id>', methods=['GET'])
 def get_summary_statistics(output_id):
-    stats = summary_statistics_collection.find_one({'output_id': output_id}, {'_id': False})
-    if stats:
-        return jsonify(stats), 200
-    return jsonify({'message': 'Summary statistics not found'}), 404
+    try:
+        # Attempt to find by output_id (custom field) or use ObjectId if applicable
+        stats = summary_statistics_collection.find_one({'output_id': output_id}, {'_id': False})
+        
+        if stats:
+            return jsonify(stats), 200
+        else:
+            return jsonify({'message': 'Summary statistics not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
 
 # 3. Update summary statistics by output_id
 @summary_statistics_routes.route('/summary_statistics/<output_id>', methods=['PUT'])
@@ -53,3 +59,9 @@ def delete_summary_statistics(output_id):
 def get_all_summary_statistics():
     stats_list = list(summary_statistics_collection.find({}, {'_id': False}))
     return jsonify(stats_list), 200
+
+# 6. Delete all outputs
+@summary_statistics_routes.route('/summary_statistics', methods=['DELETE'])
+def delete_all_outputs():
+    result = summary_statistics_collection.delete_many({})  # This deletes all documents in the collection
+    return jsonify({'message': f'{result.deleted_count} summary statistics deleted successfully'}), 200
