@@ -1,0 +1,7 @@
+flask
+pymongo[srv]
+python-dotenv
+marshmallow
+werkzeug
+numpy
+scipy
