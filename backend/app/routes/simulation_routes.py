@@ -121,6 +121,9 @@ def input_data():
 
             results.append(total_revenue)
 
+        num_bins = int(np.sqrt(number_of_simulations))
+        frequencies, bin_edges = np.histogram(results, bins=num_bins)
+        
         # Compute summary statistics
         mean_outcome = np.mean(results)
         median_outcome = np.median(results)
@@ -137,7 +140,7 @@ def input_data():
             'simulation_results': results,
             'summary_statistics': '',  # To be updated
             'volatility_distribution': '',  # To be updated
-            'additional_calculation': ''  # To be updated
+            'additional_calculation': '',  # To be updated
         }).inserted_id
 
         # Insert summary statistics
@@ -151,7 +154,10 @@ def input_data():
             'min_outcome': min_outcome,
             'max_outcome': max_outcome,
             'percentile_5': percentile_5,
-            'percentile_95': percentile_95
+            'percentile_95': percentile_95,
+            'window_size': num_bins,
+            'x_values': bin_edges.tolist(),  # Convert numpy array to list
+            'y_values': frequencies.tolist()  # Convert numpy array to list
         }).inserted_id
 
         # Update output with summary statistics
