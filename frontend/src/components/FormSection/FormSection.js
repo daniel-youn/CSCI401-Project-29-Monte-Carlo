@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Box, Grid, Button, Typography } from '@mui/material';
 import GraphForm from '../GraphForm/GraphForm';
-
+import MonteCarloServices from '../../apis/MonteCarloServices';
+//mock simulation id
+const mock_sim_id = "sim_123";
 const FormSection = () => {
   // State to hold the input data for all six GraphForms
   const [formData, setFormData] = useState({
@@ -26,10 +28,10 @@ const FormSection = () => {
 
   // Function to validate if each form has all required inputs filled
   const isFormComplete = (form) => {
-    if (form.distributionType === 'normal') {
-      return form.mean && form.stdDev;
-    } else if (form.distributionType === 'uniform') {
-      return form.min && form.max;
+    if (form.distribution_type === 'normal') {
+      return form.mean && form.stddev;
+    } else if (form.distribution_type === 'uniform') {
+      return form.min_val && form.max_val;
     }
     return false;
   };
@@ -39,8 +41,13 @@ const FormSection = () => {
     const allFormsComplete = Object.keys(formData).every((key) => isFormComplete(formData[key]));
 
     if (allFormsComplete) {
-      console.log("Submitted data for all forms: ", formData);
+      const finalFormData = {
+        ...formData,
+        simulation_id: mock_sim_id  // Add the mock simulation ID here
+      };
       setErrorMessage('');
+      MonteCarloServices.runSimulationWithInputData(finalFormData)
+      console.log("Submitted data for all forms: ", formData);
       // You can send formData to the server here
     } else {
       Object.keys(formData).forEach((key) => console.log(formData[key]));

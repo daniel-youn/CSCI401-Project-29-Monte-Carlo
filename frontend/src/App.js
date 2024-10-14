@@ -3,7 +3,8 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import LoginPage from './pages/LoginPage/LoginPage';
 import RegistrationPage from './pages/RegistrationPage/RegistrationPage';
 import MyProjectsPage from './pages/MyProjectsPage/MyProjectsPage';
-
+import FormPage from './pages/FormPage/FormPage';
+import ProjectViewPage from './pages/ProjectViewPage/ProjectViewPage'
 
 function App() {
   return (

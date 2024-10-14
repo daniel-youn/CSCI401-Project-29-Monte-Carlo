@@ -14,9 +14,9 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-const MonteCarloInputForm = ({ factorTitle = "Factor i", width = "40rem", height = "30rem", onFormChange }) => {
+const GraphForm = ({ factorTitle = "Factor i", width = "40rem", height = "30rem", onFormChange }) => {
   const [distributionType, setDistributionType] = useState('');
-  const [values, setValues] = useState({ mean: '', stdDev: '', min: '', max: '', lambda: '' });
+  const [values, setValues] = useState({ mean: '', stddev: '', min_val: '', max_val: '' });
   const [chartData, setChartData] = useState({
     labels: [],
     datasets: [
@@ -37,9 +37,19 @@ const MonteCarloInputForm = ({ factorTitle = "Factor i", width = "40rem", height
 
   const handleDistributionChange = (e) => {
     setDistributionType(e.target.value);
-    setValues({ mean: '', stdDev: '', min: '', max: '' });
+
+    if (e.target.value === "uniform") {
+      setValues({ distribution_type: e.target.value, min_val: '', max_val: '' });
+      onFormChange({ distribution_type: e.target.value, min_val: '', max_val: '' });
+    } else if (e.target.value === "normal") {
+      setValues({ distribution_type: e.target.value, mean: '', stddev: '' });
+      onFormChange({ distribution_type: e.target.value, mean: '', stddev: '' });
+    } else {
+      setValues({ distribution_type: e.target.value });
+      onFormChange({ distribution_type: e.target.value });
+    }
+
     setChartData(emptyChartData());
-    onFormChange({ distributionType: e.target.value, mean: '', stdDev: '', min: '', max: '' });
   };
 
   const handleInputChange = (e) => {
@@ -65,18 +75,18 @@ const MonteCarloInputForm = ({ factorTitle = "Factor i", width = "40rem", height
     let data = [];
     const numPoints = 100; // Number of points for the graph
 
-    if (distributionType === 'normal' && values.mean && values.stdDev) {
+    if (distributionType === 'normal' && values.mean && values.stddev) {
       const mean = parseFloat(values.mean);
-      const stdDev = parseFloat(values.stdDev);
-      const startX = mean - 3 * stdDev; // Start at mean - 3 * stdDev
-      const endX = mean + 3 * stdDev; // End at mean + 3 * stdDev
+      const stddev = parseFloat(values.stddev);
+      const startX = mean - 3 * stddev; // Start at mean - 3 * stddev
+      const endX = mean + 3 * stddev; // End at mean + 3 * stddev
       const step = (endX - startX) / numPoints; // Step size between points
 
       const labels = Array.from({ length: numPoints }, (_, i) => (startX + i * step).toFixed(2)); // X-axis labels
 
       data = labels.map(x => {
-        const z = (x - mean) / stdDev; // Standardize the value
-        return Math.exp(-0.5 * z * z) / (stdDev * Math.sqrt(2 * Math.PI)); // PDF of Normal Distribution
+        const z = (x - mean) / stddev; // Standardize the value
+        return Math.exp(-0.5 * z * z) / (stddev * Math.sqrt(2 * Math.PI)); // PDF of Normal Distribution
       });
 
       setChartData({
@@ -91,13 +101,13 @@ const MonteCarloInputForm = ({ factorTitle = "Factor i", width = "40rem", height
           }
         ]
       });
-    } else if (distributionType === 'uniform' && values.min && values.max) {
-      const min = parseFloat(values.min);
-      const max = parseFloat(values.max);
-      const uniformHeight = 1 / (max - min); // Height of the uniform PDF
-      const labels = Array.from({ length: numPoints }, (_, i) => (min + ((max - min) / numPoints) * i).toFixed(2));
+    } else if (distributionType === 'uniform' && values.min_val && values.max_val) {
+      const min_val = parseFloat(values.min_val);
+      const max_val = parseFloat(values.max_val);
+      const uniformHeight = 1 / (max_val - min_val); // Height of the uniform PDF
+      const labels = Array.from({ length: numPoints }, (_, i) => (min_val + ((max_val - min_val) / numPoints) * i).toFixed(2));
 
-      data = labels.map(x => (x >= min && x <= max ? uniformHeight : 0));
+      data = labels.map(x => (x >= min_val && x <= max_val ? uniformHeight : 0));
 
       setChartData({
         labels: labels,
@@ -113,7 +123,6 @@ const MonteCarloInputForm = ({ factorTitle = "Factor i", width = "40rem", height
       });
     }
   };
-
 
   useEffect(() => {
     generateDistributionShape();
@@ -133,8 +142,8 @@ const MonteCarloInputForm = ({ factorTitle = "Factor i", width = "40rem", height
             />
             <TextField
               label="Standard Deviation"
-              name="stdDev"
-              value={values.stdDev}
+              name="stddev"
+              value={values.stddev}
               onChange={handleInputChange}
               sx={{ margin: 1 }}
             />
@@ -144,16 +153,16 @@ const MonteCarloInputForm = ({ factorTitle = "Factor i", width = "40rem", height
         return (
           <>
             <TextField
-              label="Minimum"
-              name="min"
-              value={values.min}
+              label="Minimum Value"
+              name="min_val"
+              value={values.min_val}
               onChange={handleInputChange}
               sx={{ margin: 1 }}
             />
             <TextField
-              label="Maximum"
-              name="max"
-              value={values.max}
+              label="Maximum Value"
+              name="max_val"
+              value={values.max_val}
               onChange={handleInputChange}
               sx={{ margin: 1 }}
             />
@@ -234,4 +243,4 @@ const MonteCarloInputForm = ({ factorTitle = "Factor i", width = "40rem", height
   );
 };
 
-export default MonteCarloInputForm;
+export default GraphForm;
