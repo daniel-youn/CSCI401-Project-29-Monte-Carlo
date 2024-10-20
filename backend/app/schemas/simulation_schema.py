@@ -17,8 +17,5 @@ class SimulationSchema(Schema):
     model_variables = fields.Str(required=True) #ObjectID
     number_of_simulations = fields.Int(required=True)
     status = fields.Str(required=True, validate=validate.OneOf(["pending", "running", "completed", "failed"]))
-    window_size = fields.Int(required=True, validate=validate.Range(min=1, max=1000))
-    x_values = fields.List(fields.Float(), required=True)
-    y_values = fields.List(fields.Int(), required=True)
 
 simulation_schema = SimulationSchema()

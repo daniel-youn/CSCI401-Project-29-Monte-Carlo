@@ -12,6 +12,9 @@ class SummaryStatisticsSchema(Schema):
     max_outcome = fields.Float(required=True)
     percentile_5 = fields.Float(required=True)
     percentile_95 = fields.Float(required=True)
+    window_size = fields.Int(required=True, validate=validate.Range(min=1, max=1000))
+    x_values = fields.List(fields.Float(), required=True)
+    y_values = fields.List(fields.Int(), required=True)
     
 # Instantiate the schema
 summary_statistics_schema = SummaryStatisticsSchema()

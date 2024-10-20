@@ -1,8 +1,9 @@
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = 'http://127.0.0.1:5001/api'
+// const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const MonteCarloServices = {
   async createSimulation(simulationData) {
     try {
-      const response = await fetch(`${BACKEND_URL}/simulations`, {
+      const response = await fetch(`${BACKEND_URL}/simulation/simulations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(simulationData)
@@ -19,13 +20,32 @@ const MonteCarloServices = {
   },
   async getSimulation(simulationId) {
     try {
-      const response = await fetch(`${BACKEND_URL}/simulations/${simulationId}`, {
+      const response = await fetch(`${BACKEND_URL}/simulation/simulations/${simulationId}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
       const data = await response.json();
       if (response.ok) {
         console.log('Simulation fetched successfully:', data);
+        return data;
+      } else {
+        console.error('Error fetching simulation:', data);
+      }
+    } catch (error) {
+      console.error('Request failed:', error);
+    }
+  },
+  async getSimulationSummaryStats(outputId) {
+    try {
+      const response = await fetch(`${BACKEND_URL}/summary_statistics/summary_statistics/${outputId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+        console.log('Simulation fetched successfully:', data);
+      if (response.ok) {
+        console.log('Simulation fetched successfully:', data);
+        return data;
       } else {
         console.error('Error fetching simulation:', data);
       }
@@ -35,7 +55,7 @@ const MonteCarloServices = {
   },
   async updateSimulation(simulationId, updates) {
     try {
-      const response = await fetch(`${BACKEND_URL}/simulations/${simulationId}`, {
+      const response = await fetch(`${BACKEND_URL}/simulation/simulations/${simulationId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
@@ -52,7 +72,7 @@ const MonteCarloServices = {
   },
   async deleteSimulation(simulationId) {
     try {
-      const response = await fetch(`${BACKEND_URL}/simulations/${simulationId}`, {
+      const response = await fetch(`${BACKEND_URL}/simulation/simulations/${simulationId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -68,7 +88,7 @@ const MonteCarloServices = {
   },
   async getAllSimulations() {
     try {
-      const response = await fetch(`${BACKEND_URL}/simulations`, {
+      const response = await fetch(`${BACKEND_URL}/simulation/simulations`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -84,7 +104,7 @@ const MonteCarloServices = {
   },
   async runSimulationWithInputData(modelVariables) {
     try {
-      const response = await fetch(`${BACKEND_URL}/input_data`, {
+      const response = await fetch(`${BACKEND_URL}/simulation/input_data`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(modelVariables)

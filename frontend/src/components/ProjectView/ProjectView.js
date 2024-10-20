@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import { Line } from 'react-chartjs-2';
 import { GridViewRounded, PeopleAltRounded } from '@mui/icons-material';
 import './_project-view.scss'; // Import SCSS
+import MonteCarloServices from '../../apis/MonteCarloServices'
 
 import {
   Chart as ChartJS,
@@ -18,12 +19,20 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
+// const sim_data_string = MonteCarloServices.getSimulation('sim_123')
+// const simData = JSON.parse(sim_data_string);
+// const sim_summary_string = MonteCarloServices.getSimulationSummaryStats(simData.output_id)
+// const sim_summary = JSON.parse(sim_summary_string);
+
+// const x_values = sim_summary.x_values
+// const y_values = sim_summary.y_values
+
 const data = {
-  labels: [0, 20, 40, 60, 80, 100, 120, 140, 160],
+  labels: [],
   datasets: [
     {
       label: '', // Remove the label so the legend doesn't appear
-      data: [0, 10, 30, 50, 60, 70, 80, 90, 100],
+      data: [],
       fill: true,
       backgroundColor: 'rgba(7, 171, 174, 0.5)', // Updated fill color to #07ABAE with transparency
       borderColor: '#07ABAE', // Updated border color to #07ABAE
@@ -62,6 +71,47 @@ const options = {
 
 const ProjectView = () => {
   const [view, setView] = useState('Overview');
+  const [xValues, setXValues] = useState([]);
+  const [yValues, setYValues] = useState([]);
+
+  const fetchSimulationData = async () => {
+    try {
+      const simData = await MonteCarloServices.getSimulation('sim_123'); // Fetch simulation data
+      console.log('simData')
+      console.log(simData)
+      if (simData) {
+        const simSummary = await MonteCarloServices.getSimulationSummaryStats(simData.output_id); // Fetch summary stats
+        if (simSummary) {
+          setXValues(simSummary.x_values);
+          setYValues(simSummary.y_values);
+          console.log('simSummary');
+          console.log(simSummary);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching simulation data or summary statistics:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSimulationData(); // Fetch data on component mount
+  }, []);
+
+
+  const data = {
+    labels: xValues,
+    datasets: [
+      {
+        label: '', // Remove the label so the legend doesn't appear
+        data: yValues,
+        fill: true,
+        backgroundColor: 'rgba(7, 171, 174, 0.5)', // Updated fill color to #07ABAE with transparency
+        borderColor: '#07ABAE', // Updated border color to #07ABAE
+        pointBackgroundColor: '#fff', // Points stay white
+        pointBorderColor: '#07ABAE', // Point borders updated to #07ABAE
+      },
+    ],
+  };
 
   const handleViewChange = (newView) => {
     setView(newView);
