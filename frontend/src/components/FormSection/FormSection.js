@@ -4,6 +4,7 @@ import GraphForm from '../GraphForm/GraphForm';
 import MonteCarloServices from '../../apis/MonteCarloServices';
 //mock simulation id
 const mock_sim_id = "sim_123";
+const mock_user_id = "user_123";
 const FormSection = () => {
   // State to hold the input data for all six GraphForms
   const [formData, setFormData] = useState({
@@ -42,9 +43,14 @@ const FormSection = () => {
 
     if (allFormsComplete) {
       const finalFormData = {
-        ...formData,
-        simulation_id: mock_sim_id  // Add the mock simulation ID here
+        user_id: mock_user_id,  // Add the mock user ID here
+        simulation_id: mock_sim_id,  // Add the mock simulation ID here
+        factors: {                   // Spread formData under 'factors'
+          ...formData
+        }
       };
+    
+      console.log(finalFormData)
       setErrorMessage('');
       MonteCarloServices.runSimulationWithInputData(finalFormData)
       console.log("Submitted data for all forms: ", formData);
@@ -61,6 +67,7 @@ const FormSection = () => {
         {/* Render 6 GraphForms with descriptive keys */}
         <Grid item xs={12} md={6}>
           <GraphForm
+          factorName='willingness_to_pay_standard'
             factorTitle="Willingness to Pay (Standard)"
             width={"40rem"}
             height={"30rem"}
@@ -69,6 +76,7 @@ const FormSection = () => {
         </Grid>
         <Grid item xs={12} md={6}>
           <GraphForm
+          factorName='willingness_to_pay_premium'
             factorTitle="Willingness to Pay (Premium)"
             width={"40rem"}
             height={"30rem"}
@@ -77,6 +85,7 @@ const FormSection = () => {
         </Grid>
         <Grid item xs={12} md={6}>
           <GraphForm
+          factorName='num_standard_users_per_deal'
             factorTitle="Number of Standard Users per Deal"
             width={"40rem"}
             height={"30rem"}
@@ -85,6 +94,7 @@ const FormSection = () => {
         </Grid>
         <Grid item xs={12} md={6}>
           <GraphForm
+          factorName='num_premium_users_per_deal'
             factorTitle="Number of Premium Users per Deal"
             width={"40rem"}
             height={"30rem"}
@@ -93,6 +103,7 @@ const FormSection = () => {
         </Grid>
         <Grid item xs={12} md={6}>
           <GraphForm
+          factorName='num_deals_per_year'
             factorTitle="Number of Deals per Year"
             width={"40rem"}
             height={"30rem"}
@@ -101,6 +112,7 @@ const FormSection = () => {
         </Grid>
         <Grid item xs={12} md={6}>
           <GraphForm
+          factorName='expected_discount_per_deal'
             factorTitle="Expected Discount per Deal"
             width={"40rem"}
             height={"30rem"}

@@ -143,7 +143,7 @@ const ProjectView = () => {
             <Box mb={2}>
               <Typography className="sub-heading">Factor 1</Typography>
               <Box className="chart-container">
-                <Line data={data} options={options} />;
+                <Line data={data} options={options} />
               </Box>
             </Box>
 
@@ -151,7 +151,7 @@ const ProjectView = () => {
             <Box mb={2}>
               <Typography className="sub-heading">Factor 2</Typography>
               <Box className="chart-container">
-                <Line data={data} options={options} />;
+                <Line data={data} options={options} />
               </Box>
             </Box>
           </Box>
@@ -164,7 +164,7 @@ const ProjectView = () => {
           </Box>
           {/* Only one chart under Estimated Revenue */}
           <Box mt={2} className="chart-container">
-            <Line data={data} options={options} />;
+            <Line data={data} options={options} />
           </Box>
         </Box>
       </Box>

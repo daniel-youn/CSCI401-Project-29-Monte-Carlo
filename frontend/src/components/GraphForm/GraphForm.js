@@ -14,7 +14,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-const GraphForm = ({ factorTitle = "Factor i", width = "40rem", height = "30rem", onFormChange }) => {
+const GraphForm = ({ factorName = "factor_name ", factorTitle = "Factor i", width = "40rem", height = "30rem", onFormChange }) => {
   const [distributionType, setDistributionType] = useState('');
   const [values, setValues] = useState({ mean: '', stddev: '', min_val: '', max_val: '' });
   const [chartData, setChartData] = useState({
@@ -39,24 +39,32 @@ const GraphForm = ({ factorTitle = "Factor i", width = "40rem", height = "30rem"
     setDistributionType(e.target.value);
 
     if (e.target.value === "uniform") {
-      setValues({ distribution_type: e.target.value, min_val: '', max_val: '' });
-      onFormChange({ distribution_type: e.target.value, min_val: '', max_val: '' });
+      setValues({ factor_name: factorName, distribution_type: e.target.value, min_val: '', max_val: '' });
+      onFormChange({ factor_name: factorName, distribution_type: e.target.value, min_val: '', max_val: '' });
     } else if (e.target.value === "normal") {
-      setValues({ distribution_type: e.target.value, mean: '', stddev: '' });
-      onFormChange({ distribution_type: e.target.value, mean: '', stddev: '' });
+      setValues({ factor_name: factorName, distribution_type: e.target.value, mean: '', stddev: '' });
+      onFormChange({ factor_name: factorName, distribution_type: e.target.value, mean: '', stddev: '' });
     } else {
-      setValues({ distribution_type: e.target.value });
-      onFormChange({ distribution_type: e.target.value });
+      setValues({ factor_name: factorName, distribution_type: e.target.value });
+      onFormChange({ factor_name: factorName, distribution_type: e.target.value });
     }
 
     setChartData(emptyChartData());
   };
 
   const handleInputChange = (e) => {
-    const updatedValues = { ...values, [e.target.name]: e.target.value };
+    const { name, value } = e.target;
+    const parsedValue = parseFloat(value);
+  
+    const updatedValues = {
+      ...values,
+      [name]: isNaN(parsedValue) ? '' : parsedValue // Check if the input is a valid number
+    };
+  
     setValues(updatedValues);
     onFormChange(updatedValues);
   };
+  
 
   const emptyChartData = () => ({
     labels: Array.from({ length: 100 }, (_, i) => i),
