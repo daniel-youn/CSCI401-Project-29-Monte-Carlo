@@ -5,8 +5,10 @@ from app.schemas.model_variables_schema import model_variables_schema
 from marshmallow import ValidationError
 from datetime import datetime
 import numpy as np
+from app.schemas.user_schema import user_schema
 from scipy.stats import uniform, norm, triang
-from app.schemas.simulation_schema import simulation_schema  # Adjust the import as necessary
+from app.schemas.simulation_schema import simulation_schema
+from app.schemas.projects_schema import projects_schema
 
 # Create a Blueprint for simulation-related routes
 simulation_routes = Blueprint('simulation_routes', __name__)
@@ -81,9 +83,12 @@ def get_distribution(model_variables, factor_name):
         mean = factor_params["mean"]
         stddev = factor_params["stddev"]
         return norm(loc=mean, scale=stddev)
-    # elif distribution_type == 'triangular':
-    #     mid = (min_val + max_val) / 2
-    #     return triang(c=(mid - min_val) / (max_val - min_val), loc=min_val, scale=max_val - min_val)
+    elif distribution_type == 'triangular':
+        mode = factor_params["mode"]
+        min_val = factor_params["min_val"]
+        max_val = factor_params["max_val"]
+        return triang(c=(mode - min_val) / (max_val - min_val), loc=min_val, scale=max_val - min_val)
+
 
 @simulation_routes.route('/input_data', methods=['POST'])
 def input_data():
@@ -91,14 +96,76 @@ def input_data():
     try:
         # Parse request data
         model_variables = request.get_json()
+        user_id = model_variables["user_id"]
+        project_id = model_variables["project_id"]
+        factors = model_variables["factors"]
+        
+        # Find the user in the database
+        user = user_schema.find_one({"user_id": user_id})
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+            
+        # Find the project in the database
+        project = projects_schema.find_one({"project_id": project_id})
+        if not project:
+            return jsonify({"error": "Project not found"}), 404
+        
+        # Find the normal_sim_id for the given project
+        normal_sim_id = project.get("normal_sim_id")
+        admin_sim_id = project.get("admin_sim_id")
+        cross_check_sim_id = project.get("cross_check_sim_id")
+        
+        # UPDATE FOR NORMAL SIM
+        # Find the model_var_id for the given project
+        project = user['projects'].get(project_id)
+        if not project:
+            return jsonify({"error": "Project not found for user"}), 404
+        model_var_id = project[1]
+        
+        if not model_var_id:
+            # Create new model variable data structure
+            new_model_variable = {
+                "user_id": user_id,
+                "simulation_id": normal_sim_id,
+                "project_id": project_id,
+                "factors": factors,
+            }
+            
+            # Insert the new model variable into the database
+            result = model_variables_schema.insert_one(new_model_variable)
+            
+            # Get the ID of the newly created model variable
+            model_var_id = str(result.inserted_id)
+            
+            # Update the user record in the database with the modified projects
+            user_schema.update_one(
+                {"user_id": user_id},
+                {"$set": {"projects": user['projects']}}  # Save the updated projects back to the user
+            )
+            
+            # TODO: update the simulations list of model vars
+            simulation = simulation_schema.find_one({"simulation_id": simulation_id})
+        else:
+            # Save the updated model variable back to the database
+            model_variables_schema.update_one({"model_var_id": model_var_id}, {"$set": {"factors": factors}})
+            
+        
+        # UPDATE THE CROSS CHECK MODEL VARS IF APPLICABLE
 
-        # Revenue Parameters
-        wtp_standard_dist = get_distribution(model_variables, "willingness_to_pay_standard")
-        wtp_premium_dist = get_distribution(model_variables, "willingness_to_pay_premium")
-        num_standard_users_dist = get_distribution(model_variables, "num_standard_users_per_deal")
-        num_premium_users_dist = get_distribution(model_variables, "num_premium_users_per_deal")
-        num_deals_dist = get_distribution(model_variables, "num_deals_per_year")
-        discount_dist = get_distribution(model_variables, "expected_discount_per_deal")
+
+        
+        
+        
+        
+        
+        
+        # # Revenue Parameters
+        # wtp_standard_dist = get_distribution(model_variables, "willingness_to_pay_standard")
+        # wtp_premium_dist = get_distribution(model_variables, "willingness_to_pay_premium")
+        # num_standard_users_dist = get_distribution(model_variables, "num_standard_users_per_deal")
+        # num_premium_users_dist = get_distribution(model_variables, "num_premium_users_per_deal")
+        # num_deals_dist = get_distribution(model_variables, "num_deals_per_year")
+        # discount_dist = get_distribution(model_variables, "expected_discount_per_deal")
 
         number_of_simulations = 10000
 
@@ -174,6 +241,9 @@ def input_data():
             }}
         )
 
+        # TODO: if the user has cross check access
+        # handle cross check monte carlo
+        
         # Return success response
         return jsonify({
             'message': 'Simulation completed successfully.',
@@ -184,5 +254,4 @@ def input_data():
         return jsonify({'error': ve.messages}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
     

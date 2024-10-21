@@ -11,25 +11,15 @@ class ProjectsSchema(Schema):
     revenue_std_5th_year = fields.Float(required=True)
 
     # List of users the project is shared to (user IDs as strings)
-    shared_users = fields.List(fields.Str(validate=validate.Length(equal=24)), required=False)
-
-    # List of users with cross-check access (user IDs as strings)
-    cross_check_users = fields.List(fields.Str(validate=validate.Length(equal=24)), required=False)
-
-    # Map of stakeholders that have filled out forms (user_id -> Bool)
-    stakeholders_with_forms = fields.Dict(
-        keys=fields.Str(validate=validate.Length(equal=24)),
-        values=fields.Str(validate=validate.Length(equal=24)),
-        required=False
-    )
+    shared_users = fields.List(fields.Str(validate=validate.Length(equal=24)), required=True)
 
     # Admin user ID (string)
     admin_user_id = fields.Str(validate=validate.Length(equal=24), required=True)
 
     # Simulation IDs (Normal, Admin, Cross-Check)
-    normal_sim_id = fields.Str(validate=validate.Length(equal=24), required=False)
-    admin_sim_id = fields.Str(validate=validate.Length(equal=24), required=False)
-    cross_check_sim_id = fields.Str(validate=validate.Length(equal=24), required=False)
+    normal_sim_id = fields.Str(validate=validate.Length(equal=24), required=True)
+    admin_sim_id = fields.Str(validate=validate.Length(equal=24), required=True)
+    cross_check_sim_id = fields.Str(validate=validate.Length(equal=24), required=True)
     num_simulations = fields.Int(required=True)
 
 # Example usage

@@ -1,9 +1,6 @@
 from marshmallow import Schema, fields, validate
 
 class AccessDataSchema(Schema):
-    """
-        Stores the access data for a project that the user has access to
-    """
     cross_check_access = fields.Bool(required=True)  # Boolean field
     form_submitted = fields.Bool(required=True)      # Boolean field
     is_admin = fields.Bool(required=True)  # Boolean field
@@ -22,7 +19,7 @@ class UserSchema(Schema):
         keys=fields.Str(validate=validate.Length(equal=24)),  # project_id as key
         values=fields.List(
             fields.Nested(AccessDataSchema),
-            fields.Str(),
+            fields.Str(), # model variable id
             validate=validate.Length(equal=2)  # Ensure the tuple structure (AccessData, string)
         ),
         required=True
