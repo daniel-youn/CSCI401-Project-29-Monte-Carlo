@@ -9,6 +9,7 @@ from app import db
 
 project_routes = Blueprint('project_routes', __name__)
 projects_collection = db['project_schema']
+
 simulation_collection = db['simulations']
 user_collection = db['users']
 
@@ -198,3 +199,31 @@ def delete_project(project_id):
         return jsonify({"message": "Project deleted"}), 200
     else:
         return jsonify({"error": "Project not found"}), 404
+    
+#add users to project
+@project_routes.route('/projects/addUsers/<project_id>/<user_id>', methods=['POST'])
+def add_user_to_project(project_id, user_id):
+    try:
+        # Find the project by its ID
+        project = projects_collection.find_one({"_id": ObjectId(project_id)})
+        user = user_collection.find_one({"user_id": user_id})
+        
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        if not project:
+            return jsonify({"error": "Project not found"}), 404
+        if user_id in project['shared_users']:
+            return jsonify({"error": "User already in project"}), 400
+        if user["is_admin"] == False:
+            return jsonify({"error": "User is not an admin"}), 400
+        
+        
+        if project:
+            # Add the user to the project
+            projects_collection.update_one({"_id": ObjectId(project_id)}, {"$addToSet": {"shared_users": user_id}})
+            return jsonify({"message": "User added to project"}), 200
+        else:
+            return jsonify({"error": "Project not found"}), 404
+    
+    except ValidationError as err:
+        return jsonify({"error": err.messages}), 400

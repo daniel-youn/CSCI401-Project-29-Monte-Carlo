@@ -21,7 +21,7 @@ const CreateProjectForm = () => {
 
   return (
     <Box sx={{ bgcolor: theme.palette.background.default, minHeight: '100vh', padding: '3rem' }}>
-      <Container maxWidth="sm">
+      <Container maxWidth="md">
         <Box
           component="form"
           onSubmit={handleProjectSubmit}
