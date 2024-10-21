@@ -128,11 +128,13 @@ def input_data():
                 "factors": factors,
             }
             result = model_variables_collection.insert_one(new_model_variable)
-            # model_var_id = str(result.inserted_id)
-        # else:
+        else:
             # Save the updated model variable back to the database
-            # TODO: update properly. I don't have the mongo id i just have the object I think??
-            model_variables_collection.update_one({"model_var_id": model_var_id}, {"$set": {"factors": factors}})
+            model_var_id = model_vars["_id"]
+            model_variables_collection.update_one(
+                {"_id": model_var_id},  # Use the _id for the query
+                {"$set": {"factors": factors}}  # Update the factors
+            )
             
         # TODO: call run simulation function here
         normalFactorRunSim(normal_sim_id, project_id)
