@@ -37,7 +37,6 @@ def create_project():
             {
                 "output_id": "",  # Placeholder for output_id
                 "project_id": str(inserted_project_id),  # Set project_id now that project is created
-                "model_variables": [],  # Empty initially
                 "status": "pending",
                 "simulation_type": "normal",
                 "simulation_id": "temp"
@@ -45,7 +44,6 @@ def create_project():
             {
                 "output_id": "",  # Placeholder for output_id
                 "project_id": str(inserted_project_id),  # Set project_id
-                "model_variables": [],  # Empty initially
                 "status": "pending",
                 "simulation_type": "admin",
                 "simulation_id": "temp"
@@ -53,7 +51,6 @@ def create_project():
             {
                 "output_id": "",  # Placeholder for output_id
                 "project_id": str(inserted_project_id),  # Set project_id
-                "model_variables": [],  # Empty initially
                 "status": "pending",
                 "simulation_type": "cross-check",
                 "simulation_id": "temp"
