@@ -60,20 +60,31 @@ const FormSection = () => {
   // Handler to submit all form data together
   const handleSubmit = () => {
     const allFormsComplete = Object.keys(formData).every((key) => isFormComplete(formData[key]));
-
+  
     if (allFormsComplete) {
       const finalFormData = {
-        user_id: mock_user_id,  // Add the mock user ID here
-        simulation_id: mock_sim_id,  // Add the mock simulation ID here
-        factors: {                   // Spread formData under 'factors'
-          ...formData
+        user_id: mock_user_id, // Add user ID here
+        project_id: "6716c590796d87b86413bc37", // Replace with the actual project_id
+        factors: { // Structure formData as needed for the API
+          willingness_to_pay_standard: formData.willingness_to_pay_standard,
+          willingness_to_pay_premium: formData.willingness_to_pay_premium,
+          num_standard_users_per_deal: formData.num_standard_users_per_deal,
+          num_premium_users_per_deal: formData.num_premium_users_per_deal,
+          num_deals_per_year1: formData.num_deals_year_1,
+          num_deals_per_year2: formData.num_deals_year_2,
+          num_deals_per_year3: formData.num_deals_year_3,
+          num_deals_per_year4: formData.num_deals_year_4,
+          num_deals_per_year5: formData.num_deals_year_5,
+          expected_discount_per_deal: formData.expected_discount_per_deal,
+          initial_market_size: formData.initial_market_size,
+          yoy_growth_rate: formData.year_over_year_growth_rate
         }
       };
-
+  
       setErrorMessage('');
       MonteCarloServices.runSimulationWithInputData(finalFormData)
         .then(() => {
-          console.log("Submitted data for all forms: ", formData);
+          console.log("Submitted data for all forms: ", finalFormData);
         })
         .catch((error) => {
           setErrorMessage('Submission failed. Please try again.');
@@ -83,7 +94,7 @@ const FormSection = () => {
       setErrorMessage('Please fill in all required fields for each form.');
     }
   };
-
+  
   return (
     <Box sx={{ bgcolor: theme.palette.background.default, padding: '3rem', minHeight: '100vh' }}>
       <Grid container spacing={4}>
