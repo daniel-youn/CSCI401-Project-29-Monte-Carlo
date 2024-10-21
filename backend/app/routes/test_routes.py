@@ -6,16 +6,6 @@ from marshmallow import ValidationError
 from werkzeug.security import generate_password_hash
 from werkzeug.security import check_password_hash
 
-
-# Define blueprints routes
-# user_routes = Blueprint('user_routes', __name__)
-# simulation_routes = Blueprint('simulation_routes', __name__)
-# model_variables_routes = Blueprint('model_variables_routes', __name__)
-# output_routes = Blueprint('output_routes', __name__)
-# summary_statistics_routes = Blueprint('summary_statistics_routes', __name__)
-# volatility_distribution_routes = Blueprint('volatility_distribution_routes', __name__)
-# additional_calculations_routes = Blueprint('additional_calculations_routes', __name__)
-
 # Collections
 user_collection = db['users']
 simulation_collection = db['simulations']  

@@ -4,21 +4,83 @@ from datetime import datetime
 from bson.objectid import ObjectId
 from pymongo.errors import DuplicateKeyError
 from app.schemas.projects_schema import projects_schema  # Adjust the import as necessary
+from app.schemas.simulation_schema import simulation_schema
 from app import db
+
 project_routes = Blueprint('project_routes', __name__)
 projects_collection = db['project_schema']
+simulation_collection = db['simulations']
+
 @project_routes.route('/projects', methods=['POST'])
 def create_project():
     try:
-        # Validate input data using the schema
-        project_data = projects_schema.load(request.json)
-        project_data['creation_time'] = datetime.utcnow()  # Ensure creation time is set
+        data = request.get_json()
+        # Step 1: Add user-defined values and default initial values
+        project_data = {
+            "project_name": data['project_name'],
+            "shared_users": data['shared_users'],
+            "admin_user_id": data['admin_user_id'],
+            "num_simulations": data['num_simulations'],
+            "creation_time": datetime.utcnow(),
+            "is_published": False,  # Default unpublished
+            "revenue_mean_5th_year": 0.0,  # Default value
+            "revenue_std_5th_year": 0.0  # Default value
+        }
         
-        # Insert the validated data into MongoDB
-        inserted_id = projects_collection.insert_one(project_data).inserted_id
+        # Step 2: Create the project and insert it into MongoDB
+        inserted_project_id = projects_collection.insert_one(project_data).inserted_id
         
-        return jsonify({"message": "Project created", "project_id": str(inserted_id)}), 201
-    
+        # Step 3: Create simulation entries for the project
+        simulations = [
+            {
+                "user_id": data['admin_user_id'],
+                "output_id": str(ObjectId()),  # Placeholder for output_id
+                "project_id": str(inserted_project_id),  # Set project_id now that project is created
+                "model_variables": [],  # Empty initially
+                "status": "pending",
+                "simulation_type": "normal"
+            },
+            {
+                "user_id": data['admin_user_id'],
+                "output_id": str(ObjectId()),  # Placeholder for output_id
+                "project_id": str(inserted_project_id),  # Set project_id
+                "model_variables": [],  # Empty initially
+                "status": "pending",
+                "simulation_type": "admin"
+            },
+            {
+                "user_id": data['admin_user_id'],
+                "output_id": str(ObjectId()),  # Placeholder for output_id
+                "project_id": str(inserted_project_id),  # Set project_id
+                "model_variables": [],  # Empty initially
+                "status": "pending",
+                "simulation_type": "cross-check"
+            }
+        ]
+
+        # Insert the simulations into the database and update their IDs
+        for sim in simulations:
+            simulation_schema.load(sim)  # Validate the simulation data
+            inserted_simulation_id = simulation_collection.insert_one(sim).inserted_id
+            sim['simulation_id'] = str(inserted_simulation_id)  # Set the simulation ID to the MongoDB ID
+        
+        # Update the project with the simulation IDs
+        project_data['normal_sim_id'] = str(simulations[0]['simulation_id'])
+        project_data['admin_sim_id'] = str(simulations[1]['simulation_id'])
+        project_data['cross_check_sim_id'] = str(simulations[2]['simulation_id'])
+
+        # Update the project in the database with the simulation IDs
+        projects_collection.update_one(
+            {"_id": inserted_project_id},
+            {"$set": {
+                "normal_sim_id": project_data['normal_sim_id'],
+                "admin_sim_id": project_data['admin_sim_id'],
+                "cross_check_sim_id": project_data['cross_check_sim_id']
+            }}
+        )
+
+        return jsonify({"message": "Project and simulations created", "project_id": str(inserted_project_id)}), 201
+
     except ValidationError as err:
         return jsonify({"error": err.messages}), 400
 
