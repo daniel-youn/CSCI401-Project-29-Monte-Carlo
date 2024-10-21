@@ -107,21 +107,6 @@ def input_data():
         user_id = data["user_id"]
         project_id = data["project_id"]
         factors = data["factors"]
-        
-<<<<<<< HEAD
-        # print(factors)
-        
-        # Find the user in the database
-        user = user_collection.find_one({"user_id": user_id})
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-=======
-        # # Find the user in the database
-        # user = user_collection.find_one({"user_id": user_id})
-        # if not user:
-        #     return jsonify({"error": "User not found"}), 404
->>>>>>> origin/main
-            
         # Find the project in the database
         project = project_collection.find_one({"_id": ObjectId(project_id)})
         if not project:
@@ -146,6 +131,7 @@ def input_data():
             # model_var_id = str(result.inserted_id)
         # else:
             # Save the updated model variable back to the database
+            # TODO: update properly. I don't have the mongo id i just have the object I think??
             model_variables_collection.update_one({"model_var_id": model_var_id}, {"$set": {"factors": factors}})
             
         # TODO: call run simulation function here
@@ -181,7 +167,7 @@ def normalFactorRunSim(simulation_id, project_id):
         model_vars_list.append(model_var)
             
     num_users = len(model_vars_list)
-    num_simulations = db["project_schema"].find_one({'_id': ObjectId(project_id)})['num_simulations']
+    num_simulations = db["project"].find_one({'_id': ObjectId(project_id)})['num_simulations']
     
     def compute_for_year(year):
         sim_data = []
@@ -190,7 +176,6 @@ def normalFactorRunSim(simulation_id, project_id):
             model = model_vars_list[np.random.randint(0, num_users)]
             factors = model['factors']
             # TODO: figure out if getting the data is done correctly
-            print("Hello There")
             wtp_standard_dist = get_distribution(model, "willingness_to_pay_standard")
             wtp_premium_dist = get_distribution(model, "willingness_to_pay_premium")
             num_standard_users_dist = get_distribution(model, "num_standard_users_per_deal")
