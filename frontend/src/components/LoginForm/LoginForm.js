@@ -24,7 +24,7 @@ const LoginForm = () => {
       console.log("Login successful:", response);
 
       // If login is successful, redirect to the projects page
-      navigate('/projects');  // Navigate to the MyProjectsPage route
+      navigate('/my-projects-page');  // Navigate to the MyProjectsPage route
     } catch (err) {
       console.error('Login failed:', err);
       setError('Login failed. Please check your credentials.');  // Set error message on failure

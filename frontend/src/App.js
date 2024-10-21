@@ -4,7 +4,6 @@ import RegistrationPage from './pages/RegistrationPage/RegistrationPage';
 import FormPage from './pages/FormPage/FormPage';
 import ProjectViewPage from './pages/ProjectViewPage/ProjectViewPage'
 import MyProjectsPage from './pages/MyProjectsPage/MyProjectsPage';
-import ProjectViewPage from './pages/ProjectViewPage/ProjectViewPage';
 import EditUserPage from './pages/EditUserPage/EditUserPage';  
 
 function App() {
