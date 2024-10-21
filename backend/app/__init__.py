@@ -77,7 +77,7 @@ from app.routes.output_routes import output_routes
 from app.routes.summary_statistics_routes import summary_statistics_routes
 from app.routes.volatility_distribution_routes import volatility_distribution_routes
 from app.routes.additional_calculations_routes import additional_calculations_routes
-
+from app.routes.project_routes import project_routes
 # Register the blueprints
 app.register_blueprint(user_routes, url_prefix='/api/user')
 app.register_blueprint(simulation_routes, url_prefix='/api/simulation')
@@ -86,7 +86,7 @@ app.register_blueprint(output_routes, url_prefix='/api/output')
 app.register_blueprint(summary_statistics_routes, url_prefix='/api/summary_statistics')
 app.register_blueprint(volatility_distribution_routes, url_prefix='/api/volatility_distribution')
 app.register_blueprint(additional_calculations_routes, url_prefix='/api/additional_calculations')
-
+app.register_blueprint(project_routes, url_prefix='/api/projects')
 # Add a basic route for health checks
 @app.route('/health', methods=['GET'])
 def health_check():
