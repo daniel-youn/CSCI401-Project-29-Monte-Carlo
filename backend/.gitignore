@@ -1,2 +1,4 @@
 venv/
 .env
+schemas/__pycache__
+routes/__pycache__
