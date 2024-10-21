@@ -91,6 +91,34 @@ def login_user():
 
     except ValidationError as err: # 400 err
         return jsonify(err.messages), 400
+    
+# set is_admin varible to given true or false value
+@user_routes.route('/users/setAdminRole/<user_id>', methods=['PUT'])
+def set_admin_role(user_id):
+    data = request.json
+
+    try:
+        # Find the user by user_id
+        user = user_collection.find_one({'user_id': user_id}, {'_id': False})
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+
+        # Update the is_admin field with the provided value
+        user_collection.update_one(
+            {'user_id': user_id},
+            {'$set': {'is_admin': data['is_admin']}}
+        )
+
+        # Return a success response
+        return jsonify({'message': 'User admin role updated successfully'}), 200
+
+    except ValidationError as err:
+        # Handle validation errors
+        return jsonify(err.messages), 400
+
+    except Exception as e:
+        # Catch any other exceptions and return a 500 response
+        return jsonify({'message': f'An error occurred: {str(e)}'}), 500
 
 # # route for regi
 # @user_routes.route('/add', methods=['POST'])
