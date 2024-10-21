@@ -1,7 +1,6 @@
 from flask import Blueprint, jsonify, request
 from bson import ObjectId
 from app import db
-from app.schemas.model_variables_schema import model_variables_schema
 from marshmallow import ValidationError
 from datetime import datetime
 import numpy as np
@@ -15,6 +14,9 @@ simulation_routes = Blueprint('simulation_routes', __name__)
 
 # MongoDB collection for simulations
 simulation_collection = db['simulations']
+user_collection = db['users']
+project_collection = db['project_schema']
+model_varibales_collection = db['model_variables']
 
 # 1. Create new simulation
 @simulation_routes.route('/simulations', methods=['POST'])
@@ -101,12 +103,12 @@ def input_data():
         factors = model_variables["factors"]
         
         # Find the user in the database
-        user = user_schema.find_one({"user_id": user_id})
+        user = user_collection.find_one({"user_id": user_id})
         if not user:
             return jsonify({"error": "User not found"}), 404
             
         # Find the project in the database
-        project = projects_schema.find_one({"project_id": project_id})
+        project = project_collection.find_one({"_id": ObjectId(project_id)})
         if not project:
             return jsonify({"error": "Project not found"}), 404
         
@@ -130,21 +132,21 @@ def input_data():
                 "factors": factors,
             }
             
-            result = model_variables_schema.insert_one(new_model_variable)
+            result = model_varibales_collection.insert_one(new_model_variable)
             model_var_id = str(result.inserted_id)
             
             # Update the user record in the database with the modified projects
-            user_schema.update_one(
+            user_collection.update_one(
                 {"user_id": user_id},
                 {"$set": {"projects": user['projects']}}  # Save the updated projects back to the user
             )
             
-            simulation = simulation_schema.find_one({"simulation_id": normal_sim_id})
+            simulation = simulation_collection.find_one({"simulation_id": normal_sim_id})
             model_variable_ids = simulation.get('model_variables', [])
 
             if model_var_id not in model_variable_ids:
                 model_variable_ids.append(model_var_id)
-                simulation_schema.update_one(
+                simulation_collection.update_one(
                     {"simulation_id": normal_sim_id},
                     {"$set": {"model_variables": model_variable_ids}}
                 )
@@ -153,7 +155,7 @@ def input_data():
         
         else:
             # Save the updated model variable back to the database
-            model_variables_schema.update_one({"model_var_id": model_var_id}, {"$set": {"factors": factors}})
+            model_varibales_collection.update_one({"model_var_id": model_var_id}, {"$set": {"factors": factors}})
             
         # TODO: call run simulation function here
         normalFactorRunSim(normal_sim_id, project_id)
