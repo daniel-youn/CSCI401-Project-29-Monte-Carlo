@@ -9,7 +9,6 @@ const EditUserPage = () => {
 
   return (
     <Box>
-      <Header />  {/* Include the Header component here */}
       <Box sx={{ padding: '2rem' }}>
         <EditUserForm userId={userId} />  {/* Pass userId to the form */}
       </Box>

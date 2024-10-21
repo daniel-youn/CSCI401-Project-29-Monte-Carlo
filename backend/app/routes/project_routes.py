@@ -9,7 +9,6 @@ from app import db
 
 project_routes = Blueprint('project_routes', __name__)
 projects_collection = db['project_schema']
-
 simulation_collection = db['simulations']
 user_collection = db['users']
 
@@ -61,7 +60,6 @@ def create_project():
         for sim in simulations:
             simulation_schema.load(sim)  # Validate the simulation data
             inserted_simulation_id = simulation_collection.insert_one(sim).inserted_id
-            # TODO: we never update the db with this?
             sim['simulation_id'] = str(inserted_simulation_id)  # Set the simulation ID to the MongoDB ID
             # Update the inserted simulation document with the simulation ID
             simulation_collection.update_one(
@@ -85,11 +83,10 @@ def create_project():
         )
         
         # TODO: update user projects
-        project_data['shared_users']
-        for user_id in project_data['shared_users']:
-            # Create access data with default values
+        for user in project_data['shared_users']:
+            # Use the provided cross_check_access value instead of defaulting to False
             access_data = {
-                "cross_check_access": False,  # Default value
+                "cross_check_access": user.get('cross_check_access', False),  # Use provided value
                 "form_submitted": False,       # Default value
                 "is_admin": False               # Default value
             }
@@ -102,25 +99,25 @@ def create_project():
 
             # Update the user's projects in the database
             user_collection.update_one(
-                {"user_id": user_id},
+                {"user_id": user["user_id"]},
                 {"$set": {f"projects.{inserted_project_id}": project_info}},  # Use dot notation to set the new project
                 upsert=True  # Create a new document if no user found
             )
             
-        # Create access data with default values
+        # Create access data for the admin user
         access_data = {
             "cross_check_access": False,  # Default value
             "form_submitted": False,       # Default value
             "is_admin": True               # Default value
         }
 
-        # Prepare the project info to be added to the user
+        # Prepare the project info to be added to the admin user
         project_info = {
             "project_id": str(inserted_project_id),
             "access_data": access_data
         }
 
-        # Update the user's projects in the database
+        # Update the admin user's projects in the database
         user_collection.update_one(
             {"user_id": project_data['admin_user_id']},
             {"$set": {f"projects.{inserted_project_id}": project_info}},  # Use dot notation to set the new project
@@ -196,11 +193,13 @@ def delete_project(project_id):
         return jsonify({"message": "Project deleted"}), 200
     else:
         return jsonify({"error": "Project not found"}), 404
-    
-#add users to project
+
+# Add users to project
 @project_routes.route('/projects/addUsers/<project_id>/<user_id>', methods=['POST'])
 def add_user_to_project(project_id, user_id):
     try:
+        data = request.get_json()  # Get data from request payload
+
         # Find the project by its ID
         project = projects_collection.find_one({"_id": ObjectId(project_id)})
         user = user_collection.find_one({"user_id": user_id})
@@ -211,16 +210,30 @@ def add_user_to_project(project_id, user_id):
             return jsonify({"error": "Project not found"}), 404
         if user_id in project['shared_users']:
             return jsonify({"error": "User already in project"}), 400
-        if user["is_admin"] == False:
+        if not user["is_admin"]:
             return jsonify({"error": "User is not an admin"}), 400
         
-        
-        if project:
-            # Add the user to the project
-            projects_collection.update_one({"_id": ObjectId(project_id)}, {"$addToSet": {"shared_users": user_id}})
-            return jsonify({"message": "User added to project"}), 200
-        else:
-            return jsonify({"error": "Project not found"}), 404
+        # Add the user to the project
+        access_data = {
+            "cross_check_access": data.get('cross_check_access', False),  # Use provided value
+            "form_submitted": False,
+            "is_admin": False
+        }
+
+        project_info = {
+            "project_id": str(project_id),
+            "access_data": access_data
+        }
+
+        # Update the user's projects in the database
+        user_collection.update_one(
+            {"user_id": user_id},
+            {"$set": {f"projects.{project_id}": project_info}},
+            upsert=True
+        )
+
+        projects_collection.update_one({"_id": ObjectId(project_id)}, {"$addToSet": {"shared_users": user_id}})
+        return jsonify({"message": "User added to project"}), 200
     
     except ValidationError as err:
         return jsonify({"error": err.messages}), 400
