@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography, Box, Button } from '@mui/material';
+import {
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Paper, Typography, Box, Button, useTheme, IconButton
+} from '@mui/material';
 import { useNavigate } from 'react-router-dom'; // React Router for navigation
 import Header from '../../components/Header/Header';
-// Sample project data structure
+import PendingIcon from '@mui/icons-material/HourglassEmpty';
+import DoneIcon from '@mui/icons-material/CheckCircle';
+import { styled } from '@mui/system';
+
 const sampleProjects = [
   {
     id: 'proj_1',
@@ -42,55 +48,58 @@ const sampleProjects = [
   }
 ];
 
+// Styled table row for hover effect
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
+  '&:hover': {
+    backgroundColor: theme.palette.action.hover,
+    cursor: 'pointer',
+  }
+}));
+
 const MyProjectsPage = () => {
   const navigate = useNavigate(); // Initialize React Router's navigate function
-
-  // Local state to store the admin status
+  const theme = useTheme(); // To leverage the current theme (dark mode or light)
+  
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Retrieve isAdmin from session storage when the component mounts
   useEffect(() => {
-    const storedIsAdmin = sessionStorage.getItem('isAdmin'); // Retrieves 'isAdmin' from session storage
-    if (storedIsAdmin === 'true') { // Check if 'isAdmin' is set to 'true' (it comes as a string)
+    const storedIsAdmin = sessionStorage.getItem('isAdmin');
+    if (storedIsAdmin === 'true') {
       setIsAdmin(true);
     }
-    setIsAdmin(true);
-    //TODO:ADD FETCH REQUEST TO GET ALL PROJECTS BASED ON CURRENT USER ID
   }, []);
 
-  // Filter projects by pending and non-pending
   const pendingProjects = sampleProjects.filter(project => project.pending);
   const nonPendingProjects = sampleProjects.filter(project => !project.pending);
 
-  // Admin button click handler to redirect to a new page
   const handleAdminButtonClick = () => {
     navigate('/admin-dashboard');
   };
 
-  // Helper function to render the project rows in the table
-  const renderProjectRows = (projects) => {
+  const renderProjectRows = (projects, isPending) => {
     return projects.map((project) => (
-      <TableRow key={project.id}>
+      <StyledTableRow key={project.id}>
         <TableCell>{project.name}</TableCell>
         <TableCell>{project.creator}</TableCell>
         <TableCell>{project.contributors}</TableCell>
         <TableCell>{project.creationTime}</TableCell>
-        <TableCell>${project.revenuePrediction.mean}</TableCell>
-        <TableCell>${project.revenuePrediction.stddev}</TableCell>
-      </TableRow>
+        <TableCell>${project.revenuePrediction.mean.toLocaleString()}</TableCell>
+        <TableCell>${project.revenuePrediction.stddev.toLocaleString()}</TableCell>
+        <TableCell>
+          {isPending ? <PendingIcon color="warning" /> : <DoneIcon color="success" />}
+        </TableCell>
+      </StyledTableRow>
     ));
   };
 
   return (
-    <Box>
-      <Header></Header>
-      <Box sx={{ padding: '2rem', position: 'relative' }}>
+    <Box sx={{ bgcolor: theme.palette.background.default, minHeight: '100vh', padding: '2rem' }}>
 
-        <Typography variant="h4" gutterBottom>
+      <Box sx={{ marginBottom: '3rem' }}>
+        <Typography variant="h4" gutterBottom sx={{ color: theme.palette.text.primary }}>
           My Projects
         </Typography>
 
-        {/* Admin Button (only rendered if isAdmin is true) */}
         {isAdmin && (
           <Box sx={{ position: 'absolute', top: '2rem', right: '2rem' }}>
             <Button
@@ -98,10 +107,10 @@ const MyProjectsPage = () => {
               color="primary"
               onClick={handleAdminButtonClick}
               sx={{
-                backgroundColor: '#00bcd4',
+                backgroundColor: theme.palette.secondary.main,
                 color: 'white',
                 '&:hover': {
-                  backgroundColor: '#0097a7'
+                  backgroundColor: theme.palette.secondary.dark
                 }
               }}
             >
@@ -110,12 +119,11 @@ const MyProjectsPage = () => {
           </Box>
         )}
 
-        {/* Section for Pending Projects */}
-        <Box sx={{ marginBottom: '3rem' }}>
+        <Box sx={{ marginBottom: '2rem' }}>
           <Typography variant="h5" gutterBottom>
             Pending Projects
           </Typography>
-          <TableContainer component={Paper}>
+          <TableContainer component={Paper} sx={{ boxShadow: 3 }}>
             <Table aria-label="pending projects table">
               <TableHead>
                 <TableRow>
@@ -125,14 +133,15 @@ const MyProjectsPage = () => {
                   <TableCell>Creation Time</TableCell>
                   <TableCell>Revenue Mean</TableCell>
                   <TableCell>Revenue Std Dev</TableCell>
+                  <TableCell>Status</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {pendingProjects.length > 0 ? (
-                  renderProjectRows(pendingProjects)
+                  renderProjectRows(pendingProjects, true)
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">
+                    <TableCell colSpan={7} align="center">
                       No pending projects found.
                     </TableCell>
                   </TableRow>
@@ -142,12 +151,11 @@ const MyProjectsPage = () => {
           </TableContainer>
         </Box>
 
-        {/* Section for Non-Pending Projects */}
         <Box>
           <Typography variant="h5" gutterBottom>
             Completed Projects
           </Typography>
-          <TableContainer component={Paper}>
+          <TableContainer component={Paper} sx={{ boxShadow: 3 }}>
             <Table aria-label="non-pending projects table">
               <TableHead>
                 <TableRow>
@@ -157,14 +165,15 @@ const MyProjectsPage = () => {
                   <TableCell>Creation Time</TableCell>
                   <TableCell>Revenue Mean</TableCell>
                   <TableCell>Revenue Std Dev</TableCell>
+                  <TableCell>Status</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {nonPendingProjects.length > 0 ? (
-                  renderProjectRows(nonPendingProjects)
+                  renderProjectRows(nonPendingProjects, false)
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">
+                    <TableCell colSpan={7} align="center">
                       No completed projects found.
                     </TableCell>
                   </TableRow>
@@ -175,7 +184,6 @@ const MyProjectsPage = () => {
         </Box>
       </Box>
     </Box>
-
   );
 };
 
