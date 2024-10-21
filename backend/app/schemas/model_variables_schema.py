@@ -8,6 +8,7 @@ class FactorSchema(Schema):
     max_val = fields.Float(allow_none=True)  # Optional for distributions without max_val
     mean = fields.Float(allow_none=True)      # Optional for normal distributions
     stddev = fields.Float(allow_none=True)    # Optional for normal distributions
+    mode = fields.Float(allow_none=True)      # Optional for triangular distributions
 
 class ModelVariablesSchema(Schema):
     user_id = fields.Str(
@@ -18,6 +19,11 @@ class ModelVariablesSchema(Schema):
         required=True, 
         validate=validate.Regexp(r'^[a-zA-Z0-9_]+$', error="simulation_id must be alphanumeric with underscores allowed")
     )
+    
+    project_id = fields.Str(
+        required=True, 
+        validate=validate.Regexp(r'^[a-zA-Z0-9_]+$', error="project_id must be alphanumeric with underscores allowed")
+    )
 
     # Define the factors as a dictionary with specific key and value types
     factors = fields.Dict(
@@ -25,6 +31,8 @@ class ModelVariablesSchema(Schema):
         values=fields.Nested(FactorSchema),  # Use the nested schema for values
         required=True
     )
+    
+    
 
 # Instantiate the schema
 model_variables_schema = ModelVariablesSchema()

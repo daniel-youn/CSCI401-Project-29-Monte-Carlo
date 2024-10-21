@@ -16,7 +16,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 
 const GraphForm = ({ factorName = "factor_name ", factorTitle = "Factor i", width = "40rem", height = "30rem", onFormChange }) => {
   const [distributionType, setDistributionType] = useState('');
-  const [values, setValues] = useState({ mean: '', stddev: '', min_val: '', max_val: '' });
+  const [values, setValues] = useState({ mean: '', stddev: '', min_val: '', max_val: '', mode: '' });
   const [chartData, setChartData] = useState({
     labels: [],
     datasets: [
@@ -33,6 +33,7 @@ const GraphForm = ({ factorName = "factor_name ", factorTitle = "Factor i", widt
   const distributionOptions = [
     { value: 'normal', label: 'Normal Distribution' },
     { value: 'uniform', label: 'Uniform Distribution' },
+    { value: 'triangular', label: 'Triangular Distribution' }, // New Triangular option
   ];
 
   const handleDistributionChange = (e) => {
@@ -44,6 +45,9 @@ const GraphForm = ({ factorName = "factor_name ", factorTitle = "Factor i", widt
     } else if (e.target.value === "normal") {
       setValues({ factor_name: factorName, distribution_type: e.target.value, mean: '', stddev: '' });
       onFormChange({ factor_name: factorName, distribution_type: e.target.value, mean: '', stddev: '' });
+    } else if (e.target.value === "triangular") {
+      setValues({ factor_name: factorName, distribution_type: e.target.value, min_val: '', max_val: '', mode: '' });
+      onFormChange({ factor_name: factorName, distribution_type: e.target.value, min_val: '', max_val: '', mode: '' });
     } else {
       setValues({ factor_name: factorName, distribution_type: e.target.value });
       onFormChange({ factor_name: factorName, distribution_type: e.target.value });
@@ -55,16 +59,15 @@ const GraphForm = ({ factorName = "factor_name ", factorTitle = "Factor i", widt
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     const parsedValue = parseFloat(value);
-  
+
     const updatedValues = {
       ...values,
       [name]: isNaN(parsedValue) ? '' : parsedValue // Check if the input is a valid number
     };
-  
+
     setValues(updatedValues);
     onFormChange(updatedValues);
   };
-  
 
   const emptyChartData = () => ({
     labels: Array.from({ length: 100 }, (_, i) => i),
@@ -129,6 +132,31 @@ const GraphForm = ({ factorName = "factor_name ", factorTitle = "Factor i", widt
           }
         ]
       });
+    } else if (distributionType === 'triangular' && values.min_val && values.max_val && values.mode) {
+      const min_val = parseFloat(values.min_val);
+      const max_val = parseFloat(values.max_val);
+      const mode = parseFloat(values.mode);
+      const labels = Array.from({ length: numPoints }, (_, i) => (min_val + ((max_val - min_val) / numPoints) * i).toFixed(2));
+
+      data = labels.map(x => {
+        const val = parseFloat(x);
+        if (val < min_val || val > max_val) return 0;
+        if (val < mode) return (2 * (val - min_val)) / ((max_val - min_val) * (mode - min_val));
+        return (2 * (max_val - val)) / ((max_val - min_val) * (max_val - mode));
+      });
+
+      setChartData({
+        labels: labels,
+        datasets: [
+          {
+            label: 'Triangular Distribution',
+            data: data,
+            backgroundColor: 'rgba(0, 188, 212, 0.5)',
+            borderColor: '#00bcd4',
+            borderWidth: 1
+          }
+        ]
+      });
     }
   };
 
@@ -171,6 +199,32 @@ const GraphForm = ({ factorName = "factor_name ", factorTitle = "Factor i", widt
               label="Maximum Value"
               name="max_val"
               value={values.max_val}
+              onChange={handleInputChange}
+              sx={{ margin: 1 }}
+            />
+          </>
+        );
+      case 'triangular':
+        return (
+          <>
+            <TextField
+              label="Minimum Value"
+              name="min_val"
+              value={values.min_val}
+              onChange={handleInputChange}
+              sx={{ margin: 1 }}
+            />
+            <TextField
+              label="Maximum Value"
+              name="max_val"
+              value={values.max_val}
+              onChange={handleInputChange}
+              sx={{ margin: 1 }}
+            />
+            <TextField
+              label="Mode"
+              name="mode"
+              value={values.mode}
               onChange={handleInputChange}
               sx={{ margin: 1 }}
             />

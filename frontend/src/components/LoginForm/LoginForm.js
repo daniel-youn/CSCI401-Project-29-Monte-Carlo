@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { TextField, Button, Box, Typography, Container } from '@mui/material';
-import { Link, useNavigate } from 'react-router-dom'; // Import useNavigate from react-router-dom
-import UserService from '../../apis/UserService'; // Import UserService
+import { Link, useNavigate } from 'react-router-dom';
+import Cookies from 'js-cookie'; // Import js-cookie library
+import UserService from '../../apis/UserService';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -21,10 +22,20 @@ const LoginForm = () => {
     try {
       // Call the loginUser function from UserService
       const response = await UserService.loginUser(loginData);
-      console.log("Login successful:", response);
 
-      // If login is successful, redirect to the projects page
-      navigate('/projects');  // Navigate to the MyProjectsPage route
+      // Log the entire response for debugging
+      console.log("Login successful, full response:", response);
+
+      // Set a cookie that stores the user_id temporarily
+      if (response.user_id) {
+        Cookies.set('userId', loginData.email, { expires: 1, path: '/' });
+        console.log("user_id cookie set:", response.user_id);
+      } else {
+        console.error('user_id is missing in the response');
+      }
+
+      // Redirect to the projects page after setting the cookie
+      navigate('/my-projects-page');
     } catch (err) {
       console.error('Login failed:', err);
       setError('Login failed. Please check your credentials.');  // Set error message on failure

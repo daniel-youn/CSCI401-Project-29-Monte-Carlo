@@ -1,9 +1,23 @@
-import React from 'react';
-import { Box, Typography, Container, Divider } from '@mui/material';
+import React, { useEffect } from 'react';
+import { Box, Typography, Container } from '@mui/material';
+import { useNavigate } from 'react-router-dom'; // Import navigate to programmatically redirect
+import Cookies from 'js-cookie'; // Import js-cookie to check for cookies
 import LoginForm from '../../components/LoginForm/LoginForm';
 import './_login-page.scss'; // Import the custom SCSS
 
 const LoginPage = () => {
+  const navigate = useNavigate(); // Initialize navigate for redirection
+
+  useEffect(() => {
+    // Check if the userId cookie exists
+    const userId = Cookies.get('userId');
+    
+    // If userId exists, redirect to my-projects-page
+    if (userId) {
+      navigate('/my-projects-page');
+    }
+  }, [navigate]); // Run this effect only once when the component mounts
+
   return (
     <div className="login-page-container">
       {/* Left side with the image */}
