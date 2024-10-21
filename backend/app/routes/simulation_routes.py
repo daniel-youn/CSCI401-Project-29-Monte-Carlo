@@ -112,15 +112,14 @@ def input_data():
         
         # Find the normal_sim_id for the given project
         normal_sim_id = project.get("normal_sim_id")
-        admin_sim_id = project.get("admin_sim_id")
-        cross_check_sim_id = project.get("cross_check_sim_id")
+        # cross_check_sim_id = project.get("cross_check_sim_id")
         
         # UPDATE FOR NORMAL SIM
         # Find the model_var_id for the given project
         project = user['projects'].get(project_id)
         if not project:
             return jsonify({"error": "Project not found for user"}), 404
-        model_var_id = project[1]
+        model_var_id = project.get("model_var_id", {})
         
         if not model_var_id:
             # Create new model variable data structure
@@ -131,10 +130,7 @@ def input_data():
                 "factors": factors,
             }
             
-            # Insert the new model variable into the database
             result = model_variables_schema.insert_one(new_model_variable)
-            
-            # Get the ID of the newly created model variable
             model_var_id = str(result.inserted_id)
             
             # Update the user record in the database with the modified projects
@@ -143,111 +139,33 @@ def input_data():
                 {"$set": {"projects": user['projects']}}  # Save the updated projects back to the user
             )
             
-            # TODO: update the simulations list of model vars
-            simulation = simulation_schema.find_one({"simulation_id": simulation_id})
+            simulation = simulation_schema.find_one({"simulation_id": normal_sim_id})
+            model_variable_ids = simulation.get('model_variables', [])
+
+            if model_var_id not in model_variable_ids:
+                model_variable_ids.append(model_var_id)
+                simulation_schema.update_one(
+                    {"simulation_id": normal_sim_id},
+                    {"$set": {"model_variables": model_variable_ids}}
+                )
+        
         else:
             # Save the updated model variable back to the database
             model_variables_schema.update_one({"model_var_id": model_var_id}, {"$set": {"factors": factors}})
             
+        # TODO: call run simulation function here
         
-        # UPDATE THE CROSS CHECK MODEL VARS IF APPLICABLE
-
-
+        # TODO: UPDATE THE CROSS CHECK MODEL VARS IF APPLICABLE
+        access_data = project.get("access_data", {})
+        cross_check_access = access_data.get("cross_check_access", False)
         
-        
-        
-        
-        
-        
-        # # Revenue Parameters
-        # wtp_standard_dist = get_distribution(model_variables, "willingness_to_pay_standard")
-        # wtp_premium_dist = get_distribution(model_variables, "willingness_to_pay_premium")
-        # num_standard_users_dist = get_distribution(model_variables, "num_standard_users_per_deal")
-        # num_premium_users_dist = get_distribution(model_variables, "num_premium_users_per_deal")
-        # num_deals_dist = get_distribution(model_variables, "num_deals_per_year")
-        # discount_dist = get_distribution(model_variables, "expected_discount_per_deal")
-
-        number_of_simulations = 10000
-
-        # Run Monte Carlo simulations
-        results = []
-        for _ in range(number_of_simulations):
-            wtp_standard = wtp_standard_dist.rvs()
-            wtp_premium = wtp_premium_dist.rvs()
-            num_standard_users = num_standard_users_dist.rvs()
-            num_premium_users = num_premium_users_dist.rvs()
-            num_deals = num_deals_dist.rvs()
-            discount = discount_dist.rvs()
-            
-            total_revenue = (
-                num_deals * (
-                    num_standard_users * wtp_standard +
-                    num_premium_users * wtp_premium
-                ) * (1 - discount)
-            )
-
-            results.append(total_revenue)
-
-        num_bins = int(np.sqrt(number_of_simulations))
-        frequencies, bin_edges = np.histogram(results, bins=num_bins)
-        
-        # Compute summary statistics
-        mean_outcome = np.mean(results)
-        median_outcome = np.median(results)
-        std_dev = np.std(results)
-        min_outcome = np.min(results)
-        max_outcome = np.max(results)
-        percentile_5 = np.percentile(results, 5)
-        percentile_95 = np.percentile(results, 95)
-
-        # Store simulation data in MongoDB
-        output_id = db.outputs.insert_one({
-            'user_id': model_variables['user_id'],
-            'simulation_id': model_variables['simulation_id'],
-            'simulation_results': results,
-            'summary_statistics': '',  # To be updated
-            'volatility_distribution': '',  # To be updated
-            'additional_calculation': '',  # To be updated
-        }).inserted_id
-
-        # Insert summary statistics
-        summary_statistics_id = db.summary_statistics.insert_one({
-            'user_id': model_variables['user_id'],
-            'simulation_id': model_variables['simulation_id'],
-            'output_id': str(output_id),
-            'mean_outcome': mean_outcome,
-            'median_outcome': median_outcome,
-            'standard_deviation': std_dev,
-            'min_outcome': min_outcome,
-            'max_outcome': max_outcome,
-            'percentile_5': percentile_5,
-            'percentile_95': percentile_95,
-            'window_size': num_bins,
-            'x_values': bin_edges.tolist(),  # Convert numpy array to list
-            'y_values': frequencies.tolist()  # Convert numpy array to list
-        }).inserted_id
-
-        # Update output with summary statistics
-        db.outputs.update_one(
-            {'_id': output_id},
-            {'$set': {'summary_statistics': str(summary_statistics_id)}}
-        )
-        
-        db.simulations.update_one(
-            {'simulation_id': model_variables['simulation_id']},
-            {'$set': {
-                'output_id': str(output_id),
-                'status': 'finished',
-            }}
-        )
-
-        # TODO: if the user has cross check access
-        # handle cross check monte carlo
+        if cross_check_access:
+            pass
+        # TODO: call run simulation here again
         
         # Return success response
         return jsonify({
-            'message': 'Simulation completed successfully.',
-            'output_id': str(output_id)
+            'message': 'Simulation completed successfully.'
         }), 200
     
     except ValidationError as ve:
