@@ -154,6 +154,7 @@ def input_data():
             model_variables_schema.update_one({"model_var_id": model_var_id}, {"$set": {"factors": factors}})
             
         # TODO: call run simulation function here
+        normalFactorRunSim(normal_sim_id, project_id)
         
         # TODO: UPDATE THE CROSS CHECK MODEL VARS IF APPLICABLE
         access_data = project.get("access_data", {})
@@ -232,6 +233,7 @@ def normalFactorRunSim(simulation_id, project_id):
     
     assert len(yearly_sim_data) == 5
     # Store simulation data in output collection
+    # TODO: cleanup the old unused output objects
     output_id = db.outputs.insert_one({
         'simulation_id': simulation_id,
         'summary_statistics': yearly_sim_data
