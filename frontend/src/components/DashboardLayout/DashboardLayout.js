@@ -1,4 +1,3 @@
-// DashboardLayout.js
 import React, { useEffect, useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { createTheme } from '@mui/material/styles';
@@ -6,17 +5,13 @@ import { AppProvider } from '@toolpad/core/AppProvider';
 import { DashboardLayout } from '@toolpad/core/DashboardLayout';
 import { useLocation, useNavigate, Outlet } from 'react-router-dom';
 import Cookies from 'js-cookie';
-import { Logout } from '@mui/icons-material';
-import { MenuItem } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
-  ShoppingCart as ShoppingCartIcon,
-  BarChart as BarChartIcon,
-  Description as DescriptionIcon,
-  Layers as LayersIcon,
+  GridViewRounded as OverviewIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 
-const NAVIGATION = [
+const baseNavigation = [
   {
     segment: 'my-projects-page',
     title: 'Dashboard',
@@ -47,6 +42,10 @@ function DashboardLayoutWrapper() {
   const navigate = useNavigate();
 
   const [session, setSession] = useState(null);
+  const [navigation, setNavigation] = useState(baseNavigation);
+
+  // Extract search parameters from the current URL
+  const searchParams = new URLSearchParams(location.search);
 
   // Check for user session from cookies
   useEffect(() => {
@@ -83,22 +82,36 @@ function DashboardLayoutWrapper() {
   const router = {
     pathname: location.pathname,
     navigate: (path, options) => navigate(path, options),
+    searchParams, // Pass the extracted search params
   };
+
+  // Dynamically populate the navigation for the project page
+  useEffect(() => {
+    if (location.pathname.startsWith('/project-page')) {
+      // Add "Overview" and "Settings" relative to /project-page
+      setNavigation([
+        ...baseNavigation,
+        { segment: 'project-page/overview', title: 'Overview', icon: <OverviewIcon /> },
+        { segment: 'project-page/settings', title: 'Settings', icon: <SettingsIcon /> },
+      ]);
+    } else {
+      // Revert back to base navigation when leaving "/project-page"
+      setNavigation(baseNavigation);
+    }
+  }, [location.pathname]);
 
   return (
     <AppProvider
       session={session}
       authentication={authentication}
-      navigation={NAVIGATION}
+      navigation={navigation} // Pass the dynamic navigation
       branding={{
         title: 'CaseFlow',
       }}
       router={router}
       theme={theme}
     >
-      <DashboardLayout
-        defaultSidebarCollapsed
-      >
+      <DashboardLayout defaultSidebarCollapsed>
         <Outlet />
       </DashboardLayout>
     </AppProvider>

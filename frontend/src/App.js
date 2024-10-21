@@ -19,7 +19,7 @@ function App() {
         {/* Protected routes wrapped with DashboardLayout */}
         <Route element={<DashboardLayout />}>
           <Route path="/form" element={<FormPage />} />
-          <Route path="/project-page" element={<ProjectViewPage />} />
+          <Route path="project-page/*" element={<ProjectViewPage />} />
           <Route path="/create-project" element={<CreateProjectPage />} />
           <Route path="/my-projects-page" element={<MyProjectsPage />} />
           <Route path="/edit-user/:userId" element={<EditUserPage />} />

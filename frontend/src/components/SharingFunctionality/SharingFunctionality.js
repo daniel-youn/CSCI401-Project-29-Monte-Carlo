@@ -96,7 +96,7 @@ const SharingFunctionality = ({ sharedMembers, setSharedMembers }) => {
                   onChange={() => toggleCrossCheck(member.id)}
                 />
               }
-              label="Ask for Cross-Check Factors"
+              label="Cross-Check Factors"
             />
             <Button
               onClick={() => handleRemoveMember(member.id)}

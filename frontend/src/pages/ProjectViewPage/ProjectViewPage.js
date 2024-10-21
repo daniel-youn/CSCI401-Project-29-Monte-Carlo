@@ -5,7 +5,7 @@ import ProjectView from '../../components/ProjectView/ProjectView'; // Updated P
 
 const ProjectViewPage = () => {
   return (
-    <Box sx={{ backgroundColor: '#0b1225', minHeight: '100vh' }}>
+    <Box>
       <ProjectView /> {/* Render the updated ProjectView component */}
     </Box>
   );

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -11,11 +12,10 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper
+  Paper,
+  useTheme
 } from '@mui/material';
 import { Line } from 'react-chartjs-2';
-import { GridViewRounded, Settings } from '@mui/icons-material';
-import './_project-view.scss'; // Import SCSS
 
 // Import and register Chart.js components
 import {
@@ -38,7 +38,7 @@ const chartData = {
   datasets: [
     {
       label: 'Estimated Revenue',
-      data: [10000, 15000, 20000, 25000, 30000], // Replace with your actual data
+      data: [10000, 15000, 20000, 25000, 30000],
       fill: true,
       backgroundColor: 'rgba(7, 171, 174, 0.5)',
       borderColor: '#07ABAE',
@@ -50,26 +50,27 @@ const chartData = {
 
 const chartOptions = {
   responsive: true,
+  maintainAspectRatio: false,
   plugins: {
     legend: {
-      display: false, // Disable the legend
+      display: false,
     },
   },
   scales: {
     x: {
       ticks: {
-        color: '#D5D5D5', // Off-white color for the x-axis labels
+        color: '#D5D5D5',
       },
       grid: {
-        display: false, // Remove the x-axis grid lines
+        display: false,
       },
     },
     y: {
       ticks: {
-        color: '#D5D5D5', // Off-white color for the y-axis labels
+        color: '#D5D5D5',
       },
       grid: {
-        display: false, // Remove the y-axis grid lines
+        display: false,
       },
     },
   },
@@ -93,178 +94,208 @@ const yearData = [
 ];
 
 const ProjectView = () => {
-  const [view, setView] = useState('Overview');
-  const [members, setMembers] = useState(membersData);
-  const [crossCheckEnabled, setCrossCheckEnabled] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const theme = useTheme();
 
-  // Handlers for removing members and viewing factors
-  const handleRemoveMember = (id) => {
-    const updatedMembers = members.filter((member) => member.id !== id);
-    setMembers(updatedMembers);
-  };
+  // Redirect to /overview if visiting /project-page
+  useEffect(() => {
+    if (location.pathname === '/project-page') {
+      navigate('/project-page/overview');
+    }
+  }, [location, navigate]);
 
-  const handleViewFactors = (id) => {
-    console.log(`Viewing factors for member with ID: ${id}`);
-    // Implement logic to view member factors here
-  };
+  // Content for Overview section
+  const renderOverview = () => (
+    <Box sx={{ display: 'flex', flexDirection: 'row', gap: '1rem', padding: '2rem' }}>
+      {/* Aggregated Factors Column */}
+      <Box sx={{ flex: 1 }}>
+        <Box
+          sx={{
+            backgroundColor: '#1e1e1e',
+            padding: '1rem',
+            borderRadius: '4px',
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+            maxHeight: '600px',
+            overflowY: 'auto',
+          }}
+        >
+          <Typography variant="h6" sx={{ marginBottom: '1.5rem', color: '#fff' }}>
+            Aggregated Factors
+          </Typography>
+          <Box className="factors-content" sx={{ marginBottom: '2rem' }}>
+            <Typography variant="subtitle1" sx={{ color: '#D5D5D5' }}>
+              Factor 1
+            </Typography>
+            <Box className="chart-container" sx={{ marginTop: '1rem' }}>
+              <Line data={chartData} options={chartOptions} />
+            </Box>
+          </Box>
+          <Box className="factors-content">
+            <Typography variant="subtitle1" sx={{ color: '#D5D5D5' }}>
+              Factor 2
+            </Typography>
+            <Box className="chart-container" sx={{ marginTop: '1rem' }}>
+              <Line data={chartData} options={chartOptions} />
+            </Box>
+          </Box>
+        </Box>
+      </Box>
 
-  // Calculate number of members completed and total members
-  const numCompleted = members.filter((member) => member.status === 'Completed').length;
-  const totalMembers = members.length;
+      <Box sx={{ flex: 2 }}> 
+        {/* Hero Graph for Estimated Revenue */}
+        <Box
+          sx={{
+            backgroundColor: '#1e1e1e',
+            padding: '2rem',
+            borderRadius: '4px',
+            marginBottom: '1rem',
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          <Typography variant="h6" sx={{ marginBottom: '1.5rem', color: '#fff' }}>
+            Estimated Revenue
+          </Typography>
+          <Box className="chart-container" sx={{ height: '350px', width: '100%' }}>
+            <Line data={chartData} options={chartOptions} />
+          </Box>
+
+          {/* Cross-Check Toggle */}
+          <Box sx={{ display: 'flex', alignItems: 'center', marginTop: '1.5rem' }}>
+            <Typography variant="subtitle1" sx={{ color: '#D5D5D5', marginRight: '1rem' }}>
+              Cross-Check Factors
+            </Typography>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={false} // Update this if needed for toggle functionality
+                  onChange={() => {}}
+                  color="primary"
+                />
+              }
+              label=""
+            />
+          </Box>
+      </Box>
+
+        {/* Summary Statistics */}
+        <Box
+          sx={{
+            backgroundColor: '#1e1e1e',
+            padding: '2rem',
+            borderRadius: '4px',
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          <Typography variant="h6" sx={{ marginBottom: '1.5rem', color: '#fff' }}>
+            Summary Statistics
+          </Typography>
+          <TableContainer component={Paper} sx={{ backgroundColor: '#1e1e1e', borderRadius: '4px' }}>
+            <Table aria-label="statistics table">
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ color: '#D5D5D5' }}>Year</TableCell>
+                  <TableCell sx={{ color: '#D5D5D5' }} align="right">
+                    Mean
+                  </TableCell>
+                  <TableCell sx={{ color: '#D5D5D5' }} align="right">
+                    Std
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {yearData.map((row) => (
+                  <TableRow key={row.year}>
+                    <TableCell sx={{ color: '#D5D5D5' }} component="th" scope="row">
+                      {row.year}
+                    </TableCell>
+                    <TableCell sx={{ color: '#D5D5D5' }} align="right">
+                      {row.mean}
+                    </TableCell>
+                    <TableCell sx={{ color: '#D5D5D5' }} align="right">
+                      {row.std}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      </Box>
+    </Box>
+  );
+
+  // Content for Settings section
+  const renderSettings = () => (
+    <Box sx={{ padding: '2rem' }}>
+      <Box
+        sx={{
+          backgroundColor: '#1e1e1e',
+          padding: '2rem',
+          borderRadius: '4px',
+          marginBottom: '3rem',
+          boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+        }}
+      >
+        <Typography variant="h6" sx={{ marginBottom: '1rem', color: '#fff' }}>
+          Members Summary
+        </Typography>
+        <Box mt={2}>
+          <Button variant="contained" color="primary" sx={{ marginRight: '10px' }}>
+            Share to More Members
+          </Button>
+          <Button variant="contained" color="secondary" sx={{ marginRight: '10px' }}>
+            Publish Project
+          </Button>
+          <Button variant="outlined" color="error">
+            Delete Project
+          </Button>
+        </Box>
+      </Box>
+
+      {/* Member List Table */}
+      <TableContainer component={Paper} sx={{ backgroundColor: '#1e1e1e', borderRadius: '8px', boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)' }}>
+        <Table aria-label="members table">
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ color: '#D5D5D5', fontWeight: 'bold' }}>First Name</TableCell>
+              <TableCell sx={{ color: '#D5D5D5', fontWeight: 'bold' }}>Last Name</TableCell>
+              <TableCell sx={{ color: '#D5D5D5', fontWeight: 'bold' }}>Email</TableCell>
+              <TableCell sx={{ color: '#D5D5D5', fontWeight: 'bold' }}>Status</TableCell>
+              <TableCell sx={{ color: '#D5D5D5', fontWeight: 'bold' }} align="center">
+                Actions
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {membersData.map((member) => (
+              <TableRow key={member.id} sx={{ '&:hover': { backgroundColor: '#2e2e2e' } }}>
+                <TableCell sx={{ color: '#D5D5D5' }}>{member.firstName}</TableCell>
+                <TableCell sx={{ color: '#D5D5D5' }}>{member.lastName}</TableCell>
+                <TableCell sx={{ color: '#D5D5D5' }}>{member.email}</TableCell>
+                <TableCell sx={{ color: '#D5D5D5' }}>{member.status}</TableCell>
+                <TableCell sx={{ color: '#D5D5D5' }} align="center">
+                  <Button variant="outlined" color="primary" sx={{ marginRight: '10px' }}>
+                    View Factors
+                  </Button>
+                  <Button variant="outlined" color="error">
+                    Remove
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
+  );
 
   return (
-    <Box className="project-view">
-      {/* Sidebar */}
-      <Box className="sidebar">
-        <Button onClick={() => setView('Overview')} className="switcher-btn">
-          <GridViewRounded />
-          Overview
-        </Button>
-        <Button onClick={() => setView('Settings')} className="switcher-btn">
-          <Settings />
-          Settings
-        </Button>
-      </Box>
-
-      {/* Main Content */}
-      <Box className="content">
-        {view === 'Overview' && (
-          <>
-            {/* Aggregated Factors Column */}
-            <Box className="aggregated-factors">
-              <Box className="header-box">
-                <Typography variant="h7">Aggregated Factors</Typography>
-              </Box>
-              <Box className="factors-content">
-                {/* Factor 1 Sub-heading */}
-                <Box mb={2}>
-                  <Typography className="sub-heading">Factor 1</Typography>
-                  <Box className="chart-container">
-                    <Line data={chartData} options={chartOptions} />
-                  </Box>
-                </Box>
-
-                {/* Other Factors */}
-                {/* You can add other factors here similarly */}
-              </Box>
-            </Box>
-
-            {/* Estimated Revenue Column */}
-            <Box className="estimated-revenue">
-              <Box className="header-box">
-                <Typography variant="h7">Estimated Revenue</Typography>
-              </Box>
-              {/* Only one chart under Estimated Revenue */}
-              <Box mt={2} className="chart-container">
-                <Line data={chartData} options={chartOptions} />
-              </Box>
-
-              {/* Cross-Check Toggle */}
-              <Box mt={2}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={crossCheckEnabled}
-                      onChange={() => setCrossCheckEnabled(!crossCheckEnabled)}
-                      color="primary"
-                    />
-                  }
-                  label="Cross-Check Factors"
-                />
-              </Box>
-
-              {/* Table with statistics */}
-              <Box mt={2}>
-                <TableContainer component={Paper}>
-                  <Table aria-label="statistics table">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Year</TableCell>
-                        <TableCell align="right">Mean</TableCell>
-                        <TableCell align="right">Std</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {yearData.map((row) => (
-                        <TableRow key={row.year}>
-                          <TableCell component="th" scope="row">
-                            {row.year}
-                          </TableCell>
-                          <TableCell align="right">{row.mean}</TableCell>
-                          <TableCell align="right">{row.std}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Box>
-            </Box>
-          </>
-        )}
-
-        {view === 'Settings' && (
-          <Box className="settings-view">
-            {/* Summary Section */}
-            <Box className="summary-section" mb={3}>
-              <Typography variant="h6">Members Summary</Typography>
-              <Typography>{`${numCompleted} Members Completed / ${totalMembers} Members Shared`}</Typography>
-              <Box mt={2}>
-                <Button variant="contained" color="primary" style={{ marginRight: '10px' }}>
-                  Share to More Members
-                </Button>
-                <Button variant="contained" color="secondary" style={{ marginRight: '10px' }}>
-                  Publish Project
-                </Button>
-                <Button variant="outlined" color="error">
-                  Delete Project
-                </Button>
-              </Box>
-            </Box>
-
-            {/* Member List Table */}
-            <TableContainer component={Paper}>
-              <Table aria-label="members table">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>First Name</TableCell>
-                    <TableCell>Last Name</TableCell>
-                    <TableCell>Email</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell align="center">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {members.map((member) => (
-                    <TableRow key={member.id}>
-                      <TableCell>{member.firstName}</TableCell>
-                      <TableCell>{member.lastName}</TableCell>
-                      <TableCell>{member.email}</TableCell>
-                      <TableCell>{member.status}</TableCell>
-                      <TableCell align="center">
-                        <Button
-                          variant="outlined"
-                          color="primary"
-                          style={{ marginRight: '10px' }}
-                          onClick={() => handleViewFactors(member.id)}
-                        >
-                          View Factors
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          onClick={() => handleRemoveMember(member.id)}
-                        >
-                          Remove
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Box>
-        )}
-      </Box>
+    <Box>
+      <Routes>
+        <Route path="overview" element={renderOverview()} />
+        <Route path="settings" element={renderSettings()} />
+      </Routes>
     </Box>
   );
 };
