@@ -9,13 +9,14 @@ import {
   Dashboard as DashboardIcon,
   GridViewRounded as OverviewIcon,
   Settings as SettingsIcon,
+  InsertChartRounded as ChartIcon,
 } from '@mui/icons-material';
 
 const baseNavigation = [
   {
     segment: 'my-projects-page',
     title: 'Dashboard',
-    icon: <DashboardIcon />,
+    icon: <OverviewIcon />,
   },
 ];
 
@@ -91,7 +92,9 @@ function DashboardLayoutWrapper() {
       // Add "Overview" and "Settings" relative to /project-page
       setNavigation([
         ...baseNavigation,
-        { segment: 'project-page/overview', title: 'Overview', icon: <OverviewIcon /> },
+        { kind: 'divider' },
+        { kind: 'header', title: 'My Project' },
+        { segment: 'project-page/overview', title: 'Summary', icon: <ChartIcon /> },
         { segment: 'project-page/settings', title: 'Settings', icon: <SettingsIcon /> },
       ]);
     } else {
