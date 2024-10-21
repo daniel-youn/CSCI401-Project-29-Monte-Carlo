@@ -136,10 +136,8 @@ def input_data():
                 {"$set": {"factors": factors}}  # Update the factors
             )
             
-        print("11111111111")
         # TODO: call run simulation function here
         normalFactorRunSim(normal_sim_id, project_id)
-        print("222222222222")
         
         access_data = project.get("access_data", {})
         cross_check_access = access_data.get("cross_check_access", False)
@@ -161,17 +159,21 @@ def input_data():
 
 def normalFactorRunSim(simulation_id, project_id):
     # Get simulation data
+    print("111111111111")
     simulation = simulation_collection.find_one({'simulation_id': simulation_id}, {'_id': False})
     if not simulation:
         return jsonify({'message': 'Simulation not found'}), 404
+    print("222222222222")
     
     model_vars_list = []
     model_vars_cursor = model_variables_collection.find({"simulation_id": simulation_id})
     for model_var in model_vars_cursor:
         model_vars_list.append(model_var)
+    print("33333333333")
             
     num_users = len(model_vars_list)
-    num_simulations = db["project"].find_one({'_id': ObjectId(project_id)})['num_simulations']
+    num_simulations = project_collection.find_one({'_id': ObjectId(project_id)})['num_simulations']
+    print("4444444444444")
     
     def compute_for_year(year):
         sim_data = []
@@ -213,6 +215,7 @@ def normalFactorRunSim(simulation_id, project_id):
             'percentile_5': percentile_5,
             'percentile_95': percentile_95
         });
+    print("55555555555")
     
     assert len(yearly_sim_data) == 5
     # Store simulation data in output collection
