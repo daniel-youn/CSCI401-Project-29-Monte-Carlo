@@ -6,10 +6,7 @@ import ContentContainer from '../../components/ContentContainer/ContentContainer
 const FormPage = () => {
   return (
     <Box sx={{ backgroundColor: '#0b1225', minHeight: '100vh' }}>
-      <Header /> {/* Render the Header */}
-      <ContentContainer title={"My Project One"} contentBackgroundColor={"#232439"} padding={"2rem"} contentPadding={"2rem"} marginTop={"1rem"}>{/* Container for form section*/}
         <FormSection />{/* Render the FormSection */}
-      </ContentContainer>
     </Box>
   );
 };

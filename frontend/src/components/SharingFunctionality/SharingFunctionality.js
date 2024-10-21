@@ -44,7 +44,9 @@ const SharingFunctionality = ({ sharedMembers, setSharedMembers }) => {
 
   return (
     <Box>
-      <Typography variant="h6">Share Project</Typography>
+      <Typography variant="h6" align="left" gutterBottom>
+        Share Project
+      </Typography>
 
       {/* Search Input */}
       <TextField
@@ -53,7 +55,17 @@ const SharingFunctionality = ({ sharedMembers, setSharedMembers }) => {
         onChange={(e) => setSearchQuery(e.target.value)}
         fullWidth
       />
-      <Button onClick={handleSearch} variant="contained" sx={{ mt: 2 }}>
+      <Button onClick={handleSearch} variant="contained" 
+      sx={{
+        backgroundColor: 'white',
+        color: '#0b1225',  // White button with dark text
+        fontWeight: 'bold',
+        borderRadius: '5px',
+        '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.8)',  // Slightly translucent white on hover
+        },
+        mt: 2
+        }}>
         Search
       </Button>
 
@@ -70,7 +82,9 @@ const SharingFunctionality = ({ sharedMembers, setSharedMembers }) => {
       </Box>
 
       {/* Added Members List */}
-      <Typography variant="h6" mt={4}>Shared Members</Typography>
+      <Typography variant="h6" mt={4} align="left">
+        Shared Members
+      </Typography>
       <Box mt={2}>
         {sharedMembers.map((member) => (
           <Box key={member.id} sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>

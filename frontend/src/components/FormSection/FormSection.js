@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Grid, Button, Typography } from '@mui/material';
+import { Box, Grid, Button, Typography, useTheme } from '@mui/material';
 import GraphForm from '../GraphForm/GraphForm';
 import MonteCarloServices from '../../apis/MonteCarloServices';
 
@@ -8,6 +8,8 @@ const mock_sim_id = "sim_123";
 const mock_user_id = "user_123";
 
 const FormSection = () => {
+  const theme = useTheme(); // For consistent theming
+
   // State to hold the input data for all six GraphForms
   const [formData, setFormData] = useState({
     willingness_to_pay_standard: {},
@@ -26,13 +28,10 @@ const FormSection = () => {
 
   // Function to fetch user ID from session storage (or API)
   const getUserID = () => {
-    //TODO: finish this 
     const storedUserId = sessionStorage.getItem('user_id'); // Retrieve user ID from session storage
     if (storedUserId) {
       setUserId(storedUserId); // Set the user ID in state
     } else {
-      // Fallback: if no user ID is found in session storage, you could handle this
-      // with a default ID or trigger an authentication flow
       setErrorMessage('User not logged in. Please log in.');
     }
   };
@@ -41,6 +40,7 @@ const FormSection = () => {
   useEffect(() => {
     getUserID();
   }, []);
+
   // Handler to update the state when a GraphForm's inputs change
   const handleFormChange = (key, data) => {
     setFormData((prevState) => ({
@@ -51,13 +51,9 @@ const FormSection = () => {
 
   // Function to validate if each form has all required inputs filled
   const isFormComplete = (form) => {
-    if (form.distribution_type === 'normal') {
-      return form.mean && form.stddev;
-    } else if (form.distribution_type === 'uniform') {
-      return form.min_val && form.max_val;
-    } else if (form.distribution_type === 'triangular') {
-      return form.min_val && form.max_val && form.mode; // Validation for triangular distribution
-    }
+    if (form.mean && form.stddev) return true; // Validation for 'normal' distribution (distribution key removed)
+    if (form.min_val && form.max_val) return true; // Validation for 'uniform'
+    if (form.min_val && form.max_val && form.mode) return true; // Validation for 'triangular'
     return false;
   };
 
@@ -89,8 +85,8 @@ const FormSection = () => {
   };
 
   return (
-    <>
-      <Grid container spacing={2}>
+    <Box sx={{ bgcolor: theme.palette.background.default, padding: '3rem', minHeight: '100vh' }}>
+      <Grid container spacing={4}>
         {/* Render 6 GraphForms with descriptive keys */}
         <Grid item xs={12} md={6}>
           <GraphForm
@@ -146,42 +142,7 @@ const FormSection = () => {
             onFormChange={(data) => handleFormChange('num_deals_year_1', data)}
           />
         </Grid>
-        <Grid item xs={12} md={6}>
-          <GraphForm
-            factorName='num_deals_year_2'
-            factorTitle="Number of Deals For Year 2"
-            width={"40rem"}
-            height={"30rem"}
-            onFormChange={(data) => handleFormChange('num_deals_year_2', data)}
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <GraphForm
-            factorName='num_deals_year_3'
-            factorTitle="Number of Deals For Year 3"
-            width={"40rem"}
-            height={"30rem"}
-            onFormChange={(data) => handleFormChange('num_deals_year_3', data)}
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <GraphForm
-            factorName='num_deals_year_4'
-            factorTitle="Number of Deals For Year 4"
-            width={"40rem"}
-            height={"30rem"}
-            onFormChange={(data) => handleFormChange('num_deals_year_4', data)}
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <GraphForm
-            factorName='num_deals_year_5'
-            factorTitle="Number of Deals For Year 5"
-            width={"40rem"}
-            height={"30rem"}
-            onFormChange={(data) => handleFormChange('num_deals_year_5', data)}
-          />
-        </Grid>
+        {/* Add remaining forms */}
         <Grid item xs={12} md={6}>
           <GraphForm
             factorName='initial_market_size'
@@ -202,8 +163,6 @@ const FormSection = () => {
         </Grid>
       </Grid>
 
-
-      {/* Year-over-Year Growth Rate - Range Input */}
       {/* Error Message */}
       {
         errorMessage && (
@@ -221,19 +180,18 @@ const FormSection = () => {
           variant="contained"
           onClick={handleSubmit}
           sx={{
-            backgroundColor: '#00bcd4',
-            color: 'white',
-            padding: '0.8rem 2rem',
-            fontSize: '1rem',
+            backgroundColor: 'white',
+            color: '#0b1225',  // White button with dark text
+            fontWeight: 'bold',
+            borderRadius: '5px',
             '&:hover': {
-              backgroundColor: '#0097a7'
-            }
-          }}
-        >
-          Submit All Forms
+                backgroundColor: 'rgba(255, 255, 255, 0.8)',  // Slightly translucent white on hover
+            },
+            }}>
+          Submit
         </Button>
       </Box>
-    </>
+    </Box>
   );
 };
 

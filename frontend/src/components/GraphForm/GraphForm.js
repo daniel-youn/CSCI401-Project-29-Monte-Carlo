@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, MenuItem, TextField, Grid, Paper } from '@mui/material';
+import { Box, Typography, MenuItem, TextField, Grid, Paper, useTheme } from '@mui/material';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -15,6 +15,8 @@ import {
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width = "40rem", height = "30rem", onFormChange }) => {
+  const theme = useTheme(); // To use consistent theme styles
+
   const [distributionType, setDistributionType] = useState('');
   const [values, setValues] = useState({ mean: '', stddev: '', min_val: '', max_val: '', mode: '' });
   const [chartData, setChartData] = useState({
@@ -23,7 +25,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
       {
         label: 'Distribution',
         data: [],
-        borderColor: '#00bcd4',
+        borderColor: theme.palette.primary.main, // Use theme color
         backgroundColor: 'rgba(0, 188, 212, 0.2)',
         fill: true
       }
@@ -33,20 +35,18 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
   const distributionOptions = [
     { value: 'normal', label: 'Normal Distribution' },
     { value: 'uniform', label: 'Uniform Distribution' },
-    { value: 'triangular', label: 'Triangular Distribution' }, // New Triangular option
+    { value: 'triangular', label: 'Triangular Distribution' },
   ];
 
   const handleDistributionChange = (e) => {
     setDistributionType(e.target.value);
-
-    // Always set all the fields in the state, with unused ones defaulted to '' or 0
     const defaultValues = { mean: '', stddev: '', min_val: '', max_val: '', mode: '' };
 
     if (e.target.value === "uniform") {
       setValues({
-        ...defaultValues,  // Set all fields to default
-        min_val: values.min_val,  // Keep existing values if already filled
-        max_val: values.max_val,  // Keep existing values if already filled
+        ...defaultValues,
+        min_val: values.min_val,
+        max_val: values.max_val,
         distribution_type: e.target.value
       });
     } else if (e.target.value === "normal") {
@@ -73,12 +73,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     const parsedValue = parseFloat(value);
-
-    const updatedValues = {
-      ...values,
-      [name]: isNaN(parsedValue) ? '' : parsedValue
-    };
-
+    const updatedValues = { ...values, [name]: isNaN(parsedValue) ? '' : parsedValue };
     setValues(updatedValues);
     onFormChange(updatedValues);
   };
@@ -89,7 +84,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
       {
         label: 'Distribution',
         data: Array(100).fill(null),
-        borderColor: '#00bcd4',
+        borderColor: theme.palette.primary.main,
         backgroundColor: 'rgba(0, 188, 212, 0.2)',
         fill: true
       }
@@ -120,7 +115,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
           {
             label: 'Normal Distribution',
             data: data,
-            borderColor: '#00bcd4',
+            borderColor: theme.palette.primary.main,
             backgroundColor: 'rgba(0, 188, 212, 0.2)',
             fill: true
           }
@@ -141,8 +136,9 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
             label: 'Uniform Distribution',
             data: data,
             backgroundColor: 'rgba(0, 188, 212, 0.5)',
-            borderColor: '#00bcd4',
-            borderWidth: 1
+            borderColor: theme.palette.primary.main,
+            borderWidth: 1,
+            fill: true
           }
         ]
       });
@@ -166,8 +162,9 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
             label: 'Triangular Distribution',
             data: data,
             backgroundColor: 'rgba(0, 188, 212, 0.5)',
-            borderColor: '#00bcd4',
-            borderWidth: 1
+            borderColor: theme.palette.primary.main,
+            borderWidth: 1,
+            fill: true
           }
         ]
       });
@@ -188,14 +185,14 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
               name="mean"
               value={values.mean}
               onChange={handleInputChange}
-              sx={{ margin: 1 }}
+              sx={{ margin: 1, width: '26%' }}
             />
             <TextField
               label="Standard Deviation"
               name="stddev"
               value={values.stddev}
               onChange={handleInputChange}
-              sx={{ margin: 1 }}
+              sx={{ margin: 1, width: '26%' }}
             />
           </>
         );
@@ -207,14 +204,14 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
               name="min_val"
               value={values.min_val}
               onChange={handleInputChange}
-              sx={{ margin: 1 }}
+              sx={{ margin: 1, width: '26%' }}
             />
             <TextField
               label="Maximum Value"
               name="max_val"
               value={values.max_val}
               onChange={handleInputChange}
-              sx={{ margin: 1 }}
+              sx={{ margin: 1, width: '26%' }}
             />
           </>
         );
@@ -226,21 +223,21 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
               name="min_val"
               value={values.min_val}
               onChange={handleInputChange}
-              sx={{ margin: 1 }}
+              sx={{ margin: 1, width: '26%' }}
             />
             <TextField
               label="Maximum Value"
               name="max_val"
               value={values.max_val}
               onChange={handleInputChange}
-              sx={{ margin: 1 }}
+              sx={{ margin: 1, width: '26%' }}
             />
             <TextField
               label="Mode"
               name="mode"
               value={values.mode}
               onChange={handleInputChange}
-              sx={{ margin: 1 }}
+              sx={{ margin: 1, width: '26%' }}
             />
           </>
         );
@@ -253,14 +250,14 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
     <Paper
       sx={{
         padding: '2rem',
-        backgroundColor: '#2b3245',
-        color: '#D5D5D5',
+        backgroundColor: theme.palette.background.paper,
+        color: theme.palette.text.primary,
         width: `${width}px`,
         height: `${height}px`,
         overflow: 'auto'
       }}
     >
-      <Typography variant="h5" align="center" sx={{ marginBottom: '1rem' }}>
+      <Typography variant="h5" align="center" sx={{ marginBottom: '1rem', color: theme.palette.text.primary }}>
         {factorTitle}
       </Typography>
 
@@ -305,7 +302,12 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
                     min: Math.min(...chartData.labels),
                     max: Math.max(...chartData.labels),
                   }
-                }
+                },
+                plugins: {
+                  legend: {
+                    display: false, // Disable the legend
+                  },
+                },
               }}
             />
           </Box>
