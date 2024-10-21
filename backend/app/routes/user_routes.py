@@ -49,10 +49,17 @@ def get_user(user_id):
 @user_routes.route('/users/<user_id>', methods=['PUT'])
 def update_user(user_id):
     updates = request.json
+    
+    # If password is provided, hash the new password
+    if 'password' in updates:
+        updates['password'] = generate_password_hash(updates['password'])
+
     result = user_collection.update_one({'user_id': user_id}, {'$set': updates})
+    
     if result.matched_count:
         return jsonify({'message': 'User updated successfully'}), 200
     return jsonify({'message': 'User not found'}), 404
+
 
 # 4. Delete user by user_id
 @user_routes.route('/users/<user_id>', methods=['DELETE'])
