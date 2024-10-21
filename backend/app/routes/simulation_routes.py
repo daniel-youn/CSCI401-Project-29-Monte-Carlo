@@ -269,8 +269,6 @@ def input_data(user_id):
         return jsonify({'error': ve.messages}), 400
     pass
 
-    
-
 def normalFactorRunSim(simulation_id, project_id):
     # Get simulation data
     simulation = simulation_collection.find_one({'simulation_id': simulation_id}, {'_id': False})
@@ -308,7 +306,7 @@ def normalFactorRunSim(simulation_id, project_id):
             
         return sim_data
     
-    yearly_sim_data = {}
+    yearly_sim_data = []
     for year in range(1, 6):
         data = compute_for_year(year)
         mean = np.mean(data)
@@ -318,7 +316,7 @@ def normalFactorRunSim(simulation_id, project_id):
         max_val = np.max(data)
         percentile_5 = np.percentile(data, 5)
         percentile_95 = np.percentile(data, 95)
-        yearly_sim_data[year] = {
+        yearly_sim_data.append({
             'mean': mean,
             'median': median,
             'std_dev': std_dev,
@@ -326,7 +324,14 @@ def normalFactorRunSim(simulation_id, project_id):
             'max': max_val,
             'percentile_5': percentile_5,
             'percentile_95': percentile_95
-        }
+        });
+    
+    assert len(yearly_sim_data) == 5
+    # Store simulation data in output collection
+    output_id = db.outputs.insert_one({
+        'simulation_id': simulation_id,
+        'summary_statistics': yearly_sim_data
+    }).inserted_id
         
             
     return yearly_sim_data
