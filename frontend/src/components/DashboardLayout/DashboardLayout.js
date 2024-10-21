@@ -3,10 +3,9 @@ import PropTypes from 'prop-types';
 import { createTheme } from '@mui/material/styles';
 import { AppProvider } from '@toolpad/core/AppProvider';
 import { DashboardLayout } from '@toolpad/core/DashboardLayout';
-import { useLocation, useNavigate, Outlet } from 'react-router-dom';
+import { useLocation, useNavigate, Outlet, useParams } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import {
-  Dashboard as DashboardIcon,
   GridViewRounded as OverviewIcon,
   Settings as SettingsIcon,
   InsertChartRounded as ChartIcon,
@@ -25,7 +24,7 @@ const theme = createTheme({
     colorSchemeSelector: 'data-toolpad-color-scheme',
   },
   palette: {
-    mode: 'dark', // Choose 'light' or 'dark'
+    mode: 'dark',
   },
   breakpoints: {
     values: {
@@ -41,12 +40,10 @@ const theme = createTheme({
 function DashboardLayoutWrapper() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { projectId } = useParams();  // Capture the projectId from the URL
 
   const [session, setSession] = useState(null);
   const [navigation, setNavigation] = useState(baseNavigation);
-
-  // Extract search parameters from the current URL
-  const searchParams = new URLSearchParams(location.search);
 
   // Check for user session from cookies
   useEffect(() => {
@@ -83,25 +80,24 @@ function DashboardLayoutWrapper() {
   const router = {
     pathname: location.pathname,
     navigate: (path, options) => navigate(path, options),
-    searchParams, // Pass the extracted search params
   };
 
   // Dynamically populate the navigation for the project page
   useEffect(() => {
-    if (location.pathname.startsWith('/project-page')) {
-      // Add "Overview" and "Settings" relative to /project-page
+    if (location.pathname.startsWith('/project-page') && projectId) {
+      // Add "Overview" and "Settings" relative to the specific project page
       setNavigation([
         ...baseNavigation,
         { kind: 'divider' },
         { kind: 'header', title: 'My Project' },
-        { segment: 'project-page/overview', title: 'Summary', icon: <ChartIcon /> },
-        { segment: 'project-page/settings', title: 'Settings', icon: <SettingsIcon /> },
+        { segment: `project-page/${projectId}/overview`, title: 'Summary', icon: <ChartIcon /> },
+        { segment: `project-page/${projectId}/settings`, title: 'Settings', icon: <SettingsIcon /> },
       ]);
     } else {
       // Revert back to base navigation when leaving "/project-page"
       setNavigation(baseNavigation);
     }
-  }, [location.pathname]);
+  }, [location.pathname, projectId]);
 
   return (
     <AppProvider
