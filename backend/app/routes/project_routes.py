@@ -144,6 +144,35 @@ def get_all_projects():
     # Convert MongoDB documents to Python dictionaries and return them as JSON
     return jsonify([projects_schema.dump(project) for project in projects]), 200
 
+@project_routes.route('/projects/<project_id>', methods=['GET'])
+def get_project(project_id):
+    try:
+        # Convert project_id to ObjectId
+        project = projects_collection.find_one({"_id": ObjectId(project_id)})
+        
+        if project:
+            # Convert the MongoDB document to a JSON serializable format
+            project_data = {
+                "project_id": str(project["_id"]),
+                "project_name": project["project_name"],
+                "creation_time": project["creation_time"],
+                "is_published": project["is_published"],
+                "revenue_mean_5th_year": project["revenue_mean_5th_year"],
+                "revenue_std_5th_year": project["revenue_std_5th_year"],
+                "shared_users": project["shared_users"],
+                "admin_user_id": project["admin_user_id"],
+                "normal_sim_id": project.get("normal_sim_id"),
+                "admin_sim_id": project.get("admin_sim_id"),
+                "cross_check_sim_id": project.get("cross_check_sim_id"),
+                "num_simulations": project["num_simulations"]
+            }
+            return jsonify(project_data), 200
+        else:
+            return jsonify({"error": "Project not found"}), 404
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @project_routes.route('/projects/<project_id>', methods=['PUT'])
 def update_project(project_id):
     try:
