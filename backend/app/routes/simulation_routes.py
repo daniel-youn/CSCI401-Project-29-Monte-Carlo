@@ -114,46 +114,49 @@ def input_data():
         
         # Find the normal_sim_id for the given project
         normal_sim_id = project.get("normal_sim_id")
-        # cross_check_sim_id = project.get("cross_check_sim_id")
+        if not normal_sim_id:
+            return jsonify({"error": "Normal simulation not found for project"}), 404
         
         # UPDATE FOR NORMAL SIM
         # Find the model_var_id for the given project
-        project = user['projects'].get(project_id)
-        if not project:
-            return jsonify({"error": "Project not found for user"}), 404
-        model_var_id = project.get("model_var_id", {})
+        # project = user['projects'].get(project_id)
+        # if not project:
+        #     return jsonify({"error": "Project not found for user"}), 404
+        # model_var_id = project.get("model_var_id", {})
         
-        if not model_var_id:
-            # Create new model variable data structure
-            new_model_variable = {
-                "user_id": user_id,
-                "simulation_id": normal_sim_id,
-                "project_id": project_id,
-                "factors": factors,
-            }
+        model_vars = model_varibales_collection.find_one({"user_id": user_id, "project_id": project_id})
+        
+        # if not model_vars:
+        #     # Create new model variable data structure
+        #     new_model_variable = {
+        #         "user_id": user_id,
+        #         "simulation_id": normal_sim_id,
+        #         "project_id": project_id,
+        #         "factors": factors,
+        #     }
             
-            result = model_varibales_collection.insert_one(new_model_variable)
-            model_var_id = str(result.inserted_id)
+        #     result = model_varibales_collection.insert_one(new_model_variable)
+        #     model_var_id = str(result.inserted_id)
             
-            # Update the user record in the database with the modified projects
-            user_collection.update_one(
-                {"user_id": user_id},
-                {"$set": {"projects": user['projects']}}  # Save the updated projects back to the user
-            )
+        #     # Update the user record in the database with the modified projects
+        #     user_collection.update_one(
+        #         {"user_id": user_id},
+        #         {"$set": {"projects": user['projects']}}  # Save the updated projects back to the user
+        #     )
             
-            simulation = simulation_collection.find_one({"simulation_id": normal_sim_id})
-            model_variable_ids = simulation.get('model_variables', [])
+        #     simulation = simulation_collection.find_one({"simulation_id": normal_sim_id})
+        #     model_variable_ids = simulation.get('model_variables', [])
 
-            if model_var_id not in model_variable_ids:
-                model_variable_ids.append(model_var_id)
-                simulation_collection.update_one(
-                    {"simulation_id": normal_sim_id},
-                    {"$set": {"model_variables": model_variable_ids}}
-                )
+        #     if model_var_id not in model_variable_ids:
+        #         model_variable_ids.append(model_var_id)
+        #         simulation_collection.update_one(
+        #             {"simulation_id": normal_sim_id},
+        #             {"$set": {"model_variables": model_variable_ids}}
+        #         )
         
-        else:
-            # Save the updated model variable back to the database
-            model_varibales_collection.update_one({"model_var_id": model_var_id}, {"$set": {"factors": factors}})
+        # else:
+        #     # Save the updated model variable back to the database
+        #     model_varibales_collection.update_one({"model_var_id": model_var_id}, {"$set": {"factors": factors}})
             
         # TODO: call run simulation function here
         normalFactorRunSim(normal_sim_id, project_id)
@@ -185,12 +188,12 @@ def normalFactorRunSim(simulation_id, project_id):
     model_vars_ids_list = simulation['model_variables']
     model_vars_list = []
     for model_vars_id in model_vars_ids_list:
-        model_vars = db["model_variables"].find_one({'model_variables_id': model_vars_id}, {'_id': False})
+        model_vars = db["model_variables"].find_one({'_id': ObjectId(model_vars_id)})
         if model_vars:
             model_vars_list.append(model_vars)
             
     num_users = len(model_vars_list)
-    num_simulations = db["project"].find_one({'project_id': project_id}, {'_id': False})['num_simulations']
+    num_simulations = db["project"].find_one({'_id': ObjectId(project_id)})['num_simulations']
     
     def compute_for_year(year):
         sim_data = []
