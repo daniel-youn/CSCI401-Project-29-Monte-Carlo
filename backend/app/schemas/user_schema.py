@@ -7,6 +7,13 @@ class AccessDataSchema(Schema):
     cross_check_access = fields.Bool(required=True)  # Boolean field
     form_submitted = fields.Bool(required=True)      # Boolean field
     is_admin = fields.Bool(required=True)  # Boolean field
+    
+class ProjectsInfoSchema(Schema):
+    """
+        Stores the information about the projects that the user has access to
+    """
+    project_id = fields.Str(validate=validate.Length(equal=24), required=True)  # Project ID
+    access_data = fields.Nested(AccessDataSchema, required=True)  # Access data for the project
 
 
 class UserSchema(Schema):
@@ -20,11 +27,7 @@ class UserSchema(Schema):
     isAdmin = fields.Bool(required=True)
     projects = fields.Dict(
         keys=fields.Str(validate=validate.Length(equal=24)),  # project_id as key
-        values=fields.List(
-            fields.Nested(AccessDataSchema),
-            fields.Str(),
-            validate=validate.Length(equal=2)  # Ensure the tuple structure (AccessData, string)
-        ),
+        values=fields.Nested(ProjectsInfoSchema),  # Access data as value
         required=True
     )
 
