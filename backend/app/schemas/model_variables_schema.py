@@ -19,10 +19,6 @@ class ModelVariablesSchema(Schema):
         required=True, 
         validate=validate.Regexp(r'^[a-zA-Z0-9_]+$', error="simulation_id must be alphanumeric with underscores allowed")
     )
-    project_id = fields.Str(
-        required=True, 
-        validate=validate.Regexp(r'^[a-zA-Z0-9_]+$', error="simulation_id must be alphanumeric with underscores allowed")
-    )
 
     # Define the factors as a dictionary with specific key and value types
     factors = fields.Dict(

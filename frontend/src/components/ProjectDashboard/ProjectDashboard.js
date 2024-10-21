@@ -7,45 +7,9 @@ import { useNavigate } from 'react-router-dom';
 import PendingIcon from '@mui/icons-material/HourglassEmpty';
 import DoneIcon from '@mui/icons-material/CheckCircle';
 import { styled } from '@mui/system';
-
-const sampleProjects = [
-  {
-    id: 'proj_1',
-    name: 'Project Alpha',
-    contributors: 5,
-    creationTime: '2024-10-01',
-    revenuePrediction: { mean: 50000, stddev: 10000 },
-    pending: true,
-    creator: 'Alice Johnson'
-  },
-  {
-    id: 'proj_2',
-    name: 'Project Beta',
-    contributors: 3,
-    creationTime: '2024-08-15',
-    revenuePrediction: { mean: 30000, stddev: 8000 },
-    pending: false,
-    creator: 'Bob Smith'
-  },
-  {
-    id: 'proj_3',
-    name: 'Project Gamma',
-    contributors: 7,
-    creationTime: '2024-07-20',
-    revenuePrediction: { mean: 75000, stddev: 15000 },
-    pending: true,
-    creator: 'Charlie Davis'
-  },
-  {
-    id: 'proj_4',
-    name: 'Project Delta',
-    contributors: 4,
-    creationTime: '2024-09-10',
-    revenuePrediction: { mean: 45000, stddev: 9000 },
-    pending: false,
-    creator: 'Dana Lee'
-  }
-];
+import Cookies from 'js-cookie';
+import axios from 'axios';
+import moment from 'moment';
 
 // Styled table row for hover effect
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
@@ -58,17 +22,57 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 const ProjectDashboard = () => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const [isAdmin, setIsAdmin] = useState(true);
+  const [pendingProjects, setPendingProjects] = useState([]);
+  const [completedProjects, setCompletedProjects] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(false);
 
+  // Fetch user data and projects on component mount
   useEffect(() => {
-    const storedIsAdmin = sessionStorage.getItem('isAdmin');
-    if (storedIsAdmin === 'true') {
-      setIsAdmin(true);
-    }
-  }, []);
+    const fetchUserAndProjects = async () => {
+      try {
+        // Get user ID from cookies
+        const userId = Cookies.get('userId');
 
-  const pendingProjects = sampleProjects.filter(project => project.pending);
-  const nonPendingProjects = sampleProjects.filter(project => !project.pending);
+        console.log('userId:', userId);
+
+        if (!userId) {
+          console.error('No user ID found in session');
+          return;
+        }
+
+        // Fetch user data
+        const userResponse = await axios.get(`http://localhost:5001/api/user/users/${userId}`);
+        const userData = userResponse.data;
+
+        console.log('userData:', userData);
+
+        // Parse the user's projects
+        const projectPromises = Object.keys(userData.projects).map(async (projectId) => {
+          const projectResponse = await axios.get(`http://localhost:5001/api/project/projects/${projectId}`);
+          return {
+            ...projectResponse.data,
+            form_submitted: userData.projects[projectId].access_data.form_submitted,
+          };
+        });
+
+        const projects = await Promise.all(projectPromises);
+
+        // Separate projects into pending and completed based on form_submitted
+        const pending = projects.filter((project) => !project.form_submitted);
+        const completed = projects.filter((project) => project.form_submitted);
+
+        setPendingProjects(pending);
+        setCompletedProjects(completed);
+
+        // Set admin flag if the user is an admin
+        setIsAdmin(userData.isAdmin);
+      } catch (error) {
+        console.error('Error fetching user or projects:', error);
+      }
+    };
+
+    fetchUserAndProjects();
+  }, []);
 
   const handleAdminButtonClick = () => {
     navigate('/create-project');
@@ -76,13 +80,13 @@ const ProjectDashboard = () => {
 
   const renderProjectRows = (projects, isPending) => {
     return projects.map((project) => (
-      <StyledTableRow key={project.id}>
-        <TableCell>{project.name}</TableCell>
-        <TableCell>{project.creator}</TableCell>
-        <TableCell>{project.contributors}</TableCell>
-        <TableCell>{project.creationTime}</TableCell>
-        <TableCell>${project.revenuePrediction.mean.toLocaleString()}</TableCell>
-        <TableCell>${project.revenuePrediction.stddev.toLocaleString()}</TableCell>
+      <StyledTableRow key={project.project_id}>
+        <TableCell>{project.project_name}</TableCell>
+        <TableCell>{project.admin_user_id}</TableCell>
+        <TableCell>{project.shared_users.length}</TableCell>
+        <TableCell>{moment(project.creation_time).format('YYYY-MM-DD')}</TableCell>
+        <TableCell>${project.revenue_mean_5th_year.toLocaleString()}</TableCell>
+        <TableCell>${project.revenue_std_5th_year.toLocaleString()}</TableCell>
         <TableCell>
           {isPending ? <PendingIcon color="warning" /> : <DoneIcon color="success" />}
         </TableCell>
@@ -158,7 +162,7 @@ const ProjectDashboard = () => {
             Completed Projects
           </Typography>
           <TableContainer component={Paper} sx={{ boxShadow: 3 }}>
-            <Table aria-label="non-pending projects table">
+            <Table aria-label="completed projects table">
               <TableHead>
                 <TableRow>
                   <TableCell><strong>Project Name</strong></TableCell>
@@ -171,8 +175,8 @@ const ProjectDashboard = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {nonPendingProjects.length > 0 ? (
-                  renderProjectRows(nonPendingProjects, false)
+                {completedProjects.length > 0 ? (
+                  renderProjectRows(completedProjects, false)
                 ) : (
                   <TableRow>
                     <TableCell colSpan={7} align="center">

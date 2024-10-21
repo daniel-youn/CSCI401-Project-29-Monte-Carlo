@@ -16,7 +16,7 @@ simulation_routes = Blueprint('simulation_routes', __name__)
 simulation_collection = db['simulations']
 user_collection = db['users']
 project_collection = db['project_schema']
-model_varibales_collection = db['model_variables']
+model_variables_collection = db['model_variables']
 
 # 1. Create new simulation
 @simulation_routes.route('/simulations', methods=['POST'])
@@ -103,17 +103,24 @@ def input_data():
     # maybe store in db the simulation state like running, error, finished, etc
     try:
         # Parse request data
-        model_variables = request.get_json()
-        user_id = model_variables["user_id"]
-        project_id = model_variables["project_id"]
-        factors = model_variables["factors"]
+        data = request.get_json()
+        user_id = data["user_id"]
+        project_id = data["project_id"]
+        factors = data["factors"]
         
+<<<<<<< HEAD
         # print(factors)
         
         # Find the user in the database
         user = user_collection.find_one({"user_id": user_id})
         if not user:
             return jsonify({"error": "User not found"}), 404
+=======
+        # # Find the user in the database
+        # user = user_collection.find_one({"user_id": user_id})
+        # if not user:
+        #     return jsonify({"error": "User not found"}), 404
+>>>>>>> origin/main
             
         # Find the project in the database
         project = project_collection.find_one({"_id": ObjectId(project_id)})
@@ -126,55 +133,30 @@ def input_data():
             return jsonify({"error": "Normal simulation not found for project"}), 404
         
         # UPDATE FOR NORMAL SIM
-        # Find the model_var_id for the given project
-        # project = user['projects'].get(project_id)
-        # if not project:
-        #     return jsonify({"error": "Project not found for user"}), 404
-        # model_var_id = project.get("model_var_id", {})
+        model_vars = model_variables_collection.find_one({"user_id": user_id, "simulation_id": normal_sim_id})
         
-        model_vars = model_varibales_collection.find_one({"user_id": user_id, "project_id": project_id})
-        
-        # if not model_vars:
-        #     # Create new model variable data structure
-        #     new_model_variable = {
-        #         "user_id": user_id,
-        #         "simulation_id": normal_sim_id,
-        #         "project_id": project_id,
-        #         "factors": factors,
-        #     }
-            
-        #     result = model_varibales_collection.insert_one(new_model_variable)
-        #     model_var_id = str(result.inserted_id)
-            
-        #     # Update the user record in the database with the modified projects
-        #     user_collection.update_one(
-        #         {"user_id": user_id},
-        #         {"$set": {"projects": user['projects']}}  # Save the updated projects back to the user
-        #     )
-            
-        #     simulation = simulation_collection.find_one({"simulation_id": normal_sim_id})
-        #     model_variable_ids = simulation.get('model_variables', [])
-
-        #     if model_var_id not in model_variable_ids:
-        #         model_variable_ids.append(model_var_id)
-        #         simulation_collection.update_one(
-        #             {"simulation_id": normal_sim_id},
-        #             {"$set": {"model_variables": model_variable_ids}}
-        #         )
-        
+        if not model_vars:
+            # Create new model variable data structure
+            new_model_variable = {
+                "user_id": user_id,
+                "simulation_id": normal_sim_id,
+                "factors": factors,
+            }
+            result = model_variables_collection.insert_one(new_model_variable)
+            # model_var_id = str(result.inserted_id)
         # else:
-        #     # Save the updated model variable back to the database
-        #     model_varibales_collection.update_one({"model_var_id": model_var_id}, {"$set": {"factors": factors}})
+            # Save the updated model variable back to the database
+            model_variables_collection.update_one({"model_var_id": model_var_id}, {"$set": {"factors": factors}})
             
         # TODO: call run simulation function here
         normalFactorRunSim(normal_sim_id, project_id)
         
-        # TODO: UPDATE THE CROSS CHECK MODEL VARS IF APPLICABLE
         access_data = project.get("access_data", {})
         cross_check_access = access_data.get("cross_check_access", False)
         
         if cross_check_access:
             pass
+        # TODO: UPDATE THE CROSS CHECK MODEL VARS IF APPLICABLE
         # TODO: call run simulation here again
         
         # Return success response
@@ -193,12 +175,10 @@ def normalFactorRunSim(simulation_id, project_id):
     if not simulation:
         return jsonify({'message': 'Simulation not found'}), 404
     
-    model_vars_ids_list = simulation['model_variables']
     model_vars_list = []
-    for model_vars_id in model_vars_ids_list:
-        model_vars = db["model_variables"].find_one({'_id': ObjectId(model_vars_id)})
-        if model_vars:
-            model_vars_list.append(model_vars)
+    model_vars_cursor = model_variables_collection.find({"simulation_id": simulation_id})
+    for model_var in model_vars_cursor:
+        model_vars_list.append(model_var)
             
     num_users = len(model_vars_list)
     num_simulations = db["project_schema"].find_one({'_id': ObjectId(project_id)})['num_simulations']
