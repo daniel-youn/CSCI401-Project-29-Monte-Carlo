@@ -86,7 +86,7 @@ app.register_blueprint(output_routes, url_prefix='/api/output')
 app.register_blueprint(summary_statistics_routes, url_prefix='/api/summary_statistics')
 app.register_blueprint(volatility_distribution_routes, url_prefix='/api/volatility_distribution')
 app.register_blueprint(additional_calculations_routes, url_prefix='/api/additional_calculations')
-app.register_blueprint(project_routes, url_prefix='/api/projects')
+app.register_blueprint(project_routes, url_prefix='/api')
 # Add a basic route for health checks
 @app.route('/health', methods=['GET'])
 def health_check():

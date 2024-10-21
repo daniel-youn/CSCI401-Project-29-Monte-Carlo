@@ -1,5 +1,4 @@
-from flask import Flask, request, jsonify
-from flask_pymongo import PyMongo
+from flask import Flask, request, jsonify, Blueprint
 from marshmallow import ValidationError
 from datetime import datetime
 from bson.objectid import ObjectId

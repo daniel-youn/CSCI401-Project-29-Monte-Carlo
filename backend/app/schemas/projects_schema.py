@@ -16,7 +16,7 @@ class ProjectsSchema(Schema):
     # List of users with cross-check access (user IDs as strings)
     cross_check_users = fields.List(fields.Str(validate=validate.Length(equal=24)), required=False)
 
-    # Map of stakeholders that have filled out forms (user_id -> Bool)
+    # Map of stakeholders that have filled out forms (user_id -> input_id)
     stakeholders_with_forms = fields.Dict(
         keys=fields.Str(validate=validate.Length(equal=24)),
         values=fields.Str(validate=validate.Length(equal=24)),
