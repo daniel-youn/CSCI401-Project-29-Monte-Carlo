@@ -77,6 +77,12 @@ def get_distribution(model_variables, factor_name):
     """Helper function to return the correct distribution based on user input."""
     factor_params = model_variables["factors"][factor_name]
     distribution_type = factor_params['distribution_type']
+    
+    print("PEEEEEEEEEEEEE====================")
+    print(factor_params)
+    print(distribution_type)
+    print("POOOOOOOOOOOOOO====================")
+    
     if distribution_type == 'uniform':
         min_val = factor_params["min_val"]
         max_val = factor_params["max_val"]
@@ -101,6 +107,8 @@ def input_data():
         user_id = model_variables["user_id"]
         project_id = model_variables["project_id"]
         factors = model_variables["factors"]
+        
+        # print(factors)
         
         # Find the user in the database
         user = user_collection.find_one({"user_id": user_id})
@@ -193,7 +201,7 @@ def normalFactorRunSim(simulation_id, project_id):
             model_vars_list.append(model_vars)
             
     num_users = len(model_vars_list)
-    num_simulations = db["project"].find_one({'_id': ObjectId(project_id)})['num_simulations']
+    num_simulations = db["project_schema"].find_one({'_id': ObjectId(project_id)})['num_simulations']
     
     def compute_for_year(year):
         sim_data = []
@@ -202,6 +210,7 @@ def normalFactorRunSim(simulation_id, project_id):
             model = model_vars_list[np.random.randint(0, num_users)]
             factors = model['factors']
             # TODO: figure out if getting the data is done correctly
+            print("Hello There")
             wtp_standard_dist = get_distribution(model, "willingness_to_pay_standard")
             wtp_premium_dist = get_distribution(model, "willingness_to_pay_premium")
             num_standard_users_dist = get_distribution(model, "num_standard_users_per_deal")
