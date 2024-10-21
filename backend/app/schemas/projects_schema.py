@@ -12,7 +12,7 @@ class ProjectsSchema(Schema):
 
     # List of users the project is shared to (user IDs as strings)
     shared_users = fields.List(fields.Str(validate=validate.Length(equal=24)), required=True)
-
+    
     # Admin user ID (string)
     admin_user_id = fields.Str(validate=validate.Length(equal=24), required=True)
 

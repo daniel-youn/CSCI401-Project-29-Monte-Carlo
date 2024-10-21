@@ -14,8 +14,10 @@ const FormSection = () => {
     willingness_to_pay_premium: {},
     num_standard_users_per_deal: {},
     num_premium_users_per_deal: {},
-    num_deals_per_year: {},
-    expected_discount_per_deal: {}
+    num_deals_year_1: {}, num_deals_year_2: {}, num_deals_year_3: {}, num_deals_year_4: {}, num_deals_year_5: {},
+    expected_discount_per_deal: {},
+    initial_market_size: {},
+    year_over_year_growth_rate: {}
   });
 
   // State to handle error message
@@ -128,15 +130,6 @@ const FormSection = () => {
         </Grid>
         <Grid item xs={12} md={6}>
           <GraphForm
-            factorName='num_deals_per_year'
-            factorTitle="Number of Deals per Year"
-            width={"40rem"}
-            height={"30rem"}
-            onFormChange={(data) => handleFormChange('num_deals_per_year', data)}
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <GraphForm
             factorName='expected_discount_per_deal'
             factorTitle="Expected Discount per Deal"
             width={"40rem"}
@@ -144,16 +137,83 @@ const FormSection = () => {
             onFormChange={(data) => handleFormChange('expected_discount_per_deal', data)}
           />
         </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='num_deals_year_1'
+            factorTitle="Number of Deals For Year 1"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('num_deals_year_1', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='num_deals_year_2'
+            factorTitle="Number of Deals For Year 2"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('num_deals_year_2', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='num_deals_year_3'
+            factorTitle="Number of Deals For Year 3"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('num_deals_year_3', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='num_deals_year_4'
+            factorTitle="Number of Deals For Year 4"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('num_deals_year_4', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='num_deals_year_5'
+            factorTitle="Number of Deals For Year 5"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('num_deals_year_5', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='initial_market_size'
+            factorTitle="Initial Market Size (Year 1)"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('initial_market_size', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='year_over_year_growth_rate'
+            factorTitle="Year-over-Year Growth Rate"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('year_over_year_growth_rate', data)}
+          />
+        </Grid>
       </Grid>
 
+
+      {/* Year-over-Year Growth Rate - Range Input */}
       {/* Error Message */}
-      {errorMessage && (
-        <Box sx={{ textAlign: 'center', marginTop: '1rem' }}>
-          <Typography variant="body1" color="error">
-            {errorMessage}
-          </Typography>
-        </Box>
-      )}
+      {
+        errorMessage && (
+          <Box sx={{ textAlign: 'center', marginTop: '1rem' }}>
+            <Typography variant="body1" color="error">
+              {errorMessage}
+            </Typography>
+          </Box>
+        )
+      }
 
       {/* Submit Button */}
       <Box sx={{ textAlign: 'center', marginTop: '2rem' }}>

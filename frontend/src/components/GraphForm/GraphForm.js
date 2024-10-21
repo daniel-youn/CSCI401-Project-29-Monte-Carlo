@@ -14,7 +14,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-const GraphForm = ({ factorName = "factor_name ", factorTitle = "Factor i", width = "40rem", height = "30rem", onFormChange }) => {
+const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width = "40rem", height = "30rem", onFormChange }) => {
   const [distributionType, setDistributionType] = useState('');
   const [values, setValues] = useState({ mean: '', stddev: '', min_val: '', max_val: '', mode: '' });
   const [chartData, setChartData] = useState({
@@ -39,21 +39,35 @@ const GraphForm = ({ factorName = "factor_name ", factorTitle = "Factor i", widt
   const handleDistributionChange = (e) => {
     setDistributionType(e.target.value);
 
+    // Always set all the fields in the state, with unused ones defaulted to '' or 0
+    const defaultValues = { mean: '', stddev: '', min_val: '', max_val: '', mode: '' };
+
     if (e.target.value === "uniform") {
-      setValues({ factor_name: factorName, distribution_type: e.target.value, min_val: '', max_val: '' });
-      onFormChange({ factor_name: factorName, distribution_type: e.target.value, min_val: '', max_val: '' });
+      setValues({
+        ...defaultValues,  // Set all fields to default
+        min_val: values.min_val,  // Keep existing values if already filled
+        max_val: values.max_val,  // Keep existing values if already filled
+        distribution_type: e.target.value
+      });
     } else if (e.target.value === "normal") {
-      setValues({ factor_name: factorName, distribution_type: e.target.value, mean: '', stddev: '' });
-      onFormChange({ factor_name: factorName, distribution_type: e.target.value, mean: '', stddev: '' });
+      setValues({
+        ...defaultValues,
+        mean: values.mean,
+        stddev: values.stddev,
+        distribution_type: e.target.value
+      });
     } else if (e.target.value === "triangular") {
-      setValues({ factor_name: factorName, distribution_type: e.target.value, min_val: '', max_val: '', mode: '' });
-      onFormChange({ factor_name: factorName, distribution_type: e.target.value, min_val: '', max_val: '', mode: '' });
-    } else {
-      setValues({ factor_name: factorName, distribution_type: e.target.value });
-      onFormChange({ factor_name: factorName, distribution_type: e.target.value });
+      setValues({
+        ...defaultValues,
+        min_val: values.min_val,
+        max_val: values.max_val,
+        mode: values.mode,
+        distribution_type: e.target.value
+      });
     }
 
     setChartData(emptyChartData());
+    onFormChange({ ...values, distribution_type: e.target.value });
   };
 
   const handleInputChange = (e) => {
@@ -62,7 +76,7 @@ const GraphForm = ({ factorName = "factor_name ", factorTitle = "Factor i", widt
 
     const updatedValues = {
       ...values,
-      [name]: isNaN(parsedValue) ? '' : parsedValue // Check if the input is a valid number
+      [name]: isNaN(parsedValue) ? '' : parsedValue
     };
 
     setValues(updatedValues);
@@ -84,20 +98,20 @@ const GraphForm = ({ factorName = "factor_name ", factorTitle = "Factor i", widt
 
   const generateDistributionShape = () => {
     let data = [];
-    const numPoints = 100; // Number of points for the graph
+    const numPoints = 100;
 
     if (distributionType === 'normal' && values.mean && values.stddev) {
       const mean = parseFloat(values.mean);
       const stddev = parseFloat(values.stddev);
-      const startX = mean - 3 * stddev; // Start at mean - 3 * stddev
-      const endX = mean + 3 * stddev; // End at mean + 3 * stddev
-      const step = (endX - startX) / numPoints; // Step size between points
+      const startX = mean - 3 * stddev;
+      const endX = mean + 3 * stddev;
+      const step = (endX - startX) / numPoints;
 
-      const labels = Array.from({ length: numPoints }, (_, i) => (startX + i * step).toFixed(2)); // X-axis labels
+      const labels = Array.from({ length: numPoints }, (_, i) => (startX + i * step).toFixed(2));
 
       data = labels.map(x => {
-        const z = (x - mean) / stddev; // Standardize the value
-        return Math.exp(-0.5 * z * z) / (stddev * Math.sqrt(2 * Math.PI)); // PDF of Normal Distribution
+        const z = (x - mean) / stddev;
+        return Math.exp(-0.5 * z * z) / (stddev * Math.sqrt(2 * Math.PI));
       });
 
       setChartData({
@@ -115,7 +129,7 @@ const GraphForm = ({ factorName = "factor_name ", factorTitle = "Factor i", widt
     } else if (distributionType === 'uniform' && values.min_val && values.max_val) {
       const min_val = parseFloat(values.min_val);
       const max_val = parseFloat(values.max_val);
-      const uniformHeight = 1 / (max_val - min_val); // Height of the uniform PDF
+      const uniformHeight = 1 / (max_val - min_val);
       const labels = Array.from({ length: numPoints }, (_, i) => (min_val + ((max_val - min_val) / numPoints) * i).toFixed(2));
 
       data = labels.map(x => (x >= min_val && x <= max_val ? uniformHeight : 0));
@@ -288,8 +302,8 @@ const GraphForm = ({ factorName = "factor_name ", factorTitle = "Factor i", widt
                   },
                   x: {
                     type: 'linear',
-                    min: Math.min(...chartData.labels), // Dynamically adjust the min x-axis value
-                    max: Math.max(...chartData.labels), // Dynamically adjust the max x-axis value
+                    min: Math.min(...chartData.labels),
+                    max: Math.max(...chartData.labels),
                   }
                 }
               }}

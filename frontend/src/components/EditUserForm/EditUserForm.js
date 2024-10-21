@@ -1,20 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { TextField, Button, Box, Typography, Container, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import UserService from '../../apis/UserService'; // Assuming you have an API service
+import Cookies from 'js-cookie'; // Import js-cookie to read cookies
+import UserService from '../../apis/UserService';
 
-const EditUserForm = ({ userId }) => {
+const EditUserForm = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState(''); // New password field
+  const [isEditing, setIsEditing] = useState(false); // Editing mode state
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const navigate = useNavigate();
 
   // Fetch current user data on component mount
   useEffect(() => {
     const fetchUserData = async () => {
       try {
+        // Fetch the userId from the cookie
+        const userId = Cookies.get('userId');
+        if (!userId) {
+          setError('User ID not found in cookies.');
+          return;
+        }
+
         const user = await UserService.getUser(userId);
         setFirstName(user.first_name);
         setLastName(user.last_name);
@@ -25,26 +34,48 @@ const EditUserForm = ({ userId }) => {
     };
 
     fetchUserData();
-  }, [userId]);
+  }, []);
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    try {
-      await UserService.updateUser(userId, {
-        first_name: firstName,
-        last_name: lastName,
-        email: email,
-      });
+    const updatedData = {
+      first_name: firstName,
+      last_name: lastName,
+      email: email,
+    };
 
+    // If password is filled in, include it in the update
+    if (password) {
+      updatedData.password = password;
+    }
+
+    try {
+      // Fetch the userId from the cookie again to update the user
+      const userId = Cookies.get('userId');
+      if (!userId) {
+        setError('User ID not found in cookies.');
+        return;
+      }
+
+      await UserService.updateUser(userId, updatedData);
       setSuccess('User info updated successfully!');
-      setTimeout(() => {
-        navigate('/projects'); // Redirect after successful update
-      }, 2000);
+      setIsEditing(false); // Exit editing mode after success
     } catch (err) {
       setError('Error updating user data.');
     }
+  };
+
+  // Enable edit mode
+  const handleEditClick = () => {
+    setIsEditing(true);
+  };
+
+  // Cancel editing and revert changes
+  const handleCancelClick = () => {
+    setIsEditing(false);
+    // Optionally, reset fields back to the fetched user data
   };
 
   return (
@@ -78,50 +109,95 @@ const EditUserForm = ({ userId }) => {
           </Alert>
         )}
 
-        {/* First Name Input */}
-        <TextField
-          margin="normal"
-          required
-          fullWidth
-          id="firstName"
-          label="First Name"
-          name="firstName"
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
-        />
+        {/* First Name */}
+        {!isEditing ? (
+          <Typography sx={{ mb: 2 }}>First Name: {firstName}</Typography>
+        ) : (
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="firstName"
+            label="First Name"
+            name="firstName"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+          />
+        )}
 
-        {/* Last Name Input */}
-        <TextField
-          margin="normal"
-          required
-          fullWidth
-          id="lastName"
-          label="Last Name"
-          name="lastName"
-          value={lastName}
-          onChange={(e) => setLastName(e.target.value)}
-        />
+        {/* Last Name */}
+        {!isEditing ? (
+          <Typography sx={{ mb: 2 }}>Last Name: {lastName}</Typography>
+        ) : (
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="lastName"
+            label="Last Name"
+            name="lastName"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+          />
+        )}
 
-        {/* Email Input */}
-        <TextField
-          margin="normal"
-          required
-          fullWidth
-          id="email"
-          label="Email Address"
-          name="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        {/* Email */}
+        {!isEditing ? (
+          <Typography sx={{ mb: 2 }}>Email: {email}</Typography>
+        ) : (
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="email"
+            label="Email Address"
+            name="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        )}
 
-        <Button
-          type="submit"
-          fullWidth
-          variant="contained"
-          sx={{ mt: 3, mb: 2 }}
-        >
-          Save Changes
-        </Button>
+        {/* Password (Optional) */}
+        {isEditing && (
+          <TextField
+            margin="normal"
+            fullWidth
+            id="password"
+            label="New Password (Optional)"
+            name="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        )}
+
+        {/* Buttons for editing */}
+        {!isEditing ? (
+          <Button
+            variant="contained"
+            sx={{ mt: 3, mb: 2 }}
+            onClick={handleEditClick}
+          >
+            Edit Info
+          </Button>
+        ) : (
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+            <Button
+              type="submit"
+              variant="contained"
+              sx={{ mt: 3, mb: 2 }}
+            >
+              Save Changes
+            </Button>
+            <Button
+              variant="outlined"
+              sx={{ mt: 3, mb: 2 }}
+              onClick={handleCancelClick}
+            >
+              Cancel
+            </Button>
+          </Box>
+        )}
       </Box>
     </Container>
   );
