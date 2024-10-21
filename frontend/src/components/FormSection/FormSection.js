@@ -142,7 +142,42 @@ const FormSection = () => {
             onFormChange={(data) => handleFormChange('num_deals_year_1', data)}
           />
         </Grid>
-        {/* Add remaining forms */}
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='num_deals_year_2'
+            factorTitle="Number of Deals For Year 2"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('num_deals_year_2', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='num_deals_year_3'
+            factorTitle="Number of Deals For Year 3"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('num_deals_year_3', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='num_deals_year_4'
+            factorTitle="Number of Deals For Year 4"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('num_deals_year_4', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='num_deals_year_5'
+            factorTitle="Number of Deals For Year 5"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('num_deals_year_5', data)}
+          />
+        </Grid>
         <Grid item xs={12} md={6}>
           <GraphForm
             factorName='initial_market_size'

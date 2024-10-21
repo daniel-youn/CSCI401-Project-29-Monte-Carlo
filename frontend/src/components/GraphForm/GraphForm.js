@@ -296,6 +296,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
                 scales: {
                   y: {
                     beginAtZero: true, // Ensure no negative y-values
+                    display: false, // Hide the y-axis
                   },
                   x: {
                     type: 'linear',

@@ -65,7 +65,7 @@ const ProjectDashboard = () => {
         setCompletedProjects(completed);
 
         // Set admin flag if the user is an admin
-        setIsAdmin(userData.isAdmin);
+        setIsAdmin(userData.is_admin);
       } catch (error) {
         console.error('Error fetching user or projects:', error);
       }
@@ -78,9 +78,15 @@ const ProjectDashboard = () => {
     navigate('/create-project');
   };
 
+  // Updated function to handle clicking on a project
+  const handleProjectClick = (projectId) => {
+    // Navigate to the project page with the projectId in the URL
+    navigate(`/project-page/${projectId}/overview`);
+  };
+
   const renderProjectRows = (projects, isPending) => {
     return projects.map((project) => (
-      <StyledTableRow key={project.project_id}>
+      <StyledTableRow key={project.project_id} onClick={() => handleProjectClick(project.project_id)}>
         <TableCell>{project.project_name}</TableCell>
         <TableCell>{project.admin_user_id}</TableCell>
         <TableCell>{project.shared_users.length}</TableCell>

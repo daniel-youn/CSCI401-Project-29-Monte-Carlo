@@ -41,7 +41,7 @@ const RegistrationForm = () => {
         // Wait for 2 seconds before redirecting to login page
         setTimeout(() => {
           navigate('/');
-        }, 2000);
+        }, 1000);
       } catch (error) {
         setError('Error registering user.');
       }
