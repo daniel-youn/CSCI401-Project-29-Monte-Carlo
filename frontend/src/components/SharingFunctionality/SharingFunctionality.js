@@ -1,24 +1,30 @@
-import React, { useState } from 'react';
-import { Box, TextField, Button, Switch, FormControlLabel, Typography } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, TextField, Switch, FormControlLabel, Typography, Autocomplete, Button } from '@mui/material';
 
 const SharingFunctionality = ({ sharedMembers, setSharedMembers }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]); // Assuming you will replace with API call later
+  const [allUsers, setAllUsers] = useState([]);
 
-  // Simulated member list (would be fetched via API)
-  const allUsers = [
-    { id: 1, name: 'John Doe', email: 'john@example.com' },
-    { id: 2, name: 'Jane Smith', email: 'jane@example.com' },
-    { id: 3, name: 'Alice Johnson', email: 'alice@example.com' },
-  ];
+  // Fetch user data from API
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch('http://localhost:5001/api/user/users');
+        const data = await response.json();
+        // Extract relevant user information
+        const users = data.map((user) => ({
+          id: user.user_id,
+          name: `${user.first_name || ''} ${user.last_name || ''}`.trim(),
+          email: user.email,
+        }));
+        setAllUsers(users);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
 
-  const handleSearch = () => {
-    // Simulate search by filtering `allUsers` by the search query
-    const results = allUsers.filter(
-      (user) => user.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    setSearchResults(results);
-  };
+    fetchUsers();
+  }, []);
 
   const handleAddMember = (user) => {
     if (!sharedMembers.find((member) => member.id === user.id)) {
@@ -48,66 +54,69 @@ const SharingFunctionality = ({ sharedMembers, setSharedMembers }) => {
         Share Project
       </Typography>
 
-      {/* Search Input */}
-      <TextField
-        label="Search for Users"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        fullWidth
+      {/* Autocomplete for User Search */}
+      <Autocomplete
+        freeSolo
+        options={allUsers}
+        getOptionLabel={(option) => `${option.name} (${option.email})`}
+        onInputChange={(event, newInputValue) => setSearchQuery(newInputValue)}
+        renderInput={(params) => (
+          <TextField {...params} label="Search for Users" variant="outlined" fullWidth />
+        )}
+        renderOption={(props, option) => (
+          <li {...props} key={option.id} onClick={() => handleAddMember(option)}>
+            {option.name} ({option.email})
+          </li>
+        )}
+        sx={{ mt: 2 }}
       />
-      <Button onClick={handleSearch} variant="contained" 
-      sx={{
-        backgroundColor: 'white',
-        color: '#0b1225',  // White button with dark text
-        fontWeight: 'bold',
-        borderRadius: '5px',
-        '&:hover': {
-            backgroundColor: 'rgba(255, 255, 255, 0.8)',  // Slightly translucent white on hover
-        },
-        mt: 2
-        }}>
-        Search
-      </Button>
-
-      {/* Display Search Results */}
-      <Box mt={2}>
-        {searchResults.map((user) => (
-          <Box key={user.id} sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <Typography>{user.name} ({user.email})</Typography>
-            <Button onClick={() => handleAddMember(user)} variant="outlined">
-              Add
-            </Button>
-          </Box>
-        ))}
-      </Box>
 
       {/* Added Members List */}
       <Typography variant="h6" mt={4} align="left">
         Shared Members
       </Typography>
-      <Box mt={2}>
+      {sharedMembers.length > 0 ? (
+        <Box mt={2}>
         {sharedMembers.map((member) => (
-          <Box key={member.id} sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <Typography>{member.name} ({member.email})</Typography>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={member.crossCheck}
-                  onChange={() => toggleCrossCheck(member.id)}
-                />
-              }
-              label="Cross-Check Factors"
-            />
-            <Button
-              onClick={() => handleRemoveMember(member.id)}
-              variant="outlined"
-              color="error"
+            <Box
+            key={member.id}
+            sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}
             >
-              Remove
+            {/* Fixed width for member name and email */}
+            <Typography sx={{ width: '300px' }}>
+                {member.name} ({member.email})
+            </Typography>
+            
+            {/* Fixed width for the switch */}
+            <Box sx={{ width: '200px' }}>
+                <FormControlLabel
+                control={
+                    <Switch
+                    checked={member.crossCheck}
+                    onChange={() => toggleCrossCheck(member.id)}
+                    />
+                }
+                label="Cross-Check Factors"
+                />
+            </Box>
+            
+            {/* Fixed width for the button */}
+            <Button
+                onClick={() => handleRemoveMember(member.id)}
+                variant="outlined"
+                color="error"
+                sx={{ width: '100px' }}
+            >
+                Remove
             </Button>
-          </Box>
+            </Box>
         ))}
-      </Box>
+        </Box>
+      ) : (
+        <Typography variant="body1" color="textSecondary">
+          No members added yet. Use the search above to add members.
+        </Typography>
+      )}
     </Box>
   );
 };
