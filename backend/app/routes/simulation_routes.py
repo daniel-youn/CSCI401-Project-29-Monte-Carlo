@@ -173,3 +173,83 @@ def input_data():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
+@simulation_routes.route('/admin/input_data/<user_id>', methods=['POST'])
+def input_data(user_id):
+    # maybe store in db the simulation state like running, error, finished, etc
+    try:
+        user = db.users.find_one({'user_id': user_id}, {'_id': False})
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+        elif not user['is_admin']:
+            return jsonify({'message': 'User is not an admin'}), 401
+        
+    except ValidationError as ve:
+        return jsonify({'error': ve.messages}), 400
+    pass
+
+def normalFactorRunSim(simulation_id, project_id):
+    # Get simulation data
+    simulation = simulation_collection.find_one({'simulation_id': simulation_id}, {'_id': False})
+    if not simulation:
+        return jsonify({'message': 'Simulation not found'}), 404
+    
+    model_vars_ids_list = simulation['model_variables']
+    model_vars_list = []
+    for model_vars_id in model_vars_ids_list:
+        model_vars = db["model_variables"].find_one({'model_variables_id': model_vars_id}, {'_id': False})
+        if model_vars:
+            model_vars_list.append(model_vars)
+            
+    num_users = len(model_vars_list)
+    num_simulations = db["project"].find_one({'project_id': project_id}, {'_id': False})['num_simulations']
+    
+    def compute_for_year(year):
+        sim_data = []
+        for i in range(0, num_simulations):
+            #pick a user randomly
+            model = model_vars_list[np.random.randint(0, num_users)]
+            factors = model['factors']
+            # TODO: figure out if getting the data is done correctly
+            wtp_standard_dist = get_distribution(model, "willingness_to_pay_standard")
+            wtp_premium_dist = get_distribution(model, "willingness_to_pay_premium")
+            num_standard_users_dist = get_distribution(model, "num_standard_users_per_deal")
+            num_premium_users_dist = get_distribution(model, "num_premium_users_per_deal")
+            num_deals_dist = get_distribution(model, "num_deals_per_year" + str(year))
+            discount_dist = get_distribution(model, "expected_discount_per_deal")
+            
+            # TODO: store deal size somehere
+            deal_size = (wtp_standard_dist.rvs() * num_standard_users_dist.rvs()) + (wtp_premium_dist.rvs() * num_premium_users_dist.rvs())
+            year_revenue = deal_size * num_deals_dist.rvs() * (1 - discount_dist.rvs())
+            sim_data.append(year_revenue)
+            
+        return sim_data
+    
+    yearly_sim_data = []
+    for year in range(1, 6):
+        data = compute_for_year(year)
+        mean = np.mean(data)
+        median = np.median(data)
+        std_dev = np.std(data)
+        min_val = np.min(data)
+        max_val = np.max(data)
+        percentile_5 = np.percentile(data, 5)
+        percentile_95 = np.percentile(data, 95)
+        yearly_sim_data.append({
+            'mean': mean,
+            'median': median,
+            'std_dev': std_dev,
+            'min': min_val,
+            'max': max_val,
+            'percentile_5': percentile_5,
+            'percentile_95': percentile_95
+        });
+    
+    assert len(yearly_sim_data) == 5
+    # Store simulation data in output collection
+    output_id = db.outputs.insert_one({
+        'simulation_id': simulation_id,
+        'summary_statistics': yearly_sim_data
+    }).inserted_id
+        
+            
+    return yearly_sim_data
