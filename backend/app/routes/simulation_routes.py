@@ -148,6 +148,8 @@ def input_data():
                     {"simulation_id": normal_sim_id},
                     {"$set": {"model_variables": model_variable_ids}}
                 )
+                
+                # TODO: keep track that user has submitted form
         
         else:
             # Save the updated model variable back to the database
