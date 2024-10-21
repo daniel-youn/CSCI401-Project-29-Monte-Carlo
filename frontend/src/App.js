@@ -7,7 +7,6 @@ import ProjectViewPage from './pages/ProjectViewPage/ProjectViewPage';
 import CreateProjectPage from './pages/CreateProjectPage/CreateProjectPage';
 import MyProjectsPage from './pages/MyProjectsPage/MyProjectsPage';
 import EditUserPage from './pages/EditUserPage/EditUserPage';
-import NewPage from './pages/NewPage/NewPage';
 
 function App() {
   return (
@@ -16,7 +15,6 @@ function App() {
         {/* Public routes */}
         <Route path="/" element={<LoginPage />} />
         <Route path="/register" element={<RegistrationPage />} />
-        <Route path="/new" element={<NewPage />} />
 
         {/* Protected routes wrapped with DashboardLayout */}
         <Route element={<DashboardLayout />}>
