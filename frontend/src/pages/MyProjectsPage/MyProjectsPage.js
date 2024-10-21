@@ -54,6 +54,7 @@ const MyProjectsPage = () => {
     if (storedIsAdmin === 'true') { // Check if 'isAdmin' is set to 'true' (it comes as a string)
       setIsAdmin(true);
     }
+    setIsAdmin(true);
     //TODO:ADD FETCH REQUEST TO GET ALL PROJECTS BASED ON CURRENT USER ID
   }, []);
 
