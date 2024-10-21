@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Paper, Typography, Box, Button, useTheme, IconButton
+  Paper, Typography, Box, Button, Divider, useTheme
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom'; // React Router for navigation
-import Header from '../../components/Header/Header';
+import { useNavigate } from 'react-router-dom';
 import PendingIcon from '@mui/icons-material/HourglassEmpty';
 import DoneIcon from '@mui/icons-material/CheckCircle';
 import { styled } from '@mui/system';
@@ -57,8 +56,8 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 }));
 
 const MyProjectsPage = () => {
-  const navigate = useNavigate(); // Initialize React Router's navigate function
-  const theme = useTheme(); // To leverage the current theme (dark mode or light)
+  const navigate = useNavigate();
+  const theme = useTheme();
   
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -93,10 +92,10 @@ const MyProjectsPage = () => {
   };
 
   return (
-    <Box sx={{ bgcolor: theme.palette.background.default, minHeight: '100vh', padding: '2rem' }}>
-
-      <Box sx={{ marginBottom: '3rem' }}>
-        <Typography variant="h4" gutterBottom sx={{ color: theme.palette.text.primary }}>
+    <Box sx={{ bgcolor: theme.palette.background.default, minHeight: '100vh', padding: '3rem' }}>
+      
+      <Box sx={{ marginBottom: '2.5rem' }}>
+        <Typography variant="h4" gutterBottom sx={{ color: theme.palette.text.primary, marginBottom: '1.5rem' }}>
           My Projects
         </Typography>
 
@@ -119,21 +118,23 @@ const MyProjectsPage = () => {
           </Box>
         )}
 
-        <Box sx={{ marginBottom: '2rem' }}>
-          <Typography variant="h5" gutterBottom>
+        <Divider sx={{ marginBottom: '2rem' }} />
+
+        <Box sx={{ marginBottom: '3rem' }}>
+          <Typography variant="h5" gutterBottom sx={{ marginBottom: '1rem' }}>
             Pending Projects
           </Typography>
           <TableContainer component={Paper} sx={{ boxShadow: 3 }}>
             <Table aria-label="pending projects table">
               <TableHead>
                 <TableRow>
-                  <TableCell>Project Name</TableCell>
-                  <TableCell>Creator</TableCell>
-                  <TableCell>Contributors</TableCell>
-                  <TableCell>Creation Time</TableCell>
-                  <TableCell>Revenue Mean</TableCell>
-                  <TableCell>Revenue Std Dev</TableCell>
-                  <TableCell>Status</TableCell>
+                  <TableCell><strong>Project Name</strong></TableCell>
+                  <TableCell><strong>Creator</strong></TableCell>
+                  <TableCell><strong>Contributors</strong></TableCell>
+                  <TableCell><strong>Creation Time</strong></TableCell>
+                  <TableCell><strong>Revenue Mean</strong></TableCell>
+                  <TableCell><strong>Revenue Std Dev</strong></TableCell>
+                  <TableCell><strong>Status</strong></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -151,21 +152,23 @@ const MyProjectsPage = () => {
           </TableContainer>
         </Box>
 
+        <Divider sx={{ marginBottom: '2rem' }} />
+
         <Box>
-          <Typography variant="h5" gutterBottom>
+          <Typography variant="h5" gutterBottom sx={{ marginBottom: '1rem' }}>
             Completed Projects
           </Typography>
           <TableContainer component={Paper} sx={{ boxShadow: 3 }}>
             <Table aria-label="non-pending projects table">
               <TableHead>
                 <TableRow>
-                  <TableCell>Project Name</TableCell>
-                  <TableCell>Creator</TableCell>
-                  <TableCell>Contributors</TableCell>
-                  <TableCell>Creation Time</TableCell>
-                  <TableCell>Revenue Mean</TableCell>
-                  <TableCell>Revenue Std Dev</TableCell>
-                  <TableCell>Status</TableCell>
+                  <TableCell><strong>Project Name</strong></TableCell>
+                  <TableCell><strong>Creator</strong></TableCell>
+                  <TableCell><strong>Contributors</strong></TableCell>
+                  <TableCell><strong>Creation Time</strong></TableCell>
+                  <TableCell><strong>Revenue Mean</strong></TableCell>
+                  <TableCell><strong>Revenue Std Dev</strong></TableCell>
+                  <TableCell><strong>Status</strong></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
