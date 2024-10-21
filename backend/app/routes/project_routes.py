@@ -34,7 +34,7 @@ def create_project():
         simulations = [
             {
                 "user_id": data['admin_user_id'],
-                "output_id": str(ObjectId()),  # Placeholder for output_id
+                "output_id": "",  # Placeholder for output_id
                 "project_id": str(inserted_project_id),  # Set project_id now that project is created
                 "model_variables": [],  # Empty initially
                 "status": "pending",
@@ -42,7 +42,7 @@ def create_project():
             },
             {
                 "user_id": data['admin_user_id'],
-                "output_id": str(ObjectId()),  # Placeholder for output_id
+                "output_id": "",  # Placeholder for output_id
                 "project_id": str(inserted_project_id),  # Set project_id
                 "model_variables": [],  # Empty initially
                 "status": "pending",
@@ -50,7 +50,7 @@ def create_project():
             },
             {
                 "user_id": data['admin_user_id'],
-                "output_id": str(ObjectId()),  # Placeholder for output_id
+                "output_id": "",  # Placeholder for output_id
                 "project_id": str(inserted_project_id),  # Set project_id
                 "model_variables": [],  # Empty initially
                 "status": "pending",
@@ -62,6 +62,7 @@ def create_project():
         for sim in simulations:
             simulation_schema.load(sim)  # Validate the simulation data
             inserted_simulation_id = simulation_collection.insert_one(sim).inserted_id
+            # TODO: we never update the db with this?
             sim['simulation_id'] = str(inserted_simulation_id)  # Set the simulation ID to the MongoDB ID
         
         # Update the project with the simulation IDs
@@ -78,6 +79,9 @@ def create_project():
                 "cross_check_sim_id": project_data['cross_check_sim_id']
             }}
         )
+        
+        # TODO: update user projects
+        
 
         return jsonify({"message": "Project and simulations created", "project_id": str(inserted_project_id)}), 201
 

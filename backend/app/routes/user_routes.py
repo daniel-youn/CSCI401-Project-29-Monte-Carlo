@@ -14,20 +14,23 @@ user_collection = db['users']
 def create_user():
     data = request.json
     try:
-        # Load the user data from the request
-        user_data = user_schema.load(data)
-
-        # Explicitly set user_id as the email
-        user_data['user_id'] = user_data['email']
-        user_data['is_admin'] = False
-
+        # Create a local user object based on user input
+        user_data = {
+            'first_name': data['first_name'],
+            'last_name': data['last_name'],
+            'email': data['email'],
+            'user_id': data['email'],  # Set user_id to the email
+            'password': generate_password_hash(data['password']),  # Hash the password
+            'isAdmin': False,  # Default value for is_admin
+            'simulations': [],  # Initialize with an empty list of simulations
+            'settings': {},  # Initialize with empty settings
+            'projects': {}  # Initialize with empty projects
+        }
+        
         # Check for existing user by email (now user_id)
         existing_user = user_collection.find_one({'user_id': user_data['user_id']})
         if existing_user:
             return jsonify({'message': 'User already exists'}), 409  # Conflict status code
-
-        # Hash the password
-        user_data['password'] = generate_password_hash(user_data['password'])
 
         # Insert into MongoDB
         result = user_collection.insert_one(user_data)

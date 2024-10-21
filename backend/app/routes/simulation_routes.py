@@ -172,20 +172,6 @@ def input_data():
         return jsonify({'error': ve.messages}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
-@simulation_routes.route('/admin/input_data/<user_id>', methods=['POST'])
-def input_data(user_id):
-    # maybe store in db the simulation state like running, error, finished, etc
-    try:
-        user = db.users.find_one({'user_id': user_id}, {'_id': False})
-        if not user:
-            return jsonify({'message': 'User not found'}), 404
-        elif not user['is_admin']:
-            return jsonify({'message': 'User is not an admin'}), 401
-        
-    except ValidationError as ve:
-        return jsonify({'error': ve.messages}), 400
-    pass
 
 def normalFactorRunSim(simulation_id, project_id):
     # Get simulation data
