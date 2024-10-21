@@ -127,17 +127,19 @@ def input_data():
                 "simulation_id": normal_sim_id,
                 "factors": factors,
             }
-            result = model_variables_collection.insert_one(new_model_variable)
+            model_variables_collection.insert_one(new_model_variable)
         else:
             # Save the updated model variable back to the database
-            model_var_id = model_vars["_id"]
+            # model_var_id = model_vars["_id"]
             model_variables_collection.update_one(
-                {"_id": model_var_id},  # Use the _id for the query
+                {"user_id": user_id, "simulation_id": normal_sim_id},  # Use the _id for the query
                 {"$set": {"factors": factors}}  # Update the factors
             )
             
+        print("11111111111")
         # TODO: call run simulation function here
         normalFactorRunSim(normal_sim_id, project_id)
+        print("222222222222")
         
         access_data = project.get("access_data", {})
         cross_check_access = access_data.get("cross_check_access", False)
