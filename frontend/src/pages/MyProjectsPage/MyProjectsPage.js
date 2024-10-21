@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Paper, Typography, Box, Button, Divider, useTheme
+  Paper, Typography, Box, Button, Divider, useTheme, IconButton
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import PendingIcon from '@mui/icons-material/HourglassEmpty';
@@ -59,7 +59,7 @@ const MyProjectsPage = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(true);
 
   useEffect(() => {
     const storedIsAdmin = sessionStorage.getItem('isAdmin');
@@ -95,12 +95,12 @@ const MyProjectsPage = () => {
     <Box sx={{ bgcolor: theme.palette.background.default, minHeight: '100vh', padding: '3rem' }}>
       
       <Box sx={{ marginBottom: '2.5rem' }}>
-        <Typography variant="h4" gutterBottom sx={{ color: theme.palette.text.primary, marginBottom: '1.5rem' }}>
-          My Projects
-        </Typography>
-
-        {isAdmin && (
-          <Box sx={{ position: 'absolute', top: '2rem', right: '2rem' }}>
+        {/* Flex container for title and button */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <Typography variant="h4" sx={{ color: theme.palette.text.primary }}>
+            My Projects
+          </Typography>
+          {isAdmin && (
             <Button
               variant="contained"
               color="primary"
@@ -113,10 +113,10 @@ const MyProjectsPage = () => {
                 }
               }}
             >
-              Admin Dashboard
+              NEW PROJECT
             </Button>
-          </Box>
-        )}
+          )}
+        </Box>
 
         <Divider sx={{ marginBottom: '2rem' }} />
 
