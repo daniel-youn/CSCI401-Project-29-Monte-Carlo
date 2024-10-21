@@ -20,7 +20,11 @@ class UserSchema(Schema):
     isAdmin = fields.Bool(required=True)
     projects = fields.Dict(
         keys=fields.Str(validate=validate.Length(equal=24)),  # project_id as key
-        values=fields.Nested(AccessDataSchema),  # AccessData as value
+        values=fields.List(
+            fields.Nested(AccessDataSchema),
+            fields.Str(),
+            validate=validate.Length(equal=2)  # Ensure the tuple structure (AccessData, string)
+        ),
         required=True
     )
 
