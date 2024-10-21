@@ -19,6 +19,7 @@ def create_user():
 
         # Explicitly set user_id as the email
         user_data['user_id'] = user_data['email']
+        user_data['isAdmin'] = False
 
         # Check for existing user by email (now user_id)
         existing_user = user_collection.find_one({'user_id': user_data['user_id']})
