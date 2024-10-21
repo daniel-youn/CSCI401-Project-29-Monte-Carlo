@@ -11,10 +11,10 @@ class ProjectsSchema(Schema):
     revenue_std_5th_year = fields.Float(required=True)
 
     # List of users the project is shared to (user IDs as strings)
-    shared_users = fields.List(fields.Str(validate=validate.Length(equal=24)), required=True)
+    shared_users = fields.List(fields.Str(), required=True)
     
     # Admin user ID (string)
-    admin_user_id = fields.Str(validate=validate.Length(equal=24), required=True)
+    admin_user_id = fields.Str(required=True)
 
     # Simulation IDs (Normal, Admin, Cross-Check)
     normal_sim_id = fields.Str(validate=validate.Length(equal=24), required=True)

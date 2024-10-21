@@ -10,6 +10,7 @@ from app import db
 project_routes = Blueprint('project_routes', __name__)
 projects_collection = db['project_schema']
 simulation_collection = db['simulations']
+user_collection = db['users']
 
 @project_routes.route('/projects', methods=['POST'])
 def create_project():
@@ -33,28 +34,28 @@ def create_project():
         # Step 3: Create simulation entries for the project
         simulations = [
             {
-                "user_id": data['admin_user_id'],
                 "output_id": "",  # Placeholder for output_id
                 "project_id": str(inserted_project_id),  # Set project_id now that project is created
                 "model_variables": [],  # Empty initially
                 "status": "pending",
-                "simulation_type": "normal"
+                "simulation_type": "normal",
+                "simulation_id": "temp"
             },
             {
-                "user_id": data['admin_user_id'],
                 "output_id": "",  # Placeholder for output_id
                 "project_id": str(inserted_project_id),  # Set project_id
                 "model_variables": [],  # Empty initially
                 "status": "pending",
-                "simulation_type": "admin"
+                "simulation_type": "admin",
+                "simulation_id": "temp"
             },
             {
-                "user_id": data['admin_user_id'],
                 "output_id": "",  # Placeholder for output_id
                 "project_id": str(inserted_project_id),  # Set project_id
                 "model_variables": [],  # Empty initially
                 "status": "pending",
-                "simulation_type": "cross-check"
+                "simulation_type": "cross-check",
+                "simulation_id": "temp"
             }
         ]
 
@@ -64,6 +65,11 @@ def create_project():
             inserted_simulation_id = simulation_collection.insert_one(sim).inserted_id
             # TODO: we never update the db with this?
             sim['simulation_id'] = str(inserted_simulation_id)  # Set the simulation ID to the MongoDB ID
+            # Update the inserted simulation document with the simulation ID
+            simulation_collection.update_one(
+                {"_id": inserted_simulation_id},
+                {"$set": {"simulation_id": str(inserted_simulation_id)}}
+            )
         
         # Update the project with the simulation IDs
         project_data['normal_sim_id'] = str(simulations[0]['simulation_id'])
@@ -81,7 +87,47 @@ def create_project():
         )
         
         # TODO: update user projects
-        
+        project_data['shared_users']
+        for user_id in project_data['shared_users']:
+            # Create access data with default values
+            access_data = {
+                "cross_check_access": False,  # Default value
+                "form_submitted": False,       # Default value
+                "is_admin": False               # Default value
+            }
+
+            # Prepare the project info to be added to the user
+            project_info = {
+                "project_id": str(inserted_project_id),
+                "access_data": access_data
+            }
+
+            # Update the user's projects in the database
+            user_collection.update_one(
+                {"user_id": user_id},
+                {"$set": {f"projects.{inserted_project_id}": project_info}},  # Use dot notation to set the new project
+                upsert=True  # Create a new document if no user found
+            )
+            
+        # Create access data with default values
+        access_data = {
+            "cross_check_access": False,  # Default value
+            "form_submitted": False,       # Default value
+            "is_admin": True               # Default value
+        }
+
+        # Prepare the project info to be added to the user
+        project_info = {
+            "project_id": str(inserted_project_id),
+            "access_data": access_data
+        }
+
+        # Update the user's projects in the database
+        user_collection.update_one(
+            {"user_id": project_data['admin_user_id']},
+            {"$set": {f"projects.{inserted_project_id}": project_info}},  # Use dot notation to set the new project
+            upsert=True  # Create a new document if no user found
+        )
 
         return jsonify({"message": "Project and simulations created", "project_id": str(inserted_project_id)}), 201
 
