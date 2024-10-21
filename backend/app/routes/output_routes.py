@@ -67,3 +67,17 @@ def get_all_outputs():
 def delete_all_outputs():
     result = output_collection.delete_many({})  # This deletes all documents in the collection
     return jsonify({'message': f'{result.deleted_count} outputs deleted successfully'}), 200
+
+# 7. Get output by simulation_id
+@output_routes.route('/outputs/simulation/<simulation_id>', methods=['GET'])
+def get_output_by_simulation_id(simulation_id):
+    try:
+        # Find all outputs with the given simulation_id
+        outputs = list(output_collection.find({'simulation_id': simulation_id}, {'_id': False}))
+
+        if outputs:
+            return jsonify(outputs), 200
+        else:
+            return jsonify({'message': 'No outputs found for the given simulation ID'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
