@@ -116,7 +116,7 @@ const ProjectView = () => {
             padding: '1rem',
             borderRadius: '4px',
             boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-            maxHeight: '600px',
+            maxHeight: '900px',
             overflowY: 'auto',
           }}
         >
@@ -126,6 +126,54 @@ const ProjectView = () => {
           <Box className="factors-content" sx={{ marginBottom: '2rem' }}>
             <Typography variant="subtitle1" sx={{ color: '#D5D5D5' }}>
               Factor 1
+            </Typography>
+            <Box className="chart-container" sx={{ marginTop: '1rem' }}>
+              <Line data={chartData} options={chartOptions} />
+            </Box>
+          </Box>
+          <Box className="factors-content">
+            <Typography variant="subtitle1" sx={{ color: '#D5D5D5' }}>
+              Factor 2
+            </Typography>
+            <Box className="chart-container" sx={{ marginTop: '1rem' }}>
+              <Line data={chartData} options={chartOptions} />
+            </Box>
+          </Box>
+          <Box className="factors-content">
+            <Typography variant="subtitle1" sx={{ color: '#D5D5D5' }}>
+              Factor 2
+            </Typography>
+            <Box className="chart-container" sx={{ marginTop: '1rem' }}>
+              <Line data={chartData} options={chartOptions} />
+            </Box>
+          </Box>
+          <Box className="factors-content">
+            <Typography variant="subtitle1" sx={{ color: '#D5D5D5' }}>
+              Factor 2
+            </Typography>
+            <Box className="chart-container" sx={{ marginTop: '1rem' }}>
+              <Line data={chartData} options={chartOptions} />
+            </Box>
+          </Box>
+          <Box className="factors-content">
+            <Typography variant="subtitle1" sx={{ color: '#D5D5D5' }}>
+              Factor 2
+            </Typography>
+            <Box className="chart-container" sx={{ marginTop: '1rem' }}>
+              <Line data={chartData} options={chartOptions} />
+            </Box>
+          </Box>
+          <Box className="factors-content">
+            <Typography variant="subtitle1" sx={{ color: '#D5D5D5' }}>
+              Factor 2
+            </Typography>
+            <Box className="chart-container" sx={{ marginTop: '1rem' }}>
+              <Line data={chartData} options={chartOptions} />
+            </Box>
+          </Box>
+          <Box className="factors-content">
+            <Typography variant="subtitle1" sx={{ color: '#D5D5D5' }}>
+              Factor 2
             </Typography>
             <Box className="chart-container" sx={{ marginTop: '1rem' }}>
               <Line data={chartData} options={chartOptions} />
