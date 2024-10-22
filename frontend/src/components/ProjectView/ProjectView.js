@@ -111,7 +111,7 @@ const ProjectView = () => {
       }
     ],
   };
-  
+
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false, // This ensures that the chart adjusts to the parent container
@@ -157,14 +157,14 @@ const ProjectView = () => {
       },
     },
   };
-      
+
   const renderOverview = () => (
     <Box sx={{ padding: '2rem' }}>
       {/* Project Title */}
       <Typography variant="h4" sx={{ marginBottom: '2rem', color: '#fff' }}>
         {projectData?.project_name || 'Loading...'}
       </Typography>
-      
+
       {/* Content Row */}
       <Box sx={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
         {/* Aggregated Factors Column */}
@@ -186,7 +186,7 @@ const ProjectView = () => {
               {Array.from({ length: 12 }).map((_, index) => (
                 <Box key={index} sx={{ height: '200px', width: '100%' }}>
                   <AggregateFactorGraph
-                    factorTitle={`Factor ${index + 1}`}
+                    factorTitle={`j ${index + 1}`}
                     distributionType="normal"
                     values={{ mean: Math.random(), stddev: Math.random() }} // Placeholder data
                   />
@@ -195,7 +195,7 @@ const ProjectView = () => {
             </Box>
           </Box>
         </Box>
-  
+
         {/* Simulation Summary Column */}
         <Box
           sx={{
