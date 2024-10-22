@@ -69,15 +69,19 @@ const ProjectView = () => {
         const projectResponse = await fetch(`http://localhost:5001/api/project/projects/${projectId}`);
         const projectData = await projectResponse.json();
         setProjectData(projectData);
-
-        // Determine which simulation ID to use (either hardcoded or from projectData)
-        const simId = "6716c590796d87b86413bc38";  // Hardcoded simId
-        // const simId = projectData["normal_sim_id"]; // Use this if normal_sim_id is available in projectData
-
+    
+        // Get simId from the projectResponse
+        const simId = projectData.normal_sim_id;  // Use the normal_sim_id from the project data
+    
+        if (!simId) {
+          console.error('No normal_sim_id found in project data');
+          return;
+        }
+    
         // Fetch normal simulation data using simId
         const simulationResponse = await fetch(`http://localhost:5001/api/output/outputs/simulation/${simId}`);
         const simulationData = await simulationResponse.json();
-
+    
         // Assuming the API appends data, use the last chunk
         const lastSimulation = simulationData[simulationData.length - 1];
         setNormalSimOutput(lastSimulation);
@@ -85,7 +89,7 @@ const ProjectView = () => {
         console.error('Error fetching project or simulation data:', error);
       }
     };
-
+    
     fetchProjectData();
     fetchAggregateDistribution();
     //TODO:REMOVE
