@@ -4,14 +4,11 @@ import {
   Paper, Typography, Box, Button, Divider, useTheme
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import PendingIcon from '@mui/icons-material/HourglassEmpty';
-import DoneIcon from '@mui/icons-material/CheckCircle';
 import { styled } from '@mui/system';
 import Cookies from 'js-cookie';
 import axios from 'axios';
 import moment from 'moment';
 
-// Styled table row for hover effect
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '&:hover': {
     backgroundColor: theme.palette.action.hover,
@@ -22,19 +19,17 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 const ProjectDashboard = () => {
   const navigate = useNavigate();
   const theme = useTheme();
+  const [projects, setProjects] = useState([]);
   const [pendingProjects, setPendingProjects] = useState([]);
   const [completedProjects, setCompletedProjects] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
-
+  const [projectsWithCross, setProjectsWithCross] = useState(new Set())
   // Fetch user data and projects on component mount
   useEffect(() => {
     const fetchUserAndProjects = async () => {
       try {
         // Get user ID from cookies
         const userId = Cookies.get('userId');
-
-        console.log('userId:', userId);
-
         if (!userId) {
           console.error('No user ID found in session');
           return;
@@ -43,11 +38,17 @@ const ProjectDashboard = () => {
         // Fetch user data
         const userResponse = await axios.get(`http://localhost:5001/api/user/users/${userId}`);
         const userData = userResponse.data;
-
-        console.log('userData:', userData);
-
         // Parse the user's projects
-        const projectPromises = Object.keys(userData.projects).map(async (projectId) => {
+
+        const projectsWithCrossCheckAccess = Object.values(userData.projects)
+          .filter((project) => project.access_data.cross_check_access)
+          .map((project) => ({
+            project_id: project.project_id,
+            hasCrossCheckAccess: project.access_data.cross_check_access,
+          }));
+        setProjectsWithCross(new Set(projectsWithCrossCheckAccess))
+        const projectPromises = Object.keys(userData.projects).map(async ([projectId, project]) => {
+
           const projectResponse = await axios.get(`http://localhost:5001/api/project/projects/${projectId}`);
           return {
             ...projectResponse.data,
@@ -57,12 +58,15 @@ const ProjectDashboard = () => {
 
         const projects = await Promise.all(projectPromises);
 
-        // Separate projects into pending and completed based on form_submitted
-        const pending = projects.filter((project) => !project.form_submitted);
-        const completed = projects.filter((project) => project.form_submitted);
-
-        setPendingProjects(pending);
-        setCompletedProjects(completed);
+        // Separate projects into pending and completed based on form_submitted if not an Admin
+        if (userData.is_admin) {
+          setProjects(projects); // Admins don't fill out forms, so just display all projects
+        } else {
+          const pending = projects.filter((project) => !project.form_submitted);
+          const completed = projects.filter((project) => project.form_submitted);
+          setPendingProjects(pending);
+          setCompletedProjects(completed);
+        }
 
         // Set admin flag if the user is an admin
         setIsAdmin(userData.is_admin);
@@ -74,31 +78,40 @@ const ProjectDashboard = () => {
     fetchUserAndProjects();
   }, []);
 
-  const handleAdminButtonClick = () => {
-    navigate('/create-project');
+  // Handle clicking on a project based on user role
+  //TODO: PASS BOOLEAN INDICATING THAT WE HAVE PERMS FOR CROSS CHECK FACTORS
+  const handleProjectClick = (projectId, isFormSubmitted) => {
+    if (isAdmin || isFormSubmitted) {
+      // If the user is an admin or the form has been submitted, go to the Project View Page
+      navigate(`/project-page/${projectId}/overview`);
+    } else {
+      // Otherwise, go to the Form Page (for pending projects)
+      if (projectsWithCross.has(projectId)) {
+        navigate(`/form/${projectId}/${true}`);
+      }
+      else {
+
+      }
+      navigate(`/form/${projectId}/${false}`);
+    }
   };
 
-  // Updated function to handle clicking on a project
-  const handleProjectClick = (projectId) => {
-    // Navigate to the project page with the projectId in the URL
-    navigate(`/project-page/${projectId}/overview`);
-  };
-
-  const renderProjectRows = (projects, isPending) => {
+  const renderProjectRows = (projects) => {
     return projects.map((project) => (
-      <StyledTableRow key={project.project_id} onClick={() => handleProjectClick(project.project_id)}>
+      <StyledTableRow 
+        key={project.project_id} 
+        onClick={() => handleProjectClick(project.project_id, project.form_submitted)}
+      >
         <TableCell>{project.project_name}</TableCell>
         <TableCell>{project.admin_user_id}</TableCell>
         <TableCell>{project.shared_users.length}</TableCell>
         <TableCell>{moment(project.creation_time).format('YYYY-MM-DD')}</TableCell>
         <TableCell>${project.revenue_mean_5th_year.toLocaleString()}</TableCell>
         <TableCell>${project.revenue_std_5th_year.toLocaleString()}</TableCell>
-        <TableCell>
-          {isPending ? <PendingIcon color="warning" /> : <DoneIcon color="success" />}
-        </TableCell>
       </StyledTableRow>
     ));
   };
+  
 
   return (
     <Box sx={{ bgcolor: theme.palette.background.default, minHeight: '100vh', padding: '3rem' }}>
@@ -111,15 +124,15 @@ const ProjectDashboard = () => {
             <Button
               variant="contained"
               color="primary"
-              onClick={handleAdminButtonClick}
+              onClick={() => navigate('/create-project')}
               sx={{
                 backgroundColor: 'white',
-                color: '#0b1225',  // White button with dark text
+                color: '#0b1225',
                 fontWeight: 'bold',
                 borderRadius: '5px',
                 '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.8)',  // Slightly translucent white on hover
-                }
+                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                },
               }}
             >
               NEW PROJECT
@@ -129,12 +142,10 @@ const ProjectDashboard = () => {
 
         <Divider sx={{ marginBottom: '2rem' }} />
 
-        <Box sx={{ marginBottom: '3rem' }}>
-          <Typography variant="h5" gutterBottom sx={{ marginBottom: '1rem' }}>
-            Pending Projects
-          </Typography>
+        {/* Display projects for Admin */}
+        {isAdmin ? (
           <TableContainer component={Paper} sx={{ boxShadow: 3 }}>
-            <Table aria-label="pending projects table">
+            <Table aria-label="all projects table">
               <TableHead>
                 <TableRow>
                   <TableCell><strong>Project Name</strong></TableCell>
@@ -143,57 +154,88 @@ const ProjectDashboard = () => {
                   <TableCell><strong>Creation Time</strong></TableCell>
                   <TableCell><strong>Revenue Mean</strong></TableCell>
                   <TableCell><strong>Revenue Std Dev</strong></TableCell>
-                  <TableCell><strong>Status</strong></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {pendingProjects.length > 0 ? (
-                  renderProjectRows(pendingProjects, true)
+                {projects.length > 0 ? (
+                  renderProjectRows(projects)
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">
-                      No pending projects found.
+                    <TableCell colSpan={6} align="center">
+                      No projects found.
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </TableContainer>
-        </Box>
+        ) : (
+          <>
+            {/* Pending Projects for Stakeholders */}
+            <Box sx={{ marginBottom: '3rem' }}>
+              <Typography variant="h5" gutterBottom sx={{ marginBottom: '1rem' }}>
+                Pending Projects
+              </Typography>
+              <TableContainer component={Paper} sx={{ boxShadow: 3 }}>
+                <Table aria-label="pending projects table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell><strong>Project Name</strong></TableCell>
+                      <TableCell><strong>Creator</strong></TableCell>
+                      <TableCell><strong>Contributors</strong></TableCell>
+                      <TableCell><strong>Creation Time</strong></TableCell>
+                      <TableCell><strong>Revenue Mean</strong></TableCell>
+                      <TableCell><strong>Revenue Std Dev</strong></TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {pendingProjects.length > 0 ? (
+                      renderProjectRows(pendingProjects)
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} align="center">
+                          No pending projects found.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
 
-        <Divider sx={{ marginBottom: '2rem' }} />
-
-        <Box>
-          <Typography variant="h5" gutterBottom sx={{ marginBottom: '1rem' }}>
-            Completed Projects
-          </Typography>
-          <TableContainer component={Paper} sx={{ boxShadow: 3 }}>
-            <Table aria-label="completed projects table">
-              <TableHead>
-                <TableRow>
-                  <TableCell><strong>Project Name</strong></TableCell>
-                  <TableCell><strong>Creator</strong></TableCell>
-                  <TableCell><strong>Contributors</strong></TableCell>
-                  <TableCell><strong>Creation Time</strong></TableCell>
-                  <TableCell><strong>Revenue Mean</strong></TableCell>
-                  <TableCell><strong>Revenue Std Dev</strong></TableCell>
-                  <TableCell><strong>Status</strong></TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {completedProjects.length > 0 ? (
-                  renderProjectRows(completedProjects, false)
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center">
-                      No completed projects found.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
+            {/* Completed Projects for Stakeholders */}
+            <Box>
+              <Typography variant="h5" gutterBottom sx={{ marginBottom: '1rem' }}>
+                Completed Projects
+              </Typography>
+              <TableContainer component={Paper} sx={{ boxShadow: 3 }}>
+                <Table aria-label="completed projects table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell><strong>Project Name</strong></TableCell>
+                      <TableCell><strong>Creator</strong></TableCell>
+                      <TableCell><strong>Contributors</strong></TableCell>
+                      <TableCell><strong>Creation Time</strong></TableCell>
+                      <TableCell><strong>Revenue Mean</strong></TableCell>
+                      <TableCell><strong>Revenue Std Dev</strong></TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {completedProjects.length > 0 ? (
+                      renderProjectRows(completedProjects)
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} align="center">
+                          No completed projects found.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          </>
+        )}
       </Box>
     </Box>
   );

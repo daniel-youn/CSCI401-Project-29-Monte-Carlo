@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Box, TextField, Button, Typography, Container, useTheme } from '@mui/material';
-import SharingFunctionality from '../SharingFunctionality/SharingFunctionality'; // Import Sharing Functionality component
-import Cookies from 'js-cookie'; // Import js-cookie to retrieve the userId
+import SharingFunctionality from '../SharingFunctionality/SharingFunctionality';
+import Cookies from 'js-cookie';
 
 const CreateProjectForm = () => {
   const [projectName, setProjectName] = useState('');
-  const [numSimulations, setNumSimulations] = useState('');
-  const [sharedMembers, setSharedMembers] = useState([]); // State to track added members
+  const [numSimulations, setNumSimulations] = useState(0);
+  const [sharedMembers, setSharedMembers] = useState([]); 
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
-  const [userId, setUserId] = useState(null); // State to store the userId from cookies
+  const [userId, setUserId] = useState(null); 
 
-  const theme = useTheme(); // For consistent theme application
+  const theme = useTheme();
 
-  // Get userId from cookies when the component mounts
   useEffect(() => {
-    const storedUserId = Cookies.get('userId'); // Get the userId from cookies
+    const storedUserId = Cookies.get('userId');
     if (storedUserId) {
       setUserId(storedUserId);
     }
@@ -29,12 +28,14 @@ const CreateProjectForm = () => {
       return;
     }
 
-    // Data to send to the backend
+    // Log sharedMembers to check the format before sending
+    console.log('sharedMembers before sending:', sharedMembers);
+
     const projectData = {
       project_name: projectName,
       num_simulations: numSimulations,
       shared_users: sharedMembers,
-      admin_user_id: userId, // Use userId from cookies
+      admin_user_id: userId,
     };
 
     try {
@@ -74,7 +75,6 @@ const CreateProjectForm = () => {
             Create a New Project
           </Typography>
 
-          {/* Project Name Input */}
           <TextField
             label="Project Name"
             value={projectName}
@@ -83,34 +83,32 @@ const CreateProjectForm = () => {
             fullWidth
           />
 
-          {/* Number of Simulations Input */}
           <TextField
             label="Number of Simulations"
             value={numSimulations}
-            onChange={(e) => setNumSimulations(e.target.value)}
+            onChange={(e) => setNumSimulations(parseInt(e.target.value, 10) || 0)}
             type="number"
             required
             fullWidth
           />
 
-          {/* Sharing Functionality */}
+
           <SharingFunctionality
             sharedMembers={sharedMembers}
             setSharedMembers={setSharedMembers}
           />
 
-          {/* Display Success or Error Message */}
           {successMessage && <Typography variant="body1" color="success.main">{successMessage}</Typography>}
           {errorMessage && <Typography variant="body1" color="error.main">{errorMessage}</Typography>}
 
           <Button variant="contained" type="submit" 
             sx={{
                 backgroundColor: 'white',
-                color: '#0b1225',  // White button with dark text
+                color: '#0b1225',
                 fontWeight: 'bold',
                 borderRadius: '5px',
                 '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.8)',  // Slightly translucent white on hover
+                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
                 }
             }}>
             Create Project
