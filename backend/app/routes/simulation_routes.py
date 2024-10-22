@@ -135,7 +135,6 @@ def input_data():
                 {"user_id": user_id, "simulation_id": normal_sim_id},  # Use the _id for the query
                 {"$set": {"factors": factors}}  # Update the factors
             )
-            
         # TODO: call run simulation function here
         normalFactorRunSim(normal_sim_id, project_id)
         
@@ -162,19 +161,17 @@ def normalFactorRunSim(simulation_id, project_id):
     simulation = simulation_collection.find_one({'simulation_id': simulation_id}, {'_id': False})
     if not simulation:
         return jsonify({'message': 'Simulation not found'}), 404
-    
     model_vars_list = []
     model_vars_cursor = model_variables_collection.find({"simulation_id": simulation_id})
     for model_var in model_vars_cursor:
         model_vars_list.append(model_var)
-        
     num_users = len(model_vars_list)
     num_simulations = project_collection.find_one({'_id': ObjectId(project_id)})['num_simulations']
     
     def compute_for_year(year):
         sim_data = []
+        print("15.1", type(num_simulations))
         for i in range(0, num_simulations):
-            print("11111111111111")
             #pick a user randomly
             model = model_vars_list[np.random.randint(0, num_users)]
             factors = model['factors']

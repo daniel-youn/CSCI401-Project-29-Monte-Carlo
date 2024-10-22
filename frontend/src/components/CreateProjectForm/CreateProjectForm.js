@@ -5,7 +5,7 @@ import Cookies from 'js-cookie';
 
 const CreateProjectForm = () => {
   const [projectName, setProjectName] = useState('');
-  const [numSimulations, setNumSimulations] = useState('');
+  const [numSimulations, setNumSimulations] = useState(0);
   const [sharedMembers, setSharedMembers] = useState([]); 
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
@@ -86,11 +86,12 @@ const CreateProjectForm = () => {
           <TextField
             label="Number of Simulations"
             value={numSimulations}
-            onChange={(e) => setNumSimulations(e.target.value)}
+            onChange={(e) => setNumSimulations(parseInt(e.target.value, 10) || 0)}
             type="number"
             required
             fullWidth
           />
+
 
           <SharingFunctionality
             sharedMembers={sharedMembers}
