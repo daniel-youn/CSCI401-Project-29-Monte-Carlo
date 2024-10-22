@@ -39,6 +39,20 @@ const ProjectView = () => {
   const [normalSimOutput, setNormalSimOutput] = useState(null);  // State to hold normal simulation data
   const [aggregateData, setAggregateData] = useState(null);
   // Fetch project details when the component loads or when projectId changes
+
+  const factorTitleMapping = {
+    discount: 'Expected Discount per Deal',
+    num_deals_year_1: 'Number of Deals for Year 1',
+    num_deals_year_2: 'Number of Deals for Year 2',
+    num_deals_year_3: 'Number of Deals for Year 3',
+    num_deals_year_4: 'Number of Deals for Year 4',
+    num_deals_year_5: 'Number of Deals for Year 5',
+    num_premium_users: 'Number of Premium Users per Deal',
+    num_standard_users: 'Number of Standard Users per Deal',
+    wtp_premium: 'Annual Willingness-to-Pay per Premium User',
+    wtp_standard: 'Annual Willingness-to-Pay per Standard User',
+  };  
+
   useEffect(() => {
     if (!projectId) {
       console.error('No project ID found in URL');
@@ -247,7 +261,7 @@ const ProjectView = () => {
             padding: '1rem',
             borderRadius: '4px',
             boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-            maxHeight: '750px',
+            maxHeight: '700px',
             overflowY: 'auto',
           }}
         >
@@ -255,15 +269,19 @@ const ProjectView = () => {
             Aggregated Factors
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {aggregateData && Object.entries(aggregateData).map(([key, value], index) => (
-              <Box key={index} sx={{ height: '250px', width: '100%' }}>
-                <AggregateFactorGraph
-                  factorTitle={key} // Use the key as the title
-                  x_values={value.x_values}
-                  y_values={value.y_values}
-                />
-              </Box>
-            ))}
+            {aggregateData ? (
+              Object.entries(aggregateData).map(([key, value], index) => (
+                <Box key={index} sx={{ height: '250px', width: '100%' }}>
+                  <AggregateFactorGraph
+                    factorTitle={factorTitleMapping[key] || `Unknown factor: ${key}`} // More explicit fallback message
+                    x_values={value.x_values}
+                    y_values={value.y_values}
+                  />
+                </Box>
+              ))
+            ) : (
+              <Typography sx={{ color: '#D5D5D5' }}>Loading aggregate data...</Typography> // Loading message if data is not yet available
+            )}
           </Box>
         </Box>
       </Box>
@@ -277,7 +295,7 @@ const ProjectView = () => {
           boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
           width: '100%',
           maxWidth: '60%', // Adjust this to be responsive
-          height: '750px',
+          height: '700px',
           overflow: 'hidden',
           overflowX: 'hidden',
         }}

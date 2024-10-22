@@ -59,7 +59,11 @@ const AggregateFactorGraph = ({ factorTitle = "Factor i", width = "100%", height
         overflow: 'auto'
       }}
     >
-      <Typography variant="h5" align="center" sx={{ marginBottom: '1rem', color: theme.palette.text.primary }}>
+      <Typography 
+        variant="subtitle1"  // Reduce the font size by changing the variant
+        align="left"         // Align the title to the left
+        sx={{ marginBottom: '0.5rem', color: theme.palette.text.primary }}
+      >
         {factorTitle}
       </Typography>
 
