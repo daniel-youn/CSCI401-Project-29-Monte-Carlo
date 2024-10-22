@@ -50,13 +50,21 @@ const FormSection = ({ renderCrossCheck = false }, { projectID = "N/A" }) => {
   };
 
   const isFormComplete = (form) => {
+    if (Object.keys(form).length === 0) {
+      return true;
+    }
+  
     if (form.mean && form.stddev) return true;
     if (form.min_val && form.max_val) return true;
     if (form.min_val && form.max_val && form.mode) return true;
+  
     return false;
   };
+  
+  
 
   const handleSubmit = () => {
+    // console.log(formData)
     const allFormsComplete = Object.keys(formData).every((key) => isFormComplete(formData[key]));
 
     if (allFormsComplete) {
