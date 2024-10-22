@@ -1,3 +1,4 @@
+import pprint
 from flask import Blueprint, jsonify, request
 from bson import ObjectId
 from app import db
@@ -186,7 +187,7 @@ def normalFactorRunSim(simulation_id, project_id):
             wtp_premium_dist = get_distribution(model, "willingness_to_pay_premium")
             num_standard_users_dist = get_distribution(model, "num_standard_users_per_deal")
             num_premium_users_dist = get_distribution(model, "num_premium_users_per_deal")
-            num_deals_dist = get_distribution(model, "num_deals_per_year" + str(year))
+            num_deals_dist = get_distribution(model, "num_deals_per_year_" + str(year))
             discount_dist = get_distribution(model, "expected_discount_per_deal")
             
             # TODO: store deal size somehere
@@ -214,7 +215,7 @@ def normalFactorRunSim(simulation_id, project_id):
             'max': max_val,
             'percentile_5': percentile_5,
             'percentile_95': percentile_95
-        });
+        })
     
     assert len(yearly_sim_data) == 5
 
@@ -242,23 +243,42 @@ def normalFactorRunSim(simulation_id, project_id):
 @simulation_routes.route('/get_aggregate_distribution/<project_id>', methods=['GET'])
 def get_aggregate_distribution(project_id):
     
-    normal_sim_id = project_collection.find_one({'_id': ObjectId(project_id)})['normal_sim_id']
-    if not normal_sim_id:
-        return jsonify({"error": "Normal simulation not found for project"}), 404
+    # normal_sim_id = project_collection.find_one({'_id': ObjectId(project_id)})['normal_sim_id']
+    # if not normal_sim_id:
+    #     return jsonify({"error": "Normal simulation not found for project"}), 404
     
-    model_variables = model_variables_collection.find({'_id': ObjectId(normal_sim_id)})
+    result = project_collection.find_one({'_id': ObjectId(project_id)})
+    if not result or 'normal_sim_id' not in result:
+        return jsonify({"error": "Normal simulation not found for project"}), 404
+    normal_sim_id = result['normal_sim_id']
+    
+    # model_variables = model_variables_collection.find({'simulation_id': normal_sim_id})
+    # if not model_variables:
+    #     return jsonify({"error": "Model variables not found for normal simulation"}), 404
+    # if len(list(model_variables)) == 0:
+    #     return jsonify({"error": "Model variables not found for normal simulation. EMPTY"}), 404
+    
+    model_variables = list(model_variables_collection.find({'simulation_id': normal_sim_id}))
     if not model_variables:
         return jsonify({"error": "Model variables not found for normal simulation"}), 404
-    if len(list(model_variables)) == 0:
-        return jsonify({"error": "Model variables not found for normal simulation. EMPTY"}), 404
+
+    print(model_variables)
+    for var in model_variables:
+        print(var)
+    print("============")
+    print("============")
     
-    sample_size = 10000
+    sample_size = 1000
     
     wtp_standard_dist_values = []
     wtp_premium_dist_values = []
     num_standard_users_dist_values = []
     num_premium_users_dist_values = []
-    num_deals_dist_values = []
+    num_deals_year_1_dist_values = []
+    num_deals_year_2_dist_values = []
+    num_deals_year_3_dist_values = []
+    num_deals_year_4_dist_values = []
+    num_deals_year_5_dist_values = []
     discount_dist_values = []
     
     for model in model_variables:
@@ -266,7 +286,11 @@ def get_aggregate_distribution(project_id):
         wtp_premium_dist = get_distribution(model, "willingness_to_pay_premium")
         num_standard_users_dist = get_distribution(model, "num_standard_users_per_deal")
         num_premium_users_dist = get_distribution(model, "num_premium_users_per_deal")
-        num_deals_dist = get_distribution(model, "num_deals_per_year")
+        num_deals_year_1_dist = get_distribution(model, "num_deals_per_year_1")
+        num_deals_year_2_dist = get_distribution(model, "num_deals_per_year_2")
+        num_deals_year_3_dist = get_distribution(model, "num_deals_per_year_3")
+        num_deals_year_4_dist = get_distribution(model, "num_deals_per_year_4")
+        num_deals_year_5_dist = get_distribution(model, "num_deals_per_year_5")
         discount_dist = get_distribution(model, "expected_discount_per_deal")
         
         #sample sample_size times each factor and store the results
@@ -275,7 +299,11 @@ def get_aggregate_distribution(project_id):
             wtp_premium_dist_values.append(wtp_premium_dist.rvs())
             num_standard_users_dist_values.append(num_standard_users_dist.rvs())
             num_premium_users_dist_values.append(num_premium_users_dist.rvs())
-            num_deals_dist_values.append(num_deals_dist.rvs())
+            num_deals_year_1_dist_values.append(num_deals_year_1_dist.rvs())
+            num_deals_year_2_dist_values.append(num_deals_year_2_dist.rvs())
+            num_deals_year_3_dist_values.append(num_deals_year_3_dist.rvs())
+            num_deals_year_4_dist_values.append(num_deals_year_4_dist.rvs())
+            num_deals_year_5_dist_values.append(num_deals_year_5_dist.rvs())
             discount_dist_values.append(discount_dist.rvs())
         
         # divide each factor values into buckett (x-values)  and y-values will be the frequency of the values in the bucket
@@ -292,37 +320,65 @@ def get_aggregate_distribution(project_id):
     
     bin_size_num_premium_users = (max(num_premium_users_dist_values) - min(num_premium_users_dist_values)) / 100
     freqs_num_premium_users, bin_edges_num_premium_users = np.histogram(num_premium_users_dist_values, bins=np.arange(min(num_premium_users_dist_values), max(num_premium_users_dist_values), bin_size_num_premium_users))
+
+    bin_size_num_deals_year_1 = (max(num_deals_year_1_dist_values) - min(num_deals_year_1_dist_values)) / 100
+    freqs_num_deals_year_1, bin_edges_num_deals_year_1 = np.histogram(num_deals_year_1_dist_values, bins=np.arange(min(num_deals_year_1_dist_values), max(num_deals_year_1_dist_values), bin_size_num_deals_year_1))
     
-    bin_size_num_deals = (max(num_deals_dist_values) - min(num_deals_dist_values)) / 100
-    freqs_num_deals, bin_edges_num_deals = np.histogram(num_deals_dist_values, bins=np.arange(min(num_deals_dist_values), max(num_deals_dist_values), bin_size_num_deals))
+    bin_size_num_deals_year_2 = (max(num_deals_year_2_dist_values) - min(num_deals_year_2_dist_values)) / 100
+    freqs_num_deals_year_2, bin_edges_num_deals_year_2 = np.histogram(num_deals_year_2_dist_values, bins=np.arange(min(num_deals_year_2_dist_values), max(num_deals_year_2_dist_values), bin_size_num_deals_year_2))
     
+    bin_size_num_deals_year_3 = (max(num_deals_year_3_dist_values) - min(num_deals_year_3_dist_values)) / 100
+    freqs_num_deals_year_3, bin_edges_num_deals_year_3 = np.histogram(num_deals_year_3_dist_values, bins=np.arange(min(num_deals_year_3_dist_values), max(num_deals_year_3_dist_values), bin_size_num_deals_year_3))
+    
+    bin_size_num_deals_year_4 = (max(num_deals_year_4_dist_values) - min(num_deals_year_4_dist_values)) / 100
+    freqs_num_deals_year_4, bin_edges_num_deals_year_4 = np.histogram(num_deals_year_4_dist_values, bins=np.arange(min(num_deals_year_4_dist_values), max(num_deals_year_4_dist_values), bin_size_num_deals_year_4))
+    
+    bin_size_num_deals_year_5 = (max(num_deals_year_5_dist_values) - min(num_deals_year_5_dist_values)) / 100
+    freqs_num_deals_year_5, bin_edges_num_deals_year_5 = np.histogram(num_deals_year_5_dist_values, bins=np.arange(min(num_deals_year_5_dist_values), max(num_deals_year_5_dist_values), bin_size_num_deals_year_5))
+
     bin_size_discount = (max(discount_dist_values) - min(discount_dist_values)) / 100
     freqs_discount, bin_edges_discount = np.histogram(discount_dist_values, bins=np.arange(min(discount_dist_values), max(discount_dist_values), bin_size_discount))
     
     return jsonify({
         "wtp_standard": {
-            "x_values": bin_edges_wtp_standard,
-            "y_values": freqs_wtp_standard
+            "x_values": bin_edges_wtp_standard.tolist(),
+            "y_values": freqs_wtp_standard.tolist()
         },
         "wtp_premium": {
-            "x_values": bin_edges_wtp_premium,
-            "y_values": freqs_wtp_premium
+            "x_values": bin_edges_wtp_premium.tolist(),
+            "y_values": freqs_wtp_premium.tolist()
         },
         "num_standard_users": {
-            "x_values": bin_edges_num_standard_users,
-            "y_values": freqs_num_standard_users
+            "x_values": bin_edges_num_standard_users.tolist(),
+            "y_values": freqs_num_standard_users.tolist()
         },
         "num_premium_users": {
-            "x_values": bin_edges_num_premium_users,
-            "y_values": freqs_num_premium_users
+            "x_values": bin_edges_num_premium_users.tolist(),
+            "y_values": freqs_num_premium_users.tolist()
         },
-        "num_deals": {
-            "x_values": bin_edges_num_deals,
-            "y_values": freqs_num_deals
+        "num_deals_year_1": {
+            "x_values": bin_edges_num_deals_year_1.tolist(),
+            "y_values": freqs_num_deals_year_1.tolist()
+        },
+        "num_deals_year_1": {
+            "x_values": bin_edges_num_deals_year_2.tolist(),
+            "y_values": freqs_num_deals_year_2.tolist()
+        },
+        "num_deals_year_1": {
+            "x_values": bin_edges_num_deals_year_3.tolist(),
+            "y_values": freqs_num_deals_year_3.tolist()
+        },
+        "num_deals_year_1": {
+            "x_values": bin_edges_num_deals_year_4.tolist(),
+            "y_values": freqs_num_deals_year_4.tolist()
+        },
+        "num_deals_year_1": {
+            "x_values": bin_edges_num_deals_year_5.tolist(),
+            "y_values": freqs_num_deals_year_5.tolist()
         },
         "discount": {
-            "x_values": bin_edges_discount,
-            "y_values": freqs_discount
+            "x_values": bin_edges_discount.tolist(),
+            "y_values": freqs_discount.tolist()
         }
     }), 200
         

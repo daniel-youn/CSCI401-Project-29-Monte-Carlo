@@ -106,7 +106,23 @@ const ProjectView = () => {
         "x_values": [50, 51, 52],
         "y_values": [7, 15, 22]
       },
-      "num_deals": {
+      "num_deals_year_1": {
+        "x_values": [1, 2, 3],
+        "y_values": [4, 9, 13]
+      },
+      "num_deals_year_1": {
+        "x_values": [1, 2, 3],
+        "y_values": [4, 9, 13]
+      },
+      "num_deals_year_1": {
+        "x_values": [1, 2, 3],
+        "y_values": [4, 9, 13]
+      },
+      "num_deals_year_1": {
+        "x_values": [1, 2, 3],
+        "y_values": [4, 9, 13]
+      },
+      "num_deals_year_1": {
         "x_values": [1, 2, 3],
         "y_values": [4, 9, 13]
       },
