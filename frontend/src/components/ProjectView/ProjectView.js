@@ -78,57 +78,68 @@ const ProjectView = () => {
     }
   }, [location, navigate, projectId]);
 
-  // Prepare the chart data based on simulation statistics
   const chartData = {
     labels: ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'], // Assuming 5 years
     datasets: [
       {
-        label: 'Mean Revenue',
+        label: 'Estimated Revenue', // This is now the only visible legend item
         data: normalSimOutput?.summary_statistics.map(stat => stat.mean),
-        fill: false,
-        borderColor: '#07ABAE',
-        backgroundColor: '#07ABAE',
+        fill: '+1', // Fill the area between this dataset and the next (Std Down to Std Up)
+        borderColor: '#07ABAE', // Main line for "Estimated Revenue"
+        backgroundColor: 'rgba(7, 171, 174, 0.1)', // Translucent fill between std down and std up
         pointBackgroundColor: '#fff',
         pointBorderColor: '#07ABAE',
       },
       {
-        label: 'Std Down (Mean - Std Dev)',
+        label: 'Std Down', // Dotted line for Std Down (not shown in the legend)
         data: normalSimOutput?.summary_statistics.map(stat => stat.mean - stat.std_dev),
-        fill: false,
-        borderColor: '#FF5733',
-        backgroundColor: '#FF5733',
-        pointBackgroundColor: '#fff',
-        pointBorderColor: '#FF5733',
-        borderDash: [5, 5], // Dashed line to represent "Std Down"
+        fill: false, // No fill below this line
+        borderColor: '#07ABAE', // Same color as Estimated Revenue, but dotted
+        borderDash: [5, 5], // Dotted line style
+        pointBackgroundColor: 'rgba(0, 0, 0, 0)', // No points visible
+        pointBorderColor: 'rgba(0, 0, 0, 0)',
       },
       {
-        label: 'Std Up (Mean + Std Dev)',
+        label: 'Std Up', // Dotted line for Std Up (not shown in the legend)
         data: normalSimOutput?.summary_statistics.map(stat => stat.mean + stat.std_dev),
-        fill: false,
-        borderColor: '#C70039',
-        backgroundColor: '#C70039',
-        pointBackgroundColor: '#fff',
-        pointBorderColor: '#C70039',
-        borderDash: [5, 5], // Dashed line to represent "Std Up"
+        fill: '-1', // Fill the area between this and the previous dataset (std up and std down)
+        borderColor: '#07ABAE', // Same color as Estimated Revenue, but dotted
+        backgroundColor: 'rgba(7, 171, 174, 0.1)', // Slightly different translucent color for std up
+        borderDash: [5, 5], // Dotted line style
+        pointBackgroundColor: 'rgba(0, 0, 0, 0)', // No points visible
+        pointBorderColor: 'rgba(0, 0, 0, 0)',
       }
     ],
   };
 
   const chartOptions = {
     responsive: true,
-    maintainAspectRatio: false,
+    maintainAspectRatio: false, // This ensures that the chart adjusts to the parent container
     plugins: {
       legend: {
         display: true,
+        labels: {
+          filter: function (item) {
+            return item.text === 'Estimated Revenue'; // Only show "Estimated Revenue" in the legend
+          },
+        },
       },
     },
     scales: {
       x: {
         ticks: {
           color: '#D5D5D5',
+          font: {
+            size: 14, // Adjust the size if necessary
+          },
         },
         grid: {
           display: false,
+        },
+        title: {
+          display: true,
+          text: 'Year',
+          color: '#D5D5D5',
         },
       },
       y: {
@@ -142,32 +153,72 @@ const ProjectView = () => {
           display: true,
           text: 'Revenue',
           color: '#D5D5D5',
-        }
+        },
       },
     },
   };
 
-  // Content for Overview section
   const renderOverview = () => (
-    <Box sx={{ display: 'flex', flexDirection: 'row', gap: '1rem', padding: '2rem' }}>
-      {/* Aggregated Factors Column */}
-      <Box sx={{ flex: 1 }}>
+    <Box sx={{ padding: '2rem' }}>
+      {/* Project Title */}
+      <Typography variant="h4" sx={{ marginBottom: '2rem', color: '#fff' }}>
+        {projectData?.project_name || 'Loading...'}
+      </Typography>
+
+      {/* Content Row */}
+      <Box sx={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
+        {/* Aggregated Factors Column */}
+        <Box sx={{ flex: 0.5 }}>
+          <Box
+            sx={{
+              backgroundColor: '#1e1e1e',
+              padding: '1rem',
+              borderRadius: '4px',
+              boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+              maxHeight: '900px',
+              overflowY: 'auto',
+            }}
+          >
+            <Typography variant="h6" sx={{ marginBottom: '1.5rem', color: '#fff' }}>
+              Aggregated Factors
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {Array.from({ length: 12 }).map((_, index) => (
+                <Box key={index} sx={{ height: '200px', width: '100%' }}>
+                  <AggregateFactorGraph
+                    factorTitle={`j ${index + 1}`}
+                    distributionType="normal"
+                    values={{ mean: Math.random(), stddev: Math.random() }} // Placeholder data
+                  />
+                </Box>
+              ))}
+            </Box>
+          </Box>
+        </Box>
+
+        {/* Simulation Summary Column */}
         <Box
           sx={{
             backgroundColor: '#1e1e1e',
             padding: '1rem',
             borderRadius: '4px',
             boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-            maxHeight: '900px',
-            overflowY: 'auto',
+            width: '100%', // Make sure the box width fills the remaining space
+            height: '600px', // Fix the height to avoid overflow
+            overflow: 'hidden', // Ensure content doesn't overflow
           }}
         >
           <Typography variant="h6" sx={{ marginBottom: '1.5rem', color: '#fff' }}>
-            Simulation Summary for {projectData?.project_name || 'Loading...'}
+            Simulation Summary
           </Typography>
-          <Box className="chart-container" sx={{ marginTop: '1rem', height: '600px', width: '100%' }}>
+          <Box
+            sx={{
+              height: '100%', // Ensure chart fits the parent container
+              width: '100%',
+            }}
+          >
             {normalSimOutput ? (
-              <Line data={chartData} options={chartOptions} height={600} />
+              <Line data={chartData} options={chartOptions} />
             ) : (
               <Typography sx={{ color: '#D5D5D5' }}>Loading chart data...</Typography>
             )}
@@ -176,6 +227,7 @@ const ProjectView = () => {
       </Box>
     </Box>
   );
+
   const renderSettings = () => (
     <Box sx={{ padding: '2rem' }}>
       <Box
@@ -239,65 +291,12 @@ const ProjectView = () => {
       </Box>
     </Box>
   );
-  const renderGraphsSection = () => {
-    const graphData = [
-      {
-        factorTitle: 'Graph 1',
-        distributionType: 'normal',
-        values: { mean: 0, stddev: 1 }
-      },
-      {
-        factorTitle: 'Graph 2',
-        distributionType: 'uniform',
-        values: { min_val: 0, max_val: 1 }
-      },
-      {
-        factorTitle: 'Graph 3',
-        distributionType: 'triangular',
-        values: { min_val: 0, max_val: 1, mode: 0.5 }
-      },
-      // Add more data here for 10 graphs, adjusting distributionType and values as needed
-    ];
-
-    // Render 10 graphs by duplicating and altering the graphData array
-    return (
-      <Box sx={{ padding: '2rem' }}>
-        <Box
-          sx={{
-            backgroundColor: '#1e1e1e',
-            padding: '2rem',
-            borderRadius: '4px',
-            marginBottom: '3rem',
-            maxHeight: '600px', // Limit the height
-            overflowY: 'auto',   // Make scrollable
-          }}
-        >
-          <Typography variant="h6" sx={{ color: '#fff', marginBottom: '1rem' }}>
-            Multiple Simulations
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {graphData.map((graph, index) => (
-              <Box key={index} sx={{ height: '400px', width: '100%' }}>
-                <AggregateFactorGraph
-                  factorTitle={graph.factorTitle}
-                  distributionType={graph.distributionType}
-                  values={graph.values}
-                  height={"60rem"}
-                />
-              </Box>
-            ))}
-          </Box>
-        </Box>
-      </Box>
-    );
-  };
 
   return (
     <Box>
       <Routes>
         <Route path="overview" element={renderOverview()} />
         <Route path="settings" element={renderSettings()} />
-        <Route path="graphs" element={renderGraphsSection()} /> {/* New Route for the Graph Section */}
         {/* You can add other routes like settings here */}
       </Routes>
     </Box>

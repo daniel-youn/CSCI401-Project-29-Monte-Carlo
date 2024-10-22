@@ -92,7 +92,6 @@ function DashboardLayoutWrapper() {
         { kind: 'header', title: 'My Project' },
         { segment: `project-page/${projectId}/overview`, title: 'Summary', icon: <ChartIcon /> },
         { segment: `project-page/${projectId}/settings`, title: 'Settings', icon: <SettingsIcon /> },
-        { segment: `project-page/${projectId}/graphs`, title: 'Settings', icon: <ChartIcon /> },
       ]);
     } else {
       // Revert back to base navigation when leaving "/project-page"
