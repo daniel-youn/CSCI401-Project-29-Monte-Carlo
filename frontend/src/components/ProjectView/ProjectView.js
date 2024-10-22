@@ -182,6 +182,11 @@ const ProjectView = () => {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false, // This ensures that the chart adjusts to the parent container
+    layout: {
+      padding: {
+        bottom: 20, // Add some padding at the bottom to ensure x-axis labels are visible
+      },
+    },
     plugins: {
       legend: {
         display: true,
@@ -224,7 +229,7 @@ const ProjectView = () => {
       },
     },
   };
-
+  
   const renderOverview = () => (
     <Box sx={{ padding: '2rem' }}>
       {/* Project Title */}
@@ -271,17 +276,18 @@ const ProjectView = () => {
             borderRadius: '4px',
             boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
             width: '100%', // Make sure the box width fills the remaining space
-            height: '600px', // Fix the height to avoid overflow
+            height: '700px', // Fix the height to avoid overflow
             overflow: 'hidden', // Ensure content doesn't overflow
           }}
         >
           <Typography variant="h6" sx={{ marginBottom: '1.5rem', color: '#fff' }}>
-            Simulation Summary
+            Estimated Revenue
           </Typography>
           <Box
             sx={{
               height: '100%', // Ensure chart fits the parent container
               width: '100%',
+              paddingBottom: '40px',
             }}
           >
             {normalSimOutput ? (
