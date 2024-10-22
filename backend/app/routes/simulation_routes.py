@@ -100,14 +100,14 @@ def get_distribution(model_variables, factor_name):
 
 @simulation_routes.route('/input_data', methods=['POST'])
 def input_data():
-    # maybe store in db the simulation state like running, error, finished, etc
     try:
         # Parse request data
         data = request.get_json()
         user_id = data["user_id"]
         project_id = data["project_id"]
         factors = data["factors"]
-        # Find the project in the database
+        
+        # Find the project in the project collection
         project = project_collection.find_one({"_id": ObjectId(project_id)})
         if not project:
             return jsonify({"error": "Project not found"}), 404
@@ -117,7 +117,7 @@ def input_data():
         if not normal_sim_id:
             return jsonify({"error": "Normal simulation not found for project"}), 404
         
-        # UPDATE FOR NORMAL SIM
+        # Update or create the model variables for the simulation
         model_vars = model_variables_collection.find_one({"user_id": user_id, "simulation_id": normal_sim_id})
         
         if not model_vars:
@@ -129,32 +129,44 @@ def input_data():
             }
             model_variables_collection.insert_one(new_model_variable)
         else:
-            # Save the updated model variable back to the database
-            # model_var_id = model_vars["_id"]
+            # Update the factors in the existing model variable document
             model_variables_collection.update_one(
-                {"user_id": user_id, "simulation_id": normal_sim_id},  # Use the _id for the query
-                {"$set": {"factors": factors}}  # Update the factors
+                {"user_id": user_id, "simulation_id": normal_sim_id},
+                {"$set": {"factors": factors}}
             )
-        # TODO: call run simulation function here
+        
+        # Call the normalFactorRunSim function to run the simulation
         normalFactorRunSim(normal_sim_id, project_id)
         
+        # Now, update the form_submitted field in the user's document
+        user = user_collection.find_one({"user_id": user_id})
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        
+        # Update the 'form_submitted' field for the specific project in the user's projects
+        user_collection.update_one(
+            {"user_id": user_id, f"projects.{project_id}": {"$exists": True}},
+            {"$set": {f"projects.{project_id}.access_data.form_submitted": True}}
+        )
+        
+        # Handle cross-check if necessary
         access_data = project.get("access_data", {})
         cross_check_access = access_data.get("cross_check_access", False)
         
         if cross_check_access:
+            # TODO: update cross-check model vars if needed and call simulation again
             pass
-        # TODO: UPDATE THE CROSS CHECK MODEL VARS IF APPLICABLE
-        # TODO: call run simulation here again
         
         # Return success response
         return jsonify({
-            'message': 'Simulation completed successfully.'
+            'message': 'Simulation completed and form submitted successfully.'
         }), 200
     
     except ValidationError as ve:
         return jsonify({'error': ve.messages}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 def normalFactorRunSim(simulation_id, project_id):
     # Get simulation data
@@ -170,7 +182,6 @@ def normalFactorRunSim(simulation_id, project_id):
     
     def compute_for_year(year):
         sim_data = []
-        print("15.1", type(num_simulations))
         for i in range(0, num_simulations):
             #pick a user randomly
             model = model_vars_list[np.random.randint(0, num_users)]

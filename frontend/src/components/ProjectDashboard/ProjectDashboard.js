@@ -83,7 +83,10 @@ const ProjectDashboard = () => {
 
   const renderProjectRows = (projects) => {
     return projects.map((project) => (
-      <StyledTableRow key={project.project_id} onClick={() => handleProjectClick(project.project_id)}>
+      <StyledTableRow 
+        key={project.project_id} 
+        onClick={() => handleProjectClick(project.project_id, project.form_submitted)}
+      >
         <TableCell>{project.project_name}</TableCell>
         <TableCell>{project.admin_user_id}</TableCell>
         <TableCell>{project.shared_users.length}</TableCell>
@@ -93,6 +96,7 @@ const ProjectDashboard = () => {
       </StyledTableRow>
     ));
   };
+  
 
   return (
     <Box sx={{ bgcolor: theme.palette.background.default, minHeight: '100vh', padding: '3rem' }}>
