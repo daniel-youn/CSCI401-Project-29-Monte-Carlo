@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Grid, Button, Typography, useTheme, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle  } from '@mui/material';
+import { Box, Grid, Button, Typography, useTheme, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom'; // Import useParams to extract projectId
 import GraphForm from '../GraphForm/GraphForm';
 import MonteCarloServices from '../../apis/MonteCarloServices';
 import Cookies from 'js-cookie'; // Make sure to import the js-cookie library
 
-const FormSection = () => {
+const FormSection = ({ renderCrossCheck = false }, { projectID = "N/A" }) => {
+  console.log(renderCrossCheck, projectID)
   const navigate = useNavigate(); // For redirecting after successful submission
   const theme = useTheme(); // For consistent theming
   const { projectId } = useParams(); // Get projectId from the route params
@@ -36,7 +37,7 @@ const FormSection = () => {
       setErrorMessage('User not logged in. Please log in.');
     }
   };
-  
+
   useEffect(() => {
     getUserID();
   }, []);
@@ -190,24 +191,28 @@ const FormSection = () => {
             onFormChange={(data) => handleFormChange('num_deals_year_5', data)}
           />
         </Grid>
-        <Grid item xs={12} md={6}>
-          <GraphForm
-            factorName='initial_market_size'
-            factorTitle="Initial Market Size (Year 1)"
-            width={"40rem"}
-            height={"30rem"}
-            onFormChange={(data) => handleFormChange('initial_market_size', data)}
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <GraphForm
-            factorName='year_over_year_growth_rate'
-            factorTitle="Year-over-Year Growth Rate"
-            width={"40rem"}
-            height={"30rem"}
-            onFormChange={(data) => handleFormChange('year_over_year_growth_rate', data)}
-          />
-        </Grid>
+        {renderCrossCheck === "true" && (
+          <>
+            <Grid item xs={12} md={6}>
+              <GraphForm
+                factorName='initial_market_size'
+                factorTitle="Initial Market Size (Year 1)"
+                width={"40rem"}
+                height={"30rem"}
+                onFormChange={(data) => handleFormChange('initial_market_size', data)}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <GraphForm
+                factorName='year_over_year_growth_rate'
+                factorTitle="Year-over-Year Growth Rate"
+                width={"40rem"}
+                height={"30rem"}
+                onFormChange={(data) => handleFormChange('year_over_year_growth_rate', data)}
+              />
+            </Grid>
+          </>
+        )}
       </Grid>
 
       {/* Error Message */}
@@ -232,9 +237,9 @@ const FormSection = () => {
             fontWeight: 'bold',
             borderRadius: '5px',
             '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.8)',  // Slightly translucent white on hover
+              backgroundColor: 'rgba(255, 255, 255, 0.8)',  // Slightly translucent white on hover
             },
-            }}>
+          }}>
           Submit
         </Button>
       </Box>
