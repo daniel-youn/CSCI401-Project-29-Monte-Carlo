@@ -56,7 +56,7 @@ const ProjectView = () => {
 
         // Parse the JSON response
         const data = await response.json();
-
+        console.log(data);
         // Set the distribution data in state
         setAggregateData(data);
       } catch (error) {
@@ -93,48 +93,48 @@ const ProjectView = () => {
     fetchProjectData();
     fetchAggregateDistribution();
     //TODO:REMOVE
-    setAggregateData({
-      "wtp_standard": {
-        "x_values": [10.5, 10.6, 10.7],
-        "y_values": [5, 15, 30]
-      },
-      "wtp_premium": {
-        "x_values": [20.5, 20.6, 20.7],
-        "y_values": [3, 12, 25]
-      },
-      "num_standard_users": {
-        "x_values": [100, 101, 102],
-        "y_values": [10, 18, 35]
-      },
-      "num_premium_users": {
-        "x_values": [50, 51, 52],
-        "y_values": [7, 15, 22]
-      },
-      "num_deals_year_1": {
-        "x_values": [1, 2, 3],
-        "y_values": [4, 9, 13]
-      },
-      "num_deals_year_1": {
-        "x_values": [1, 2, 3],
-        "y_values": [4, 9, 13]
-      },
-      "num_deals_year_1": {
-        "x_values": [1, 2, 3],
-        "y_values": [4, 9, 13]
-      },
-      "num_deals_year_1": {
-        "x_values": [1, 2, 3],
-        "y_values": [4, 9, 13]
-      },
-      "num_deals_year_1": {
-        "x_values": [1, 2, 3],
-        "y_values": [4, 9, 13]
-      },
-      "discount": {
-        "x_values": [0.05, 0.06, 0.07],
-        "y_values": [10, 20, 35]
-      }
-    });
+    // setAggregateData({
+    //   "wtp_standard": {
+    //     "x_values": [10.5, 10.6, 10.7],
+    //     "y_values": [5, 15, 30]
+    //   },
+    //   "wtp_premium": {
+    //     "x_values": [20.5, 20.6, 20.7],
+    //     "y_values": [3, 12, 25]
+    //   },
+    //   "num_standard_users": {
+    //     "x_values": [100, 101, 102],
+    //     "y_values": [10, 18, 35]
+    //   },
+    //   "num_premium_users": {
+    //     "x_values": [50, 51, 52],
+    //     "y_values": [7, 15, 22]
+    //   },
+    //   "num_deals_year_1": {
+    //     "x_values": [1, 2, 3],
+    //     "y_values": [4, 9, 13]
+    //   },
+    //   "num_deals_year_1": {
+    //     "x_values": [1, 2, 3],
+    //     "y_values": [4, 9, 13]
+    //   },
+    //   "num_deals_year_1": {
+    //     "x_values": [1, 2, 3],
+    //     "y_values": [4, 9, 13]
+    //   },
+    //   "num_deals_year_1": {
+    //     "x_values": [1, 2, 3],
+    //     "y_values": [4, 9, 13]
+    //   },
+    //   "num_deals_year_1": {
+    //     "x_values": [1, 2, 3],
+    //     "y_values": [4, 9, 13]
+    //   },
+    //   "discount": {
+    //     "x_values": [0.05, 0.06, 0.07],
+    //     "y_values": [10, 20, 35]
+    //   }
+    // });
     console.log(aggregateData)
   }, [projectId]);
 

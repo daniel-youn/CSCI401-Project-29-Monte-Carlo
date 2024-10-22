@@ -242,33 +242,16 @@ def normalFactorRunSim(simulation_id, project_id):
 
 @simulation_routes.route('/get_aggregate_distribution/<project_id>', methods=['GET'])
 def get_aggregate_distribution(project_id):
-    
-    # normal_sim_id = project_collection.find_one({'_id': ObjectId(project_id)})['normal_sim_id']
-    # if not normal_sim_id:
-    #     return jsonify({"error": "Normal simulation not found for project"}), 404
-    
     result = project_collection.find_one({'_id': ObjectId(project_id)})
     if not result or 'normal_sim_id' not in result:
         return jsonify({"error": "Normal simulation not found for project"}), 404
     normal_sim_id = result['normal_sim_id']
     
-    # model_variables = model_variables_collection.find({'simulation_id': normal_sim_id})
-    # if not model_variables:
-    #     return jsonify({"error": "Model variables not found for normal simulation"}), 404
-    # if len(list(model_variables)) == 0:
-    #     return jsonify({"error": "Model variables not found for normal simulation. EMPTY"}), 404
-    
     model_variables = list(model_variables_collection.find({'simulation_id': normal_sim_id}))
     if not model_variables:
         return jsonify({"error": "Model variables not found for normal simulation"}), 404
-
-    print(model_variables)
-    for var in model_variables:
-        print(var)
-    print("============")
-    print("============")
     
-    sample_size = 1000
+    sample_size = 10000
     
     wtp_standard_dist_values = []
     wtp_premium_dist_values = []
@@ -360,19 +343,19 @@ def get_aggregate_distribution(project_id):
             "x_values": bin_edges_num_deals_year_1.tolist(),
             "y_values": freqs_num_deals_year_1.tolist()
         },
-        "num_deals_year_1": {
+        "num_deals_year_2": {
             "x_values": bin_edges_num_deals_year_2.tolist(),
             "y_values": freqs_num_deals_year_2.tolist()
         },
-        "num_deals_year_1": {
+        "num_deals_year_3": {
             "x_values": bin_edges_num_deals_year_3.tolist(),
             "y_values": freqs_num_deals_year_3.tolist()
         },
-        "num_deals_year_1": {
+        "num_deals_year_4": {
             "x_values": bin_edges_num_deals_year_4.tolist(),
             "y_values": freqs_num_deals_year_4.tolist()
         },
-        "num_deals_year_1": {
+        "num_deals_year_5": {
             "x_values": bin_edges_num_deals_year_5.tolist(),
             "y_values": freqs_num_deals_year_5.tolist()
         },
