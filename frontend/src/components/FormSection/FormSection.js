@@ -1,47 +1,46 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Grid, Button, Typography, useTheme } from '@mui/material';
+import { Box, Grid, Button, Typography, useTheme, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle  } from '@mui/material';
+import { useParams, useNavigate } from 'react-router-dom'; // Import useParams to extract projectId
 import GraphForm from '../GraphForm/GraphForm';
 import MonteCarloServices from '../../apis/MonteCarloServices';
-
-// Mock simulation and user IDs
-const mock_sim_id = "sim_123";
-const mock_user_id = "user_123";
+import Cookies from 'js-cookie'; // Make sure to import the js-cookie library
 
 const FormSection = () => {
+  const navigate = useNavigate(); // For redirecting after successful submission
   const theme = useTheme(); // For consistent theming
-
-  // State to hold the input data for all six GraphForms
+  const { projectId } = useParams(); // Get projectId from the route params
   const [formData, setFormData] = useState({
     willingness_to_pay_standard: {},
     willingness_to_pay_premium: {},
     num_standard_users_per_deal: {},
     num_premium_users_per_deal: {},
-    num_deals_year_1: {}, num_deals_year_2: {}, num_deals_year_3: {}, num_deals_year_4: {}, num_deals_year_5: {},
+    num_deals_year_1: {},
+    num_deals_year_2: {},
+    num_deals_year_3: {},
+    num_deals_year_4: {},
+    num_deals_year_5: {},
     expected_discount_per_deal: {},
     initial_market_size: {},
     year_over_year_growth_rate: {}
   });
 
-  // State to handle error message
   const [errorMessage, setErrorMessage] = useState('');
-  const [userId, setUserId] = useState(''); // State to hold the current user ID
+  const [successModalOpen, setSuccessModalOpen] = useState(false); // State for controlling the modal
+  const [userId, setUserId] = useState('');
 
-  // Function to fetch user ID from session storage (or API)
   const getUserID = () => {
-    const storedUserId = sessionStorage.getItem('user_id'); // Retrieve user ID from session storage
+    const storedUserId = Cookies.get('userId');  // Now retrieving from cookies, not session storage
     if (storedUserId) {
-      setUserId(storedUserId); // Set the user ID in state
+      setUserId(storedUserId);  // Set the userId from cookies
     } else {
       setErrorMessage('User not logged in. Please log in.');
     }
   };
-
-  // Run the function to fetch the user ID when the component mounts
+  
   useEffect(() => {
     getUserID();
   }, []);
 
-  // Handler to update the state when a GraphForm's inputs change
   const handleFormChange = (key, data) => {
     setFormData((prevState) => ({
       ...prevState,
@@ -49,23 +48,21 @@ const FormSection = () => {
     }));
   };
 
-  // Function to validate if each form has all required inputs filled
   const isFormComplete = (form) => {
-    if (form.mean && form.stddev) return true; // Validation for 'normal' distribution (distribution key removed)
-    if (form.min_val && form.max_val) return true; // Validation for 'uniform'
-    if (form.min_val && form.max_val && form.mode) return true; // Validation for 'triangular'
+    if (form.mean && form.stddev) return true;
+    if (form.min_val && form.max_val) return true;
+    if (form.min_val && form.max_val && form.mode) return true;
     return false;
   };
 
-  // Handler to submit all form data together
   const handleSubmit = () => {
     const allFormsComplete = Object.keys(formData).every((key) => isFormComplete(formData[key]));
-  
+
     if (allFormsComplete) {
       const finalFormData = {
-        user_id: mock_user_id, // Add user ID here
-        project_id: "6716c590796d87b86413bc37", // Replace with the actual project_id
-        factors: { // Structure formData as needed for the API
+        user_id: userId,
+        project_id: projectId, // Use dynamic projectId from the route
+        factors: {
           willingness_to_pay_standard: formData.willingness_to_pay_standard,
           willingness_to_pay_premium: formData.willingness_to_pay_premium,
           num_standard_users_per_deal: formData.num_standard_users_per_deal,
@@ -80,11 +77,15 @@ const FormSection = () => {
           yoy_growth_rate: formData.year_over_year_growth_rate
         }
       };
-  
+
       setErrorMessage('');
       MonteCarloServices.runSimulationWithInputData(finalFormData)
         .then(() => {
           console.log("Submitted data for all forms: ", finalFormData);
+          setSuccessModalOpen(true); // Open the success modal on successful submission
+          setTimeout(() => {
+            navigate('/my-projects-page'); // Redirect to Project Dashboard after 2 seconds
+          }, 2000); // 2-second delay before redirecting
         })
         .catch((error) => {
           setErrorMessage('Submission failed. Please try again.');
@@ -94,7 +95,7 @@ const FormSection = () => {
       setErrorMessage('Please fill in all required fields for each form.');
     }
   };
-  
+
   return (
     <Box sx={{ bgcolor: theme.palette.background.default, padding: '3rem', minHeight: '100vh' }}>
       <Grid container spacing={4}>
@@ -237,6 +238,22 @@ const FormSection = () => {
           Submit
         </Button>
       </Box>
+
+      {/* Success Modal */}
+      <Dialog open={successModalOpen} onClose={() => setSuccessModalOpen(false)}>
+        <DialogTitle>Success</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Form submission was successful! Redirecting to the Project Dashboard...
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => navigate('/my-projects-page')} color="primary">
+            Go to Dashboard
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </Box>
   );
 };

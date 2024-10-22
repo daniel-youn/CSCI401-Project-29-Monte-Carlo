@@ -18,7 +18,7 @@ function App() {
 
         {/* Protected routes wrapped with DashboardLayout */}
         <Route element={<DashboardLayout />}>
-          <Route path="/form" element={<FormPage />} />
+          <Route path="/form/:projectId" element={<FormPage />} /> {/* Pass projectId in the route */}
           <Route path="project-page/:projectId/*" element={<ProjectViewPage />} />
           <Route path="/create-project" element={<CreateProjectPage />} />
           <Route path="/my-projects-page" element={<MyProjectsPage />} />
