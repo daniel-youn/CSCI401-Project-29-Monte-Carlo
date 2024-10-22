@@ -27,7 +27,7 @@ import {
   Legend,
   Filler
 } from 'chart.js';
-
+import AggregateFactorGraph from '../AggregateFactorGraph/AggregateFactorGraph';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
 const ProjectView = () => {
@@ -59,7 +59,7 @@ const ProjectView = () => {
         // Fetch normal simulation data using simId
         const simulationResponse = await fetch(`http://localhost:5001/api/output/outputs/simulation/${simId}`);
         const simulationData = await simulationResponse.json();
-        
+
         // Assuming the API appends data, use the last chunk
         const lastSimulation = simulationData[simulationData.length - 1];
         setNormalSimOutput(lastSimulation);
@@ -176,11 +176,128 @@ const ProjectView = () => {
       </Box>
     </Box>
   );
+  const renderSettings = () => (
+    <Box sx={{ padding: '2rem' }}>
+      <Box
+        sx={{
+          backgroundColor: '#1e1e1e',
+          padding: '2rem',
+          borderRadius: '4px',
+          marginBottom: '3rem',
+          boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+        }}
+      >
+        <Typography variant="h6" sx={{ marginBottom: '1rem', color: '#fff' }}>
+          Members Summary for {projectData?.project_name || 'Loading...'}
+        </Typography>
+        <Box>
+          <Typography variant="body1" sx={{ color: '#D5D5D5' }}>
+            Admin: {projectData?.admin_user_id || 'Loading...'}
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#D5D5D5', marginTop: '1rem' }}>
+            Shared Users: {projectData?.shared_users?.join(', ') || 'None'}
+          </Typography>
+        </Box>
+        {/* Table for Shared Users */}
+        <TableContainer component={Paper} sx={{ marginTop: '2rem', backgroundColor: '#1e1e1e' }}>
+          <Table aria-label="shared members table">
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ color: '#D5D5D5' }}>User</TableCell>
+                <TableCell sx={{ color: '#D5D5D5' }}>Email</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {projectData?.shared_users?.map((user, index) => (
+                <TableRow key={index}>
+                  <TableCell sx={{ color: '#D5D5D5' }}>{user}</TableCell>
+                  <TableCell sx={{ color: '#D5D5D5' }}>{user}</TableCell> {/* Assuming user is both name and email */}
+                </TableRow>
+              ))}
+              {!projectData?.shared_users?.length && (
+                <TableRow>
+                  <TableCell colSpan={2} sx={{ color: '#D5D5D5', textAlign: 'center' }}>
+                    No shared users
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        {/* Example buttons */}
+        <Box mt={2}>
+          <Button variant="contained" color="primary" sx={{ marginRight: '10px' }}>
+            Share to More Members
+          </Button>
+          <Button variant="contained" color="secondary" sx={{ marginRight: '10px' }}>
+            Publish Project
+          </Button>
+          <Button variant="outlined" color="error">
+            Delete Project
+          </Button>
+        </Box>
+      </Box>
+    </Box>
+  );
+  const renderGraphsSection = () => {
+    const graphData = [
+      {
+        factorTitle: 'Graph 1',
+        distributionType: 'normal',
+        values: { mean: 0, stddev: 1 }
+      },
+      {
+        factorTitle: 'Graph 2',
+        distributionType: 'uniform',
+        values: { min_val: 0, max_val: 1 }
+      },
+      {
+        factorTitle: 'Graph 3',
+        distributionType: 'triangular',
+        values: { min_val: 0, max_val: 1, mode: 0.5 }
+      },
+      // Add more data here for 10 graphs, adjusting distributionType and values as needed
+    ];
+
+    // Render 10 graphs by duplicating and altering the graphData array
+    return (
+      <Box sx={{ padding: '2rem' }}>
+        <Box
+          sx={{
+            backgroundColor: '#1e1e1e',
+            padding: '2rem',
+            borderRadius: '4px',
+            marginBottom: '3rem',
+            maxHeight: '600px', // Limit the height
+            overflowY: 'auto',   // Make scrollable
+          }}
+        >
+          <Typography variant="h6" sx={{ color: '#fff', marginBottom: '1rem' }}>
+            Multiple Simulations
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {graphData.map((graph, index) => (
+              <Box key={index} sx={{ height: '400px', width: '100%' }}>
+                <AggregateFactorGraph
+                  factorTitle={graph.factorTitle}
+                  distributionType={graph.distributionType}
+                  values={graph.values}
+                  height={"60rem"}
+                />
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      </Box>
+    );
+  };
 
   return (
     <Box>
       <Routes>
         <Route path="overview" element={renderOverview()} />
+        <Route path="settings" element={renderSettings()} />
+        <Route path="graphs" element={renderGraphsSection()} /> {/* New Route for the Graph Section */}
         {/* You can add other routes like settings here */}
       </Routes>
     </Box>
