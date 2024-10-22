@@ -38,28 +38,27 @@ const ProjectDashboard = () => {
         // Fetch user data
         const userResponse = await axios.get(`http://localhost:5001/api/user/users/${userId}`);
         const userData = userResponse.data;
+        console.log(userData)
         // Parse the user's projects
 
-        const projectsWithCrossCheckAccess = Object.values(userData.projects)
-          .filter((project) => project.access_data.cross_check_access)
-          .map((project) => ({
-            project_id: project.project_id,
-            hasCrossCheckAccess: project.access_data.cross_check_access,
-          }));
-        setProjectsWithCross(new Set(projectsWithCrossCheckAccess))
-        const projectPromises = Object.keys(userData.projects).map(async ([projectId, project]) => {
-
+        const projectsWithCrossCheckAccess = Object.entries(userData.projects)
+        .filter(([projectId, project]) => project.access_data.cross_check_access)
+        .map(([projectId]) => projectId); // Only map to project IDs
+      setProjectsWithCross(new Set(projectsWithCrossCheckAccess));
+              setProjectsWithCross(new Set(projectsWithCrossCheckAccess))
+        const projectPromises = Object.entries(userData.projects).map(async ([projectId, project]) => {
           const projectResponse = await axios.get(`http://localhost:5001/api/project/projects/${projectId}`);
           return {
             ...projectResponse.data,
-            form_submitted: userData.projects[projectId].access_data.form_submitted,
+            form_submitted: project.access_data.form_submitted, // Access form_submitted correctly
           };
         });
-
+                
         const projects = await Promise.all(projectPromises);
 
         // Separate projects into pending and completed based on form_submitted if not an Admin
         if (userData.is_admin) {
+          console.log('Admin user detected');
           setProjects(projects); // Admins don't fill out forms, so just display all projects
         } else {
           const pending = projects.filter((project) => !project.form_submitted);
