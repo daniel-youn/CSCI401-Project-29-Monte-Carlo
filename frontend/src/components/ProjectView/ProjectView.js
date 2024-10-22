@@ -239,65 +239,69 @@ const ProjectView = () => {
 
       {/* Content Row */}
       <Box sx={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
-        {/* Aggregated Factors Column */}
-        <Box sx={{ flex: 0.5 }}>
-          <Box
-            sx={{
-              backgroundColor: '#1e1e1e',
-              padding: '1rem',
-              borderRadius: '4px',
-              boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-              maxHeight: '900px',
-              overflowY: 'auto',
-            }}
-          >
-            <Typography variant="h6" sx={{ marginBottom: '1.5rem', color: '#fff' }}>
-              Aggregated Factors
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {aggregateData && Object.entries(aggregateData).map(([key, value], index) => (
-                <Box key={index} sx={{ height: '200px', width: '100%' }}>
-                  <AggregateFactorGraph
-                    factorTitle={key} // Use the key as the title
-                    x_values={value.x_values}
-                    y_values={value.y_values}
-                  />
-                </Box>
-              ))}
-            </Box>
-          </Box>
-        </Box>
-
-        {/* Simulation Summary Column */}
+      {/* Aggregated Factors Column */}
+      <Box sx={{ flex: 1, minWidth: '200px', maxWidth: '40%', flexGrow: 1 }}>
         <Box
           sx={{
             backgroundColor: '#1e1e1e',
             padding: '1rem',
             borderRadius: '4px',
             boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-            width: '100%', // Make sure the box width fills the remaining space
-            height: '700px', // Fix the height to avoid overflow
-            overflow: 'hidden', // Ensure content doesn't overflow
+            maxHeight: '750px',
+            overflowY: 'auto',
           }}
         >
           <Typography variant="h6" sx={{ marginBottom: '1.5rem', color: '#fff' }}>
-            Estimated Revenue
+            Aggregated Factors
           </Typography>
-          <Box
-            sx={{
-              height: '100%', // Ensure chart fits the parent container
-              width: '100%',
-              paddingBottom: '40px',
-            }}
-          >
-            {normalSimOutput ? (
-              <Line data={chartData} options={chartOptions} />
-            ) : (
-              <Typography sx={{ color: '#D5D5D5' }}>Loading chart data...</Typography>
-            )}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {aggregateData && Object.entries(aggregateData).map(([key, value], index) => (
+              <Box key={index} sx={{ height: '250px', width: '100%' }}>
+                <AggregateFactorGraph
+                  factorTitle={key} // Use the key as the title
+                  x_values={value.x_values}
+                  y_values={value.y_values}
+                />
+              </Box>
+            ))}
           </Box>
         </Box>
       </Box>
+
+      {/* Simulation Summary Column */}
+      <Box
+        sx={{
+          backgroundColor: '#1e1e1e',
+          padding: '1rem',
+          borderRadius: '4px',
+          boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+          width: '100%',
+          maxWidth: '60%', // Adjust this to be responsive
+          height: '750px',
+          overflow: 'hidden',
+          overflowX: 'hidden',
+        }}
+      >
+        <Typography variant="h6" sx={{ marginBottom: '1.5rem', color: '#fff' }}>
+          Estimated Revenue
+        </Typography>
+        <Box
+          sx={{
+            height: '100%',
+            width: '100%',
+            paddingBottom: '40px',
+            maxWidth: '100%',
+            overflowX: 'hidden',
+          }}
+        >
+          {normalSimOutput ? (
+            <Line data={chartData} options={chartOptions} />
+          ) : (
+            <Typography sx={{ color: '#D5D5D5' }}>Loading chart data...</Typography>
+          )}
+        </Box>
+      </Box>
+    </Box>
     </Box>
   );
 

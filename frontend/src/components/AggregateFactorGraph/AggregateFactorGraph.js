@@ -14,7 +14,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-const AggregateFactorGraph = ({ factorTitle = "Factor i", width = "40rem", height = "30rem", x_values, y_values }) => {
+const AggregateFactorGraph = ({ factorTitle = "Factor i", width = "100%", height = "300px", x_values, y_values }) => {
   const theme = useTheme();
 
   const [chartData, setChartData] = useState({
@@ -79,14 +79,18 @@ const AggregateFactorGraph = ({ factorTitle = "Factor i", width = "40rem", heigh
               data={chartData}
               options={{
                 maintainAspectRatio: false,
+                animation: false,
                 scales: {
                   y: {
-                    beginAtZero: true,
-                    display: true,
+                    display: false,  // Hide the y-axis
                   },
                   x: {
                     type: 'linear',
                     display: true,
+                    title: {
+                      display: true,
+                      text: factorTitle,  // Use factorTitle as x-axis label
+                    }
                   }
                 },
                 plugins: {
