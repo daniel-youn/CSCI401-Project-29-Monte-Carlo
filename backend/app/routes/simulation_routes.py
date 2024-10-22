@@ -78,11 +78,6 @@ def get_distribution(model_variables, factor_name):
     factor_params = model_variables["factors"][factor_name]
     distribution_type = factor_params['distribution_type']
     
-    print("PEEEEEEEEEEEEE====================")
-    print(factor_params)
-    print(distribution_type)
-    print("POOOOOOOOOOOOOO====================")
-    
     if distribution_type == 'uniform':
         min_val = factor_params["min_val"]
         max_val = factor_params["max_val"]
@@ -96,7 +91,6 @@ def get_distribution(model_variables, factor_name):
         min_val = factor_params["min_val"]
         max_val = factor_params["max_val"]
         return triang(c=(mode - min_val) / (max_val - min_val), loc=min_val, scale=max_val - min_val)
-
 
 @simulation_routes.route('/input_data', methods=['POST'])
 def input_data():
@@ -159,21 +153,17 @@ def input_data():
 
 def normalFactorRunSim(simulation_id, project_id):
     # Get simulation data
-    print("111111111111")
     simulation = simulation_collection.find_one({'simulation_id': simulation_id}, {'_id': False})
     if not simulation:
         return jsonify({'message': 'Simulation not found'}), 404
-    print("222222222222")
     
     model_vars_list = []
     model_vars_cursor = model_variables_collection.find({"simulation_id": simulation_id})
     for model_var in model_vars_cursor:
         model_vars_list.append(model_var)
-    print("33333333333")
             
     num_users = len(model_vars_list)
     num_simulations = project_collection.find_one({'_id': ObjectId(project_id)})['num_simulations']
-    print("4444444444444")
     
     def compute_for_year(year):
         sim_data = []
@@ -215,15 +205,118 @@ def normalFactorRunSim(simulation_id, project_id):
             'percentile_5': percentile_5,
             'percentile_95': percentile_95
         });
-    print("55555555555")
     
     assert len(yearly_sim_data) == 5
-    # Store simulation data in output collection
+
+    
     # TODO: cleanup the old unused output objects
-    output_id = db.outputs.insert_one({
-        'simulation_id': simulation_id,
-        'summary_statistics': yearly_sim_data
-    }).inserted_id
+    output_id = db["outputs"].update_one(
+    {'simulation_id': simulation_id},  # Query filter to match the document
+    {
+        '$set': {
+            'summary_statistics': yearly_sim_data
+        }
+    },
+        upsert=True  # Insert if no matching document is found
+    ).upserted_id
+
+    if output_id:
+        print(f"Inserted new document with ID: {output_id}")
+    else:
+        print(f"Updated existing document with simulation_id: {simulation_id}")
+
         
             
     return yearly_sim_data
+
+@simulation_routes.route('/get_aggregate_distribution/<project_id>', methods=['GET'])
+def get_aggregate_distribution(project_id):
+    
+    normal_sim_id = project_collection.find_one({'_id': ObjectId(project_id)})['normal_sim_id']
+    if not normal_sim_id:
+        return jsonify({"error": "Normal simulation not found for project"}), 404
+    
+    model_variables = model_variables_collection.find({'_id': ObjectId(normal_sim_id)})
+    if not model_variables:
+        return jsonify({"error": "Model variables not found for normal simulation"}), 404
+    if len(list(model_variables)) == 0:
+        return jsonify({"error": "Model variables not found for normal simulation. EMPTY"}), 404
+    
+    sample_size = 10000
+    
+    wtp_standard_dist_values = []
+    wtp_premium_dist_values = []
+    num_standard_users_dist_values = []
+    num_premium_users_dist_values = []
+    num_deals_dist_values = []
+    discount_dist_values = []
+    
+    for model in model_variables:
+        wtp_standard_dist = get_distribution(model, "willingness_to_pay_standard")
+        wtp_premium_dist = get_distribution(model, "willingness_to_pay_premium")
+        num_standard_users_dist = get_distribution(model, "num_standard_users_per_deal")
+        num_premium_users_dist = get_distribution(model, "num_premium_users_per_deal")
+        num_deals_dist = get_distribution(model, "num_deals_per_year")
+        discount_dist = get_distribution(model, "expected_discount_per_deal")
+        
+        #sample sample_size times each factor and store the results
+        for i in range(sample_size):
+            wtp_standard_dist_values.append(wtp_standard_dist.rvs())
+            wtp_premium_dist_values.append(wtp_premium_dist.rvs())
+            num_standard_users_dist_values.append(num_standard_users_dist.rvs())
+            num_premium_users_dist_values.append(num_premium_users_dist.rvs())
+            num_deals_dist_values.append(num_deals_dist.rvs())
+            discount_dist_values.append(discount_dist.rvs())
+        
+        # divide each factor values into buckett (x-values)  and y-values will be the frequency of the values in the bucket
+        # for each factor
+        # return the x-values and y-values for each factor
+    bin_size_wtp_standard = (max(wtp_standard_dist_values) - min(wtp_standard_dist_values)) / 100
+    freqs_wtp_standard, bin_edges_wtp_standard = np.histogram(wtp_standard_dist_values, bins=np.arange(min(wtp_standard_dist_values), max(wtp_standard_dist_values), bin_size_wtp_standard))
+    
+    bin_size_wtp_premium = (max(wtp_premium_dist_values) - min(wtp_premium_dist_values)) / 100
+    freqs_wtp_premium, bin_edges_wtp_premium = np.histogram(wtp_premium_dist_values, bins=np.arange(min(wtp_premium_dist_values), max(wtp_premium_dist_values), bin_size_wtp_premium))
+    
+    bin_size_num_standard_users = (max(num_standard_users_dist_values) - min(num_standard_users_dist_values)) / 100
+    freqs_num_standard_users, bin_edges_num_standard_users = np.histogram(num_standard_users_dist_values, bins=np.arange(min(num_standard_users_dist_values), max(num_standard_users_dist_values), bin_size_num_standard_users))
+    
+    bin_size_num_premium_users = (max(num_premium_users_dist_values) - min(num_premium_users_dist_values)) / 100
+    freqs_num_premium_users, bin_edges_num_premium_users = np.histogram(num_premium_users_dist_values, bins=np.arange(min(num_premium_users_dist_values), max(num_premium_users_dist_values), bin_size_num_premium_users))
+    
+    bin_size_num_deals = (max(num_deals_dist_values) - min(num_deals_dist_values)) / 100
+    freqs_num_deals, bin_edges_num_deals = np.histogram(num_deals_dist_values, bins=np.arange(min(num_deals_dist_values), max(num_deals_dist_values), bin_size_num_deals))
+    
+    bin_size_discount = (max(discount_dist_values) - min(discount_dist_values)) / 100
+    freqs_discount, bin_edges_discount = np.histogram(discount_dist_values, bins=np.arange(min(discount_dist_values), max(discount_dist_values), bin_size_discount))
+    
+    return jsonify({
+        "wtp_standard": {
+            "x_values": bin_edges_wtp_standard,
+            "y_values": freqs_wtp_standard
+        },
+        "wtp_premium": {
+            "x_values": bin_edges_wtp_premium,
+            "y_values": freqs_wtp_premium
+        },
+        "num_standard_users": {
+            "x_values": bin_edges_num_standard_users,
+            "y_values": freqs_num_standard_users
+        },
+        "num_premium_users": {
+            "x_values": bin_edges_num_premium_users,
+            "y_values": freqs_num_premium_users
+        },
+        "num_deals": {
+            "x_values": bin_edges_num_deals,
+            "y_values": freqs_num_deals
+        },
+        "discount": {
+            "x_values": bin_edges_discount,
+            "y_values": freqs_discount
+        }
+    }), 200
+        
+        
+            
+        
+        

@@ -86,7 +86,7 @@ def create_project():
         for user in project_data['shared_users']:
             # Use the provided cross_check_access value instead of defaulting to False
             access_data = {
-                "cross_check_access": user.get('cross_check_access', False),  # Use provided value
+                "cross_check_access": False,  # Use provided value TODO: DO PROPER CHECKS
                 "form_submitted": False,       # Default value
                 "is_admin": False               # Default value
             }
@@ -99,7 +99,7 @@ def create_project():
 
             # Update the user's projects in the database
             user_collection.update_one(
-                {"user_id": user["user_id"]},
+                {"user_id": user},
                 {"$set": {f"projects.{inserted_project_id}": project_info}},  # Use dot notation to set the new project
                 upsert=True  # Create a new document if no user found
             )
