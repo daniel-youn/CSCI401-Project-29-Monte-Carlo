@@ -23,7 +23,7 @@ const ProjectDashboard = () => {
   const [pendingProjects, setPendingProjects] = useState([]);
   const [completedProjects, setCompletedProjects] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
-
+  const [projectsWithCross, setProjectsWithCross] = useState(new Set())
   // Fetch user data and projects on component mount
   useEffect(() => {
     const fetchUserAndProjects = async () => {
@@ -38,9 +38,17 @@ const ProjectDashboard = () => {
         // Fetch user data
         const userResponse = await axios.get(`http://localhost:5001/api/user/users/${userId}`);
         const userData = userResponse.data;
-
         // Parse the user's projects
-        const projectPromises = Object.keys(userData.projects).map(async (projectId) => {
+
+        const projectsWithCrossCheckAccess = Object.values(userData.projects)
+          .filter((project) => project.access_data.cross_check_access)
+          .map((project) => ({
+            project_id: project.project_id,
+            hasCrossCheckAccess: project.access_data.cross_check_access,
+          }));
+        setProjectsWithCross(new Set(projectsWithCrossCheckAccess))
+        const projectPromises = Object.keys(userData.projects).map(async ([projectId, project]) => {
+
           const projectResponse = await axios.get(`http://localhost:5001/api/project/projects/${projectId}`);
           return {
             ...projectResponse.data,
@@ -71,13 +79,20 @@ const ProjectDashboard = () => {
   }, []);
 
   // Handle clicking on a project based on user role
+  //TODO: PASS BOOLEAN INDICATING THAT WE HAVE PERMS FOR CROSS CHECK FACTORS
   const handleProjectClick = (projectId, isFormSubmitted) => {
     if (isAdmin || isFormSubmitted) {
       // If the user is an admin or the form has been submitted, go to the Project View Page
       navigate(`/project-page/${projectId}/overview`);
     } else {
       // Otherwise, go to the Form Page (for pending projects)
-      navigate(`/form/${projectId}`);
+      if (projectsWithCross.has(projectId)) {
+        navigate(`/form/${projectId}/${true}`);
+      }
+      else {
+
+      }
+      navigate(`/form/${projectId}/${false}`);
     }
   };
 

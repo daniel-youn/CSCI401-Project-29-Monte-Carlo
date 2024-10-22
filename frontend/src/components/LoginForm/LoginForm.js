@@ -30,6 +30,7 @@ const LoginForm = () => {
       if (response.user_id) {
         Cookies.set('userId', loginData.email, { expires: 1, path: '/' });
         console.log("user_id cookie set:", response.user_id);
+
       } else {
         console.error('user_id is missing in the response');
       }
