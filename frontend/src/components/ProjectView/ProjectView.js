@@ -37,14 +37,32 @@ const ProjectView = () => {
   const theme = useTheme();
   const [projectData, setProjectData] = useState(null);  // State to hold project details
   const [normalSimOutput, setNormalSimOutput] = useState(null);  // State to hold normal simulation data
-
+  const [aggregateData, setAggregateData] = useState(null);
   // Fetch project details when the component loads or when projectId changes
   useEffect(() => {
     if (!projectId) {
       console.error('No project ID found in URL');
       return;
     }
+    console.log(projectId)
+    const fetchAggregateDistribution = async () => {
+      try {
+        const response = await fetch(`http://localhost:5001/api/simulation/get_aggregate_distribution/${projectId}`);
 
+        // Check if the response is ok
+        if (!response.ok) {
+          throw new Error(`Error fetching data: ${response.statusText}`);
+        }
+
+        // Parse the JSON response
+        const data = await response.json();
+
+        // Set the distribution data in state
+        setAggregateData(data);
+      } catch (error) {
+        console.error('Error fetching aggregate data', error);
+      }
+    };
     const fetchProjectData = async () => {
       try {
         // Fetch project details
@@ -69,6 +87,35 @@ const ProjectView = () => {
     };
 
     fetchProjectData();
+    fetchAggregateDistribution();
+    //TODO:REMOVE
+    setAggregateData({
+      "wtp_standard": {
+        "x_values": [10.5, 10.6, 10.7],
+        "y_values": [5, 15, 30]
+      },
+      "wtp_premium": {
+        "x_values": [20.5, 20.6, 20.7],
+        "y_values": [3, 12, 25]
+      },
+      "num_standard_users": {
+        "x_values": [100, 101, 102],
+        "y_values": [10, 18, 35]
+      },
+      "num_premium_users": {
+        "x_values": [50, 51, 52],
+        "y_values": [7, 15, 22]
+      },
+      "num_deals": {
+        "x_values": [1, 2, 3],
+        "y_values": [4, 9, 13]
+      },
+      "discount": {
+        "x_values": [0.05, 0.06, 0.07],
+        "y_values": [10, 20, 35]
+      }
+    });
+    console.log(aggregateData)
   }, [projectId]);
 
   // Redirect to /project-page/:projectId/overview if visiting /project-page/:projectId
@@ -183,12 +230,12 @@ const ProjectView = () => {
               Aggregated Factors
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {Array.from({ length: 12 }).map((_, index) => (
+              {aggregateData && Object.entries(aggregateData).map(([key, value], index) => (
                 <Box key={index} sx={{ height: '200px', width: '100%' }}>
                   <AggregateFactorGraph
-                    factorTitle={`j ${index + 1}`}
-                    distributionType="normal"
-                    values={{ mean: Math.random(), stddev: Math.random() }} // Placeholder data
+                    factorTitle={key} // Use the key as the title
+                    x_values={value.x_values}
+                    y_values={value.y_values}
                   />
                 </Box>
               ))}
