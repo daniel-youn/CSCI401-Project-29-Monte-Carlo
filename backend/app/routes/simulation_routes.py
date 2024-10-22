@@ -9,6 +9,7 @@ from app.schemas.user_schema import user_schema
 from scipy.stats import uniform, norm, triang
 from app.schemas.simulation_schema import simulation_schema
 from app.schemas.projects_schema import projects_schema
+from joblib import Parallel, delayed
 
 # Create a Blueprint for simulation-related routes
 simulation_routes = Blueprint('simulation_routes', __name__)
@@ -131,7 +132,7 @@ def input_data():
             )
         
         # Call the normalFactorRunSim function to run the simulation
-        normalFactorRunSim(normal_sim_id, project_id)
+        _ , output_id, sim_id_or_output_id = normalFactorRunSim(normal_sim_id, project_id)
         
         # Now, update the form_submitted field in the user's document
         user = user_collection.find_one({"user_id": user_id})
@@ -154,7 +155,9 @@ def input_data():
         
         # Return success response
         return jsonify({
-            'message': 'Simulation completed and form submitted successfully.'
+            'message': 'Simulation completed and form submitted successfully.',
+            'id': output_id,
+            'id_type': sim_id_or_output_id
         }), 200
     
     except ValidationError as ve:
@@ -163,62 +166,130 @@ def input_data():
         return jsonify({'error': str(e)}), 500
 
 
+# def normalFactorRunSim(simulation_id, project_id):
+#     # Step 1: Fetch simulation data
+#     simulation = simulation_collection.find_one({'simulation_id': simulation_id}, {'_id': False})
+#     if not simulation:
+#         return jsonify({'message': 'Simulation not found'}), 404
+
+#     # Step 2: Fetch project and model variables
+#     model_vars_list = list(model_variables_collection.find({"simulation_id": simulation_id}))
+#     if not model_vars_list:
+#         return jsonify({'message': 'No model variables found'}), 404
+
+#     num_simulations = project_collection.find_one({'_id': ObjectId(project_id)})['num_simulations']
+#     num_users = len(model_vars_list)
+
+#     def generate_sample(model, year):
+#         """Generates a revenue sample for one simulation run."""
+#         wtp_standard_dist = get_distribution(model, "willingness_to_pay_standard")
+#         wtp_premium_dist = get_distribution(model, "willingness_to_pay_premium")
+#         num_standard_users_dist = get_distribution(model, "num_standard_users_per_deal")
+#         num_premium_users_dist = get_distribution(model, "num_premium_users_per_deal")
+#         num_deals_dist = get_distribution(model, f"num_deals_per_year_{year}")
+#         discount_dist = get_distribution(model, "expected_discount_per_deal")
+
+#         # Generate revenue for the year
+#         deal_size = (
+#             wtp_standard_dist.rvs() * num_standard_users_dist.rvs() +
+#             wtp_premium_dist.rvs() * num_premium_users_dist.rvs()
+#         )
+#         revenue = deal_size * num_deals_dist.rvs() * (1 - discount_dist.rvs())
+#         return revenue
+
+#     def compute_yearly_statistics(year):
+#         """Computes statistics for a given year."""
+#         sim_data = [generate_sample(model_vars_list[np.random.randint(num_users)], year) 
+#                     for _ in range(num_simulations)]
+#         return {
+#             'mean': np.mean(sim_data),
+#             'median': np.median(sim_data),
+#             'std_dev': np.std(sim_data),
+#             'min': np.min(sim_data),
+#             'max': np.max(sim_data),
+#             'percentile_5': np.percentile(sim_data, 5),
+#             'percentile_95': np.percentile(sim_data, 95)
+#         }
+
+#     # Step 3: Compute statistics for 5 years
+#     yearly_sim_data = [compute_yearly_statistics(year) for year in range(1, 6)]
+
+#     # Step 4: Upsert summary statistics into the output collection
+#     output_id = db["outputs"].update_one(
+#         {'simulation_id': simulation_id},
+#         {'$set': {'summary_statistics': yearly_sim_data}},
+#         upsert=True
+#     ).upserted_id
+
+#     # Log the result of the operation
+#     if output_id:
+#         print(f"Inserted new document with ID: {output_id}")
+#     else:
+#         print(f"Updated existing document with simulation_id: {simulation_id}")
+
+#     return yearly_sim_data
+
 def normalFactorRunSim(simulation_id, project_id):
     # Get simulation data
     simulation = simulation_collection.find_one({'simulation_id': simulation_id}, {'_id': False})
     if not simulation:
         return jsonify({'message': 'Simulation not found'}), 404
-    model_vars_list = []
-    model_vars_cursor = model_variables_collection.find({"simulation_id": simulation_id})
-    for model_var in model_vars_cursor:
-        model_vars_list.append(model_var)
+    
+    # Step 2: Fetch project and model variables
+    model_vars_list = list(model_variables_collection.find({"simulation_id": simulation_id}))
+    if not model_vars_list:
+        return jsonify({'message': 'No model variables found'}), 404
             
     num_users = len(model_vars_list)
     num_simulations = project_collection.find_one({'_id': ObjectId(project_id)})['num_simulations']
-    
+            
     def compute_for_year(year):
         sim_data = []
-        for i in range(0, num_simulations):
-            #pick a user randomly
-            model = model_vars_list[np.random.randint(0, num_users)]
-            factors = model['factors']
-            # TODO: figure out if getting the data is done correctly
-            wtp_standard_dist = get_distribution(model, "willingness_to_pay_standard")
-            wtp_premium_dist = get_distribution(model, "willingness_to_pay_premium")
-            num_standard_users_dist = get_distribution(model, "num_standard_users_per_deal")
-            num_premium_users_dist = get_distribution(model, "num_premium_users_per_deal")
-            num_deals_dist = get_distribution(model, "num_deals_per_year_" + str(year))
-            discount_dist = get_distribution(model, "expected_discount_per_deal")
+
+        # Pre-fetch the distributions outside the loop to avoid redundant calls
+        wtp_standard_dists = [get_distribution(model, "willingness_to_pay_standard") for model in model_vars_list]
+        wtp_premium_dists = [get_distribution(model, "willingness_to_pay_premium") for model in model_vars_list]
+        num_standard_users_dists = [get_distribution(model, "num_standard_users_per_deal") for model in model_vars_list]
+        num_premium_users_dists = [get_distribution(model, "num_premium_users_per_deal") for model in model_vars_list]
+        num_deals_dists = [get_distribution(model, "num_deals_per_year_" + str(year)) for model in model_vars_list]
+        discount_dists = [get_distribution(model, "expected_discount_per_deal") for model in model_vars_list]
+
+        # Generate all samples at once using vectorized operations
+        for _ in range(num_simulations):
+            random_index = np.random.randint(0, num_users)
             
-            # TODO: store deal size somehere
-            deal_size = (wtp_standard_dist.rvs() * num_standard_users_dist.rvs()) + (wtp_premium_dist.rvs() * num_premium_users_dist.rvs())
-            year_revenue = deal_size * num_deals_dist.rvs() * (1 - discount_dist.rvs())
+            # Select the pre-fetched distributions for the randomly selected model
+            wtp_standard = wtp_standard_dists[random_index].rvs()
+            wtp_premium = wtp_premium_dists[random_index].rvs()
+            num_standard_users = num_standard_users_dists[random_index].rvs()
+            num_premium_users = num_premium_users_dists[random_index].rvs()
+            num_deals = num_deals_dists[random_index].rvs()
+            discount = discount_dists[random_index].rvs()
+
+            # Calculate deal size and revenue
+            deal_size = (wtp_standard * num_standard_users) + (wtp_premium * num_premium_users)
+            year_revenue = deal_size * num_deals * (1 - discount)
+
             sim_data.append(year_revenue)
-            
+
         return sim_data
     
-    yearly_sim_data = []
-    for year in range(1, 6):
-        data = compute_for_year(year)
-        mean = np.mean(data)
-        median = np.median(data)
-        std_dev = np.std(data)
-        min_val = np.min(data)
-        max_val = np.max(data)
-        percentile_5 = np.percentile(data, 5)
-        percentile_95 = np.percentile(data, 95)
-        yearly_sim_data.append({
-            'mean': mean,
-            'median': median,
-            'std_dev': std_dev,
-            'min': min_val,
-            'max': max_val,
-            'percentile_5': percentile_5,
-            'percentile_95': percentile_95
-        })
+    def compute_statistics_for_year(year):
+        data = np.array(compute_for_year(year))
+        return {
+            'mean': np.mean(data),
+            'median': np.median(data),
+            'std_dev': np.std(data),
+            'min': np.min(data),
+            'max': np.max(data),
+            'percentile_5': np.percentile(data, 5),
+            'percentile_95': np.percentile(data, 95)
+        }
+
+    # Parallelize computation across 5 years
+    yearly_sim_data = Parallel(n_jobs=-1)(delayed(compute_statistics_for_year)(year) for year in range(1, 6))
     
     assert len(yearly_sim_data) == 5
-
     
     # TODO: cleanup the old unused output objects
     output_id = db["outputs"].update_one(
@@ -235,10 +306,11 @@ def normalFactorRunSim(simulation_id, project_id):
         print(f"Inserted new document with ID: {output_id}")
     else:
         print(f"Updated existing document with simulation_id: {simulation_id}")
-
-        
+    
+    res_id = output_id if output_id else simulation_id
+    sim_id_or_output_id = "output_id" if output_id else "simulation_id"
             
-    return yearly_sim_data
+    return yearly_sim_data, res_id, sim_id_or_output_id
 
 @simulation_routes.route('/get_aggregate_distribution/<project_id>', methods=['GET'])
 def get_aggregate_distribution(project_id):
