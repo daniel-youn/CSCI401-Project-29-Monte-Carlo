@@ -1,9 +1,0 @@
-flask
-pymongo[srv]
-python-dotenv
-marshmallow
-werkzeug
-numpy
-scipy
-flask-cors
-joblib
