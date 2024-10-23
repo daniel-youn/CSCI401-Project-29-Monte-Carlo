@@ -87,6 +87,7 @@ const AggregateFactorGraph = ({ factorTitle = "Factor i", width = "100%", height
                 scales: {
                   y: {
                     display: false,  // Hide the y-axis
+                    min: 0,
                   },
                   x: {
                     type: 'linear',
