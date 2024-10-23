@@ -260,7 +260,8 @@ def get_aggregate_distribution(project_id):
     if not model_variables:
         return jsonify({"error": "Model variables not found for normal simulation"}), 404
 
-    sample_size = 10000
+    sample_size = 100000
+    num_bins = 100
 
     # Function to sample distributions
     def sample_distributions(model):
@@ -307,7 +308,7 @@ def get_aggregate_distribution(project_id):
     
     # Function to compute histogram in parallel
     def compute_histogram(values):
-        bin_size = (max(values) - min(values)) / 100
+        bin_size = (max(values) - min(values)) / num_bins
         return np.histogram(values, bins=np.arange(min(values), max(values), bin_size))
 
     with ThreadPoolExecutor() as executor:
