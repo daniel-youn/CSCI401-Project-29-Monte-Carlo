@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 import pprint
 from flask import Blueprint, jsonify, request
 from bson import ObjectId
@@ -165,70 +166,6 @@ def input_data():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-# def normalFactorRunSim(simulation_id, project_id):
-#     # Step 1: Fetch simulation data
-#     simulation = simulation_collection.find_one({'simulation_id': simulation_id}, {'_id': False})
-#     if not simulation:
-#         return jsonify({'message': 'Simulation not found'}), 404
-
-#     # Step 2: Fetch project and model variables
-#     model_vars_list = list(model_variables_collection.find({"simulation_id": simulation_id}))
-#     if not model_vars_list:
-#         return jsonify({'message': 'No model variables found'}), 404
-
-#     num_simulations = project_collection.find_one({'_id': ObjectId(project_id)})['num_simulations']
-#     num_users = len(model_vars_list)
-
-#     def generate_sample(model, year):
-#         """Generates a revenue sample for one simulation run."""
-#         wtp_standard_dist = get_distribution(model, "willingness_to_pay_standard")
-#         wtp_premium_dist = get_distribution(model, "willingness_to_pay_premium")
-#         num_standard_users_dist = get_distribution(model, "num_standard_users_per_deal")
-#         num_premium_users_dist = get_distribution(model, "num_premium_users_per_deal")
-#         num_deals_dist = get_distribution(model, f"num_deals_per_year_{year}")
-#         discount_dist = get_distribution(model, "expected_discount_per_deal")
-
-#         # Generate revenue for the year
-#         deal_size = (
-#             wtp_standard_dist.rvs() * num_standard_users_dist.rvs() +
-#             wtp_premium_dist.rvs() * num_premium_users_dist.rvs()
-#         )
-#         revenue = deal_size * num_deals_dist.rvs() * (1 - discount_dist.rvs())
-#         return revenue
-
-#     def compute_yearly_statistics(year):
-#         """Computes statistics for a given year."""
-#         sim_data = [generate_sample(model_vars_list[np.random.randint(num_users)], year) 
-#                     for _ in range(num_simulations)]
-#         return {
-#             'mean': np.mean(sim_data),
-#             'median': np.median(sim_data),
-#             'std_dev': np.std(sim_data),
-#             'min': np.min(sim_data),
-#             'max': np.max(sim_data),
-#             'percentile_5': np.percentile(sim_data, 5),
-#             'percentile_95': np.percentile(sim_data, 95)
-#         }
-
-#     # Step 3: Compute statistics for 5 years
-#     yearly_sim_data = [compute_yearly_statistics(year) for year in range(1, 6)]
-
-#     # Step 4: Upsert summary statistics into the output collection
-#     output_id = db["outputs"].update_one(
-#         {'simulation_id': simulation_id},
-#         {'$set': {'summary_statistics': yearly_sim_data}},
-#         upsert=True
-#     ).upserted_id
-
-#     # Log the result of the operation
-#     if output_id:
-#         print(f"Inserted new document with ID: {output_id}")
-#     else:
-#         print(f"Updated existing document with simulation_id: {simulation_id}")
-
-#     return yearly_sim_data
-
 def normalFactorRunSim(simulation_id, project_id):
     # Get simulation data
     simulation = simulation_collection.find_one({'simulation_id': simulation_id}, {'_id': False})
@@ -317,26 +254,16 @@ def get_aggregate_distribution(project_id):
     result = project_collection.find_one({'_id': ObjectId(project_id)})
     if not result or 'normal_sim_id' not in result:
         return jsonify({"error": "Normal simulation not found for project"}), 404
-    normal_sim_id = result['normal_sim_id']
     
+    normal_sim_id = result['normal_sim_id']
     model_variables = list(model_variables_collection.find({'simulation_id': normal_sim_id}))
     if not model_variables:
         return jsonify({"error": "Model variables not found for normal simulation"}), 404
-    
+
     sample_size = 10000
-    
-    wtp_standard_dist_values = []
-    wtp_premium_dist_values = []
-    num_standard_users_dist_values = []
-    num_premium_users_dist_values = []
-    num_deals_year_1_dist_values = []
-    num_deals_year_2_dist_values = []
-    num_deals_year_3_dist_values = []
-    num_deals_year_4_dist_values = []
-    num_deals_year_5_dist_values = []
-    discount_dist_values = []
-    
-    for model in model_variables:
+
+    # Function to sample distributions
+    def sample_distributions(model):
         wtp_standard_dist = get_distribution(model, "willingness_to_pay_standard")
         wtp_premium_dist = get_distribution(model, "willingness_to_pay_premium")
         num_standard_users_dist = get_distribution(model, "num_standard_users_per_deal")
@@ -347,97 +274,90 @@ def get_aggregate_distribution(project_id):
         num_deals_year_4_dist = get_distribution(model, "num_deals_per_year_4")
         num_deals_year_5_dist = get_distribution(model, "num_deals_per_year_5")
         discount_dist = get_distribution(model, "expected_discount_per_deal")
-        
-        #sample sample_size times each factor and store the results
-        for i in range(sample_size):
-            wtp_standard_dist_values.append(wtp_standard_dist.rvs())
-            wtp_premium_dist_values.append(wtp_premium_dist.rvs())
-            num_standard_users_dist_values.append(num_standard_users_dist.rvs())
-            num_premium_users_dist_values.append(num_premium_users_dist.rvs())
-            num_deals_year_1_dist_values.append(num_deals_year_1_dist.rvs())
-            num_deals_year_2_dist_values.append(num_deals_year_2_dist.rvs())
-            num_deals_year_3_dist_values.append(num_deals_year_3_dist.rvs())
-            num_deals_year_4_dist_values.append(num_deals_year_4_dist.rvs())
-            num_deals_year_5_dist_values.append(num_deals_year_5_dist.rvs())
-            discount_dist_values.append(discount_dist.rvs())
-        
-        # divide each factor values into buckett (x-values)  and y-values will be the frequency of the values in the bucket
-        # for each factor
-        # return the x-values and y-values for each factor
-    bin_size_wtp_standard = (max(wtp_standard_dist_values) - min(wtp_standard_dist_values)) / 100
-    freqs_wtp_standard, bin_edges_wtp_standard = np.histogram(wtp_standard_dist_values, bins=np.arange(min(wtp_standard_dist_values), max(wtp_standard_dist_values), bin_size_wtp_standard))
-    
-    bin_size_wtp_premium = (max(wtp_premium_dist_values) - min(wtp_premium_dist_values)) / 100
-    freqs_wtp_premium, bin_edges_wtp_premium = np.histogram(wtp_premium_dist_values, bins=np.arange(min(wtp_premium_dist_values), max(wtp_premium_dist_values), bin_size_wtp_premium))
-    
-    bin_size_num_standard_users = (max(num_standard_users_dist_values) - min(num_standard_users_dist_values)) / 100
-    freqs_num_standard_users, bin_edges_num_standard_users = np.histogram(num_standard_users_dist_values, bins=np.arange(min(num_standard_users_dist_values), max(num_standard_users_dist_values), bin_size_num_standard_users))
-    
-    bin_size_num_premium_users = (max(num_premium_users_dist_values) - min(num_premium_users_dist_values)) / 100
-    freqs_num_premium_users, bin_edges_num_premium_users = np.histogram(num_premium_users_dist_values, bins=np.arange(min(num_premium_users_dist_values), max(num_premium_users_dist_values), bin_size_num_premium_users))
 
-    bin_size_num_deals_year_1 = (max(num_deals_year_1_dist_values) - min(num_deals_year_1_dist_values)) / 100
-    freqs_num_deals_year_1, bin_edges_num_deals_year_1 = np.histogram(num_deals_year_1_dist_values, bins=np.arange(min(num_deals_year_1_dist_values), max(num_deals_year_1_dist_values), bin_size_num_deals_year_1))
-    
-    bin_size_num_deals_year_2 = (max(num_deals_year_2_dist_values) - min(num_deals_year_2_dist_values)) / 100
-    freqs_num_deals_year_2, bin_edges_num_deals_year_2 = np.histogram(num_deals_year_2_dist_values, bins=np.arange(min(num_deals_year_2_dist_values), max(num_deals_year_2_dist_values), bin_size_num_deals_year_2))
-    
-    bin_size_num_deals_year_3 = (max(num_deals_year_3_dist_values) - min(num_deals_year_3_dist_values)) / 100
-    freqs_num_deals_year_3, bin_edges_num_deals_year_3 = np.histogram(num_deals_year_3_dist_values, bins=np.arange(min(num_deals_year_3_dist_values), max(num_deals_year_3_dist_values), bin_size_num_deals_year_3))
-    
-    bin_size_num_deals_year_4 = (max(num_deals_year_4_dist_values) - min(num_deals_year_4_dist_values)) / 100
-    freqs_num_deals_year_4, bin_edges_num_deals_year_4 = np.histogram(num_deals_year_4_dist_values, bins=np.arange(min(num_deals_year_4_dist_values), max(num_deals_year_4_dist_values), bin_size_num_deals_year_4))
-    
-    bin_size_num_deals_year_5 = (max(num_deals_year_5_dist_values) - min(num_deals_year_5_dist_values)) / 100
-    freqs_num_deals_year_5, bin_edges_num_deals_year_5 = np.histogram(num_deals_year_5_dist_values, bins=np.arange(min(num_deals_year_5_dist_values), max(num_deals_year_5_dist_values), bin_size_num_deals_year_5))
+        # Sample in bulk using numpy
+        return {
+            'wtp_standard': wtp_standard_dist.rvs(sample_size),
+            'wtp_premium': wtp_premium_dist.rvs(sample_size),
+            'num_standard_users': num_standard_users_dist.rvs(sample_size),
+            'num_premium_users': num_premium_users_dist.rvs(sample_size),
+            'num_deals_year_1': num_deals_year_1_dist.rvs(sample_size),
+            'num_deals_year_2': num_deals_year_2_dist.rvs(sample_size),
+            'num_deals_year_3': num_deals_year_3_dist.rvs(sample_size),
+            'num_deals_year_4': num_deals_year_4_dist.rvs(sample_size),
+            'num_deals_year_5': num_deals_year_5_dist.rvs(sample_size),
+            'discount': discount_dist.rvs(sample_size)
+        }
 
-    bin_size_discount = (max(discount_dist_values) - min(discount_dist_values)) / 100
-    freqs_discount, bin_edges_discount = np.histogram(discount_dist_values, bins=np.arange(min(discount_dist_values), max(discount_dist_values), bin_size_discount))
+    # Parallelize sampling
+    with ThreadPoolExecutor() as executor:
+        sampled_results = list(executor.map(sample_distributions, model_variables))
     
+    # Aggregate samples
+    wtp_standard_values = np.concatenate([result['wtp_standard'] for result in sampled_results])
+    wtp_premium_values = np.concatenate([result['wtp_premium'] for result in sampled_results])
+    num_standard_users_values = np.concatenate([result['num_standard_users'] for result in sampled_results])
+    num_premium_users_values = np.concatenate([result['num_premium_users'] for result in sampled_results])
+    num_deals_year_1_values = np.concatenate([result['num_deals_year_1'] for result in sampled_results])
+    num_deals_year_2_values = np.concatenate([result['num_deals_year_2'] for result in sampled_results])
+    num_deals_year_3_values = np.concatenate([result['num_deals_year_3'] for result in sampled_results])
+    num_deals_year_4_values = np.concatenate([result['num_deals_year_4'] for result in sampled_results])
+    num_deals_year_5_values = np.concatenate([result['num_deals_year_5'] for result in sampled_results])
+    discount_values = np.concatenate([result['discount'] for result in sampled_results])
+    
+    # Function to compute histogram in parallel
+    def compute_histogram(values):
+        bin_size = (max(values) - min(values)) / 100
+        return np.histogram(values, bins=np.arange(min(values), max(values), bin_size))
+
+    with ThreadPoolExecutor() as executor:
+        histograms = list(executor.map(compute_histogram, [
+            wtp_standard_values, wtp_premium_values, num_standard_users_values, 
+            num_premium_users_values, num_deals_year_1_values, num_deals_year_2_values, 
+            num_deals_year_3_values, num_deals_year_4_values, num_deals_year_5_values, 
+            discount_values
+        ]))
+
+    # Prepare the response
     return jsonify({
         "wtp_standard": {
-            "x_values": bin_edges_wtp_standard.tolist(),
-            "y_values": freqs_wtp_standard.tolist()
+            "x_values": histograms[0][1].tolist(),
+            "y_values": histograms[0][0].tolist()
         },
         "wtp_premium": {
-            "x_values": bin_edges_wtp_premium.tolist(),
-            "y_values": freqs_wtp_premium.tolist()
+            "x_values": histograms[1][1].tolist(),
+            "y_values": histograms[1][0].tolist()
         },
         "num_standard_users": {
-            "x_values": bin_edges_num_standard_users.tolist(),
-            "y_values": freqs_num_standard_users.tolist()
+            "x_values": histograms[2][1].tolist(),
+            "y_values": histograms[2][0].tolist()
         },
         "num_premium_users": {
-            "x_values": bin_edges_num_premium_users.tolist(),
-            "y_values": freqs_num_premium_users.tolist()
+            "x_values": histograms[3][1].tolist(),
+            "y_values": histograms[3][0].tolist()
         },
         "num_deals_year_1": {
-            "x_values": bin_edges_num_deals_year_1.tolist(),
-            "y_values": freqs_num_deals_year_1.tolist()
+            "x_values": histograms[4][1].tolist(),
+            "y_values": histograms[4][0].tolist()
         },
         "num_deals_year_2": {
-            "x_values": bin_edges_num_deals_year_2.tolist(),
-            "y_values": freqs_num_deals_year_2.tolist()
+            "x_values": histograms[5][1].tolist(),
+            "y_values": histograms[5][0].tolist()
         },
         "num_deals_year_3": {
-            "x_values": bin_edges_num_deals_year_3.tolist(),
-            "y_values": freqs_num_deals_year_3.tolist()
+            "x_values": histograms[6][1].tolist(),
+            "y_values": histograms[6][0].tolist()
         },
         "num_deals_year_4": {
-            "x_values": bin_edges_num_deals_year_4.tolist(),
-            "y_values": freqs_num_deals_year_4.tolist()
+            "x_values": histograms[7][1].tolist(),
+            "y_values": histograms[7][0].tolist()
         },
         "num_deals_year_5": {
-            "x_values": bin_edges_num_deals_year_5.tolist(),
-            "y_values": freqs_num_deals_year_5.tolist()
+            "x_values": histograms[8][1].tolist(),
+            "y_values": histograms[8][0].tolist()
         },
         "discount": {
-            "x_values": bin_edges_discount.tolist(),
-            "y_values": freqs_discount.tolist()
+            "x_values": histograms[9][1].tolist(),
+            "y_values": histograms[9][0].tolist()
         }
     }), 200
-        
-        
-            
-        
-        
