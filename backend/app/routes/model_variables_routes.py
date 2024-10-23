@@ -27,9 +27,10 @@ def create_model_variables():
 # 2. Get model variables by simulation_id
 @model_variables_routes.route('/model_variables/<simulation_id>', methods=['GET'])
 def get_model_variables(simulation_id):
-    model_variables = model_variables_collection.find_one({'simulation_id': simulation_id}, {'_id': False})
-    if model_variables:
-        return jsonify(model_variables), 200
+    model_variables = model_variables_collection.find({'simulation_id': simulation_id}, {'_id': False})
+    model_variables_list = list(model_variables)
+    if model_variables_list:
+        return jsonify(model_variables_list), 200
     return jsonify({'message': 'Model variables not found'}), 404
 
 # 3. Update model variables by simulation_id
@@ -44,7 +45,7 @@ def update_model_variables(simulation_id):
 # 4. Delete model variables by simulation_id
 @model_variables_routes.route('/model_variables/<simulation_id>', methods=['DELETE'])
 def delete_model_variables(simulation_id):
-    result = model_variables_collection.delete_one({'simulation_id': simulation_id})
+    result = model_variables_collection.delete_many({'simulation_id': simulation_id})
     if result.deleted_count:
         return jsonify({'message': 'Model variables deleted successfully'}), 200
     return jsonify({'message': 'Model variables not found'}), 404

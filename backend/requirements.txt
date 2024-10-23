@@ -6,3 +6,4 @@ werkzeug
 numpy
 scipy
 flask-cors
+joblib
