@@ -28,8 +28,6 @@ const CreateProjectForm = () => {
       return;
     }
 
-    // Log sharedMembers to check the format before sending
-    console.log('sharedMembers before sending:', sharedMembers);
 
     const projectData = {
       project_name: projectName,
