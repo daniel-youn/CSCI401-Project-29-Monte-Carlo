@@ -14,7 +14,14 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width = "40rem", height = "30rem", onFormChange }) => {
+const GraphForm = ({
+  factorName = "factor_name",
+  factorTitle = "Factor i",
+  width = 400, // Changed to number
+  height = 300, // Changed to number
+  percentageInput = false,
+  onFormChange
+}) => {
   const theme = useTheme(); // To use consistent theme styles
 
   const [distributionType, setDistributionType] = useState('');
@@ -31,6 +38,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
       }
     ]
   });
+  const [errorMessage, setErrorMessage] = useState('');
 
   const distributionOptions = [
     { value: 'normal', label: 'Normal Distribution' },
@@ -42,48 +50,41 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
     setDistributionType(e.target.value);
     const defaultValues = { mean: '', stddev: '', min_val: '', max_val: '', mode: '' };
 
-    if (e.target.value === "uniform") {
-      setValues({
-        ...defaultValues,
-        min_val: values.min_val,
-        max_val: values.max_val,
-        distribution_type: e.target.value
-      });
-    } else if (e.target.value === "normal") {
-      setValues({
-        ...defaultValues,
-        mean: values.mean,
-        stddev: values.stddev,
-        distribution_type: e.target.value
-      });
-    } else if (e.target.value === "triangular") {
-      setValues({
-        ...defaultValues,
-        min_val: values.min_val,
-        max_val: values.max_val,
-        mode: values.mode,
-        distribution_type: e.target.value
-      });
-    }
+    setValues({
+      ...defaultValues,
+      distribution_type: e.target.value
+    });
 
     setChartData(emptyChartData());
+    setErrorMessage('');
     onFormChange({ ...values, distribution_type: e.target.value });
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    const parsedValue = parseFloat(value);
-    const updatedValues = { ...values, [name]: isNaN(parsedValue) ? '' : parsedValue };
+    let parsedValue = value === '' ? '' : parseFloat(value);
+
+    if (parsedValue === '' || isNaN(parsedValue) || parsedValue < 0) {
+      setErrorMessage('Value cannot be negative.');
+      parsedValue = '';
+    } else if (percentageInput && parsedValue > 1) {
+      setErrorMessage('Please enter a value between 0.00 and 1.00.');
+      parsedValue = '';
+    } else {
+      setErrorMessage('');
+    }
+
+    const updatedValues = { ...values, [name]: parsedValue };
     setValues(updatedValues);
     onFormChange(updatedValues);
   };
 
   const emptyChartData = () => ({
-    labels: Array.from({ length: 100 }, (_, i) => i),
+    labels: [],
     datasets: [
       {
         label: 'Distribution',
-        data: Array(100).fill(null),
+        data: [],
         borderColor: theme.palette.primary.main,
         backgroundColor: 'rgba(0, 188, 212, 0.2)',
         fill: true
@@ -95,10 +96,10 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
     let data = [];
     const numPoints = 100;
 
-    if (distributionType === 'normal' && values.mean && values.stddev) {
+    if (distributionType === 'normal' && values.mean !== '' && values.stddev !== '') {
       const mean = parseFloat(values.mean);
       const stddev = parseFloat(values.stddev);
-      const startX = mean - 3 * stddev;
+      const startX = Math.max(0, mean - 3 * stddev);
       const endX = mean + 3 * stddev;
       const step = (endX - startX) / numPoints;
 
@@ -121,11 +122,21 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
           }
         ]
       });
-    } else if (distributionType === 'uniform' && values.min_val && values.max_val) {
+    } else if (distributionType === 'uniform' && values.min_val !== '' && values.max_val !== '') {
       const min_val = parseFloat(values.min_val);
       const max_val = parseFloat(values.max_val);
-      const uniformHeight = 1 / (max_val - min_val);
-      const labels = Array.from({ length: numPoints }, (_, i) => (min_val + ((max_val - min_val) / numPoints) * i).toFixed(2));
+
+      if (min_val > max_val) {
+        setErrorMessage('Minimum value cannot be greater than Maximum value.');
+        return;
+      } else {
+        setErrorMessage('');
+      }
+
+      const uniformHeight = max_val - min_val !== 0 ? 1 / (max_val - min_val) : 0;
+      const labels = Array.from({ length: numPoints }, (_, i) =>
+        (min_val + ((max_val - min_val) / numPoints) * i).toFixed(2)
+      );
 
       data = labels.map(x => (x >= min_val && x <= max_val ? uniformHeight : 0));
 
@@ -142,15 +153,29 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
           }
         ]
       });
-    } else if (distributionType === 'triangular' && values.min_val && values.max_val && values.mode) {
+    } else if (distributionType === 'triangular' && values.min_val !== '' && values.max_val !== '' && values.mode !== '') {
       const min_val = parseFloat(values.min_val);
       const max_val = parseFloat(values.max_val);
       const mode = parseFloat(values.mode);
-      const labels = Array.from({ length: numPoints }, (_, i) => (min_val + ((max_val - min_val) / numPoints) * i).toFixed(2));
+
+      if (min_val > max_val) {
+        setErrorMessage('Minimum value cannot be greater than Maximum value.');
+        return;
+      } else if (mode < min_val || mode > max_val) {
+        setErrorMessage('Mode must be between Minimum and Maximum values.');
+        return;
+      } else {
+        setErrorMessage('');
+      }
+
+      const labels = Array.from({ length: numPoints }, (_, i) =>
+        (min_val + ((max_val - min_val) / numPoints) * i).toFixed(2)
+      );
 
       data = labels.map(x => {
         const val = parseFloat(x);
         if (val < min_val || val > max_val) return 0;
+        if (val === mode) return 2 / (max_val - min_val);
         if (val < mode) return (2 * (val - min_val)) / ((max_val - min_val) * (mode - min_val));
         return (2 * (max_val - val)) / ((max_val - min_val) * (max_val - mode));
       });
@@ -168,6 +193,8 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
           }
         ]
       });
+    } else {
+      setChartData(emptyChartData());
     }
   };
 
@@ -176,6 +203,10 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
   }, [values, distributionType]);
 
   const renderInputs = () => {
+    const commonInputProps = { type: 'number', step: 'any', min: 0 };
+    if (percentageInput) {
+      commonInputProps.max = 1;
+    }
     switch (distributionType) {
       case 'normal':
         return (
@@ -186,7 +217,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
               value={values.mean}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
-              inputProps={{ type: 'number', step: 'any' }} // Accept floats
+              inputProps={commonInputProps}
             />
             <TextField
               label="Standard Deviation"
@@ -194,7 +225,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
               value={values.stddev}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
-              inputProps={{ type: 'number', step: 'any' }} // Accept floats
+              inputProps={commonInputProps}
             />
           </>
         );
@@ -207,7 +238,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
               value={values.min_val}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
-              inputProps={{ type: 'number', step: 'any' }} // Accept floats
+              inputProps={commonInputProps}
             />
             <TextField
               label="Maximum Value"
@@ -215,7 +246,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
               value={values.max_val}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
-              inputProps={{ type: 'number', step: 'any' }} // Accept floats
+              inputProps={commonInputProps}
             />
           </>
         );
@@ -228,7 +259,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
               value={values.min_val}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
-              inputProps={{ type: 'number', step: 'any' }} // Accept floats
+              inputProps={commonInputProps}
             />
             <TextField
               label="Maximum Value"
@@ -236,7 +267,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
               value={values.max_val}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
-              inputProps={{ type: 'number', step: 'any' }} // Accept floats
+              inputProps={commonInputProps}
             />
             <TextField
               label="Mode"
@@ -244,7 +275,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
               value={values.mode}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
-              inputProps={{ type: 'number', step: 'any' }} // Accept floats
+              inputProps={commonInputProps}
             />
           </>
         );
@@ -260,13 +291,18 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
         backgroundColor: theme.palette.background.paper,
         color: theme.palette.text.primary,
         width: `${width}px`,
-        height: `${height}px`,
         overflow: 'auto'
       }}
     >
       <Typography variant="h5" align="center" sx={{ marginBottom: '1rem', color: theme.palette.text.primary }}>
         {factorTitle}
       </Typography>
+
+      {percentageInput && (
+        <Typography variant="body2" align="center" color="textSecondary" sx={{ marginBottom: '1rem', color: theme.palette.text.primary }}>
+          Please enter a value between 0.00 and 1.00.
+        </Typography>
+      )}
 
       <Box sx={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
         <TextField
@@ -285,46 +321,55 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
       </Box>
 
       {distributionType && (
-        <Box
-          sx={{
-            marginBottom: '2rem',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            width: `${width * 0.8}px`,
-            height: `${height * 0.4}px`
-          }}
-        >
-          <Box sx={{ width: '100%', height: '100%' }}>
-            <Line
-              data={chartData}
-              options={{
-                maintainAspectRatio: false,
-                scales: {
-                  y: {
-                    beginAtZero: true, // Ensure no negative y-values
-                    display: false, // Hide the y-axis
+        <>
+          <Box
+            sx={{
+              marginBottom: '2rem',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              width: `${width * 0.8}px`,
+              height: `${height * 0.4}px`
+            }}
+          >
+            <Box sx={{ width: '100%', height: '100%' }}>
+              <Line
+                data={chartData}
+                options={{
+                  maintainAspectRatio: false,
+                  scales: {
+                    y: {
+                      beginAtZero: true, // Ensure no negative y-values
+                      display: false, // Hide the y-axis
+                    },
+                    x: {
+                      type: 'linear',
+                      min: Math.max(0, Math.min(...chartData.labels)),
+                      max: Math.max(...chartData.labels),
+                    }
                   },
-                  x: {
-                    type: 'linear',
-                    min: Math.min(...chartData.labels),
-                    max: Math.max(...chartData.labels),
-                  }
-                },
-                plugins: {
-                  legend: {
-                    display: false, // Disable the legend
+                  plugins: {
+                    legend: {
+                      display: false, // Disable the legend
+                    },
                   },
-                },
-              }}
-            />
+                }}
+              />
+            </Box>
           </Box>
-        </Box>
-      )}
 
-      <Grid container spacing={2} justifyContent="center">
-        {renderInputs()}
-      </Grid>
+          <Grid container spacing={2} justifyContent="center">
+            {renderInputs()}
+          </Grid>
+
+          {/* Error Message */}
+          {errorMessage && (
+            <Typography variant="body2" color="error" align="center" sx={{ marginTop: '1rem' }}>
+              {errorMessage}
+            </Typography>
+          )}
+        </>
+      )}
     </Paper>
   );
 };

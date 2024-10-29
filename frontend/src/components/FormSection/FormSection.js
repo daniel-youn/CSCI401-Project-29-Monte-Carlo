@@ -53,18 +53,15 @@ const FormSection = ({ renderCrossCheck = false }, { projectID = "N/A" }) => {
     if (Object.keys(form).length === 0) {
       return true;
     }
-  
+
     if (form.mean && form.stddev) return true;
     if (form.min_val && form.max_val) return true;
     if (form.min_val && form.max_val && form.mode) return true;
-  
+
     return false;
   };
-  
-  
 
   const handleSubmit = () => {
-    // console.log(formData)
     const allFormsComplete = Object.keys(formData).every((key) => isFormComplete(formData[key]));
 
     if (allFormsComplete) {
@@ -151,6 +148,7 @@ const FormSection = ({ renderCrossCheck = false }, { projectID = "N/A" }) => {
             factorTitle="Expected Discount per Deal"
             width={"40rem"}
             height={"30rem"}
+            percentageInput={true} // Added this line
             onFormChange={(data) => handleFormChange('expected_discount_per_deal', data)}
           />
         </Grid>
