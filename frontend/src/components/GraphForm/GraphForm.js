@@ -186,6 +186,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
               value={values.mean}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
+              inputProps={{ type: 'number', step: 'any' }} // Accept floats
             />
             <TextField
               label="Standard Deviation"
@@ -193,6 +194,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
               value={values.stddev}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
+              inputProps={{ type: 'number', step: 'any' }} // Accept floats
             />
           </>
         );
@@ -205,6 +207,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
               value={values.min_val}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
+              inputProps={{ type: 'number', step: 'any' }} // Accept floats
             />
             <TextField
               label="Maximum Value"
@@ -212,6 +215,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
               value={values.max_val}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
+              inputProps={{ type: 'number', step: 'any' }} // Accept floats
             />
           </>
         );
@@ -224,6 +228,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
               value={values.min_val}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
+              inputProps={{ type: 'number', step: 'any' }} // Accept floats
             />
             <TextField
               label="Maximum Value"
@@ -231,6 +236,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
               value={values.max_val}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
+              inputProps={{ type: 'number', step: 'any' }} // Accept floats
             />
             <TextField
               label="Mode"
@@ -238,6 +244,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
               value={values.mode}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
+              inputProps={{ type: 'number', step: 'any' }} // Accept floats
             />
           </>
         );

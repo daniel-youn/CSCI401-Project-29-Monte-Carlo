@@ -268,7 +268,7 @@ const ProjectView = () => {
               padding: '1rem',
               borderRadius: '4px',
               boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-              maxHeight: '700px',
+              maxHeight: '750px',
               overflowY: 'auto',
             }}
           >
@@ -278,7 +278,7 @@ const ProjectView = () => {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {aggregateData ? (
                 Object.entries(aggregateData).map(([key, value], index) => (
-                  <Box key={index} sx={{ height: '250px', width: '100%' }}>
+                  <Box key={index} sx={{ height: '220px', width: '100%' }}>
                     <AggregateFactorGraph
                       factorTitle={factorTitleMapping[key] || `Unknown factor: ${key}`} // More explicit fallback message
                       x_values={value.x_values}
@@ -302,7 +302,7 @@ const ProjectView = () => {
             boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
             width: '100%',
             maxWidth: '60%', // Adjust this to be responsive
-            height: '700px',
+            height: '750px',
             overflow: 'hidden',
             overflowX: 'hidden',
           }}
@@ -312,15 +312,24 @@ const ProjectView = () => {
           </Typography>
           <Box
             sx={{
-              height: '100%',
+              height: '85%',
               width: '100%',
-              paddingBottom: '40px',
+              paddingBottom: '10px',
               maxWidth: '100%',
               overflowX: 'hidden',
             }}
           >
-
-            <FormControlLabel
+            {/* may need to change to load just normal sim if only normal sim exists */}
+            {normalSimOutput || adminSimOutput ? (
+              <Line data={chartData} options={chartOptions} />
+            ) : (
+              <Typography sx={{ color: '#D5D5D5' }}>Loading chart data...</Typography>
+            )}
+          </Box>
+          <FormControlLabel
+              sx={{
+                paddingLeft: '1rem',
+              }}
               control={
                 <Switch
                   checked={showOverlay}
@@ -330,14 +339,6 @@ const ProjectView = () => {
               }
               label="Overlay"
             />
-
-            {/* may need to change to load just normal sim if only normal sim exists */}
-            {normalSimOutput || adminSimOutput ? (
-              <Line data={chartData} options={chartOptions} />
-            ) : (
-              <Typography sx={{ color: '#D5D5D5' }}>Loading chart data...</Typography>
-            )}
-          </Box>
         </Box>
       </Box>
     </Box>
