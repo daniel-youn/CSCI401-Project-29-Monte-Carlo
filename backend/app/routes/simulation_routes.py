@@ -163,7 +163,7 @@ def input_data():
         # Return success response
         return jsonify({
             'message': 'Simulation completed and form submitted successfully.',
-            'id': output_id,
+            'id': str(output_id),
             'id_type': sim_id_or_output_id
         }), 200
     
