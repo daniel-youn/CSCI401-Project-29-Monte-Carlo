@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
+import SharingFunctionality from '../SharingFunctionality/SharingFunctionality';
 import {
   Box,
   Typography,
@@ -42,6 +43,8 @@ const ProjectView = () => {
   const [normalSimOutput, setNormalSimOutput] = useState(null);  // State to hold normal simulation data
   const [adminSimOutput, setAdminSimOutput] = useState(null);  // State to hold normal simulation data
   const [aggregateData, setAggregateData] = useState(null);
+  const [showShare, setShowShare] = useState(false);
+  const [sharedMembers, setSharedMembers] = useState([]);
   // Fetch project details when the component loads or when projectId changes
 
   const factorTitleMapping = {
@@ -87,7 +90,7 @@ const ProjectView = () => {
         const projectResponse = await fetch(`http://localhost:5001/api/project/projects/${projectId}`);
         const projectData = await projectResponse.json();
         setProjectData(projectData);
-
+        setSharedMembers(projectData.shared_users)
         // Get simId from the projectResponse
         const simId = projectData.normal_sim_id;  // Use the normal_sim_id from the project data
         if (!simId) {
@@ -132,6 +135,57 @@ const ProjectView = () => {
   const handleToggleOverlay = () => {
     setShowOverlay(prev => !prev);
   };
+  const toggleShare = () => {
+    console.log(projectData);
+    setShowShare(!showShare);
+  }
+  const updateSharedList = () => {
+    console.log("Before updating:", projectData);
+
+    // Format creation_time and exclude project_id
+    const { project_id, creation_time, ...restData } = projectData;
+    const updatedData = {
+      ...restData,
+      shared_users: sharedMembers,
+      creation_time: new Date(creation_time).toISOString()
+    };
+
+    // Update the project data state
+    setProjectData((prevData) => ({
+      ...prevData,
+      shared_users: sharedMembers,
+      creation_time: updatedData.creation_time
+    }));
+
+    // Use updatedData directly for updateProject to ensure correct data is used
+    updateProject(project_id, updatedData);
+
+    console.log("After setting state with updatedData:", updatedData);
+  };
+
+  async function updateProject(projectId, updatedData) {
+    try {
+      const response = await fetch(`http://localhost:5001/api/project/projects/${projectId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data.message);
+      } else if (response.status === 404) {
+        console.error('Project not found');
+      } else {
+        const errorData = await response.json();
+        console.error('Error:', errorData.error);
+      }
+    } catch (error) {
+      console.error('Fetch error:', error);
+    }
+  }
 
   const chartData = {
     labels: ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'], // Assuming 5 years
@@ -327,18 +381,18 @@ const ProjectView = () => {
             )}
           </Box>
           <FormControlLabel
-              sx={{
-                paddingLeft: '1rem',
-              }}
-              control={
-                <Switch
-                  checked={showOverlay}
-                  onChange={handleToggleOverlay}
-                  color="primary"
-                />
-              }
-              label="Overlay"
-            />
+            sx={{
+              paddingLeft: '1rem',
+            }}
+            control={
+              <Switch
+                checked={showOverlay}
+                onChange={handleToggleOverlay}
+                color="primary"
+              />
+            }
+            label="Overlay"
+          />
         </Box>
       </Box>
     </Box>
@@ -394,7 +448,7 @@ const ProjectView = () => {
         </TableContainer>
         {/* Example buttons */}
         <Box mt={2}>
-          <Button variant="contained" color="primary" sx={{ marginRight: '10px' }}>
+          <Button variant="contained" color="primary" sx={{ marginRight: '10px' }} onClick={() => toggleShare()}>
             Share to More Members
           </Button>
           <Button variant="contained" color="secondary" sx={{ marginRight: '10px' }}>
@@ -405,7 +459,21 @@ const ProjectView = () => {
           </Button>
         </Box>
       </Box>
+      {
+        showShare && (
+          <Box>
+            <SharingFunctionality
+              sharedMembers={sharedMembers}
+              setSharedMembers={setSharedMembers}
+            />
+            <Button onClick={() => updateSharedList()}>Update</Button>
+          </Box>
+
+        )
+      }
     </Box>
+
+
   );
 
   return (
