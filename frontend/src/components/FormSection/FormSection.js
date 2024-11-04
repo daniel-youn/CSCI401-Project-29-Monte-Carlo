@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Grid, Button, Typography, useTheme, Dialog, DialogActions, DialogContent, DialogContentText } from '@mui/material';
+import { Box, Grid, Button, Typography, useTheme, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import GraphForm from '../GraphForm/GraphForm';
 import MonteCarloServices from '../../apis/MonteCarloServices';
@@ -137,7 +137,6 @@ const FormSection = ({ renderCrossCheck = false, projectID = "N/A" }) => {
   return (
     <Box sx={{ bgcolor: theme.palette.background.default, padding: '3rem', minHeight: '100vh' }}>
       <Grid container spacing={4}>
-        {/* Render GraphForm components */}
         <Grid item xs={12} md={6}>
           <GraphForm
             factorName='willingness_to_pay_standard'
@@ -147,7 +146,109 @@ const FormSection = ({ renderCrossCheck = false, projectID = "N/A" }) => {
             onFormChange={(data) => handleFormChange('willingness_to_pay_standard', data)}
           />
         </Grid>
-        {/* Additional GraphForm components omitted for brevity */}
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='willingness_to_pay_premium'
+            factorTitle="Willingness to Pay (Premium)"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('willingness_to_pay_premium', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='num_standard_users_per_deal'
+            factorTitle="Number of Standard Users per Deal"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('num_standard_users_per_deal', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='num_premium_users_per_deal'
+            factorTitle="Number of Premium Users per Deal"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('num_premium_users_per_deal', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='expected_discount_per_deal'
+            factorTitle="Expected Discount per Deal"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('expected_discount_per_deal', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='num_deals_year_1'
+            factorTitle="Number of Deals For Year 1"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('num_deals_year_1', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='num_deals_year_2'
+            factorTitle="Number of Deals For Year 2"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('num_deals_year_2', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='num_deals_year_3'
+            factorTitle="Number of Deals For Year 3"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('num_deals_year_3', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='num_deals_year_4'
+            factorTitle="Number of Deals For Year 4"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('num_deals_year_4', data)}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <GraphForm
+            factorName='num_deals_year_5'
+            factorTitle="Number of Deals For Year 5"
+            width={"40rem"}
+            height={"30rem"}
+            onFormChange={(data) => handleFormChange('num_deals_year_5', data)}
+          />
+        </Grid>
+        {renderCrossCheck && (
+          <>
+            <Grid item xs={12} md={6}>
+              <GraphForm
+                factorName='initial_market_size'
+                factorTitle="Initial Market Size (Year 1)"
+                width={"40rem"}
+                height={"30rem"}
+                onFormChange={(data) => handleFormChange('initial_market_size', data)}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <GraphForm
+                factorName='year_over_year_growth_rate'
+                factorTitle="Year-over-Year Growth Rate"
+                width={"40rem"}
+                height={"30rem"}
+                onFormChange={(data) => handleFormChange('year_over_year_growth_rate', data)}
+              />
+            </Grid>
+          </>
+        )}
       </Grid>
 
       {/* Error Message */}

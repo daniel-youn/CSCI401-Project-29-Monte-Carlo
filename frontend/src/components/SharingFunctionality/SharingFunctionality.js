@@ -6,7 +6,6 @@ const SharingFunctionality = ({ sharedMembers, setSharedMembers }) => {
   const [allUsers, setAllUsers] = useState([]);
   const [crossCheckMembers, setCrossCheckMembers] = useState({});
 
-  // Fetch user data from API
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -16,9 +15,8 @@ const SharingFunctionality = ({ sharedMembers, setSharedMembers }) => {
         }
         const data = await response.json();
 
-        // Only fetch the necessary user_id for passing, but display full data
         const users = data.map((user) => ({
-          id: user.user_id, // user_id will be passed to sharedMembers
+          id: user.user_id,
           name: `${user.first_name || ''} ${user.last_name || ''}`.trim(),
           email: user.email,
         }));
@@ -32,40 +30,26 @@ const SharingFunctionality = ({ sharedMembers, setSharedMembers }) => {
     fetchUsers();
   }, []);
 
-  // Handle adding members with only user_id as string
   const handleAddMember = (user) => {
-    if (!sharedMembers.includes(user.id)) {
-      setSharedMembers([...sharedMembers, user.id]);
-
-      // Initialize crossCheck status for the new member
-      setCrossCheckMembers((prev) => ({
-        ...prev,
-        [user.id]: false,
-      }));
+    if (!sharedMembers.some(member => member.user_id === user.id)) {
+      setSharedMembers([...sharedMembers, { user_id: user.id, cross_check_access: false }]);
     }
   };
 
-  // Toggle crossCheck for a member
   const toggleCrossCheck = (id) => {
-    setCrossCheckMembers((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
+    setSharedMembers(prevMembers =>
+      prevMembers.map(member =>
+        member.user_id === id
+          ? { ...member, cross_check_access: !member.cross_check_access }
+          : member
+      )
+    );
   };
 
-  // Handle removing a member
   const handleRemoveMember = (id) => {
-    setSharedMembers((prevMembers) => prevMembers.filter((memberId) => memberId !== id));
-
-    // Remove crossCheck status for the removed member
-    setCrossCheckMembers((prev) => {
-      const updated = { ...prev };
-      delete updated[id];
-      return updated;
-    });
+    setSharedMembers(prevMembers => prevMembers.filter(member => member.user_id !== id));
   };
 
-  // Retrieve user details by ID for rendering
   const getUserById = (id) => allUsers.find((user) => user.id === id);
 
   return (
@@ -76,19 +60,18 @@ const SharingFunctionality = ({ sharedMembers, setSharedMembers }) => {
 
       <Autocomplete
         options={allUsers}
-        getOptionLabel={(option) => `${option.name} (${option.email})`} // Display name and email
+        getOptionLabel={(option) => `${option.name} (${option.email})`}
         onChange={(event, newValue) => {
           if (newValue) {
-            handleAddMember(newValue); // Pass only user_id as string
+            handleAddMember(newValue);
           }
         }}
         renderInput={(params) => (
           <TextField {...params} label="Search for Users" variant="outlined" fullWidth />
         )}
         sx={{ mt: 2 }}
-        // To prevent adding the same user multiple times, you can disable already selected users
         filterOptions={(options, state) =>
-          options.filter((option) => !sharedMembers.includes(option.id))
+          options.filter((option) => !sharedMembers.some(member => member.user_id === option.id))
         }
       />
 
@@ -97,11 +80,11 @@ const SharingFunctionality = ({ sharedMembers, setSharedMembers }) => {
       </Typography>
       {sharedMembers.length > 0 ? (
         <Box mt={2}>
-          {sharedMembers.map((id) => {
-            const user = getUserById(id);
+          {sharedMembers.map(({ user_id, cross_check_access }) => {
+            const user = getUserById(user_id);
             return (
               <Box
-                key={id}
+                key={user_id}
                 sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}
               >
                 <Typography sx={{ width: '300px' }}>
@@ -112,8 +95,8 @@ const SharingFunctionality = ({ sharedMembers, setSharedMembers }) => {
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={crossCheckMembers[id] || false}
-                        onChange={() => toggleCrossCheck(id)}
+                        checked={cross_check_access}
+                        onChange={() => toggleCrossCheck(user_id)}
                         color="primary"
                       />
                     }
@@ -122,7 +105,7 @@ const SharingFunctionality = ({ sharedMembers, setSharedMembers }) => {
                 </Box>
 
                 <Button
-                  onClick={() => handleRemoveMember(id)}
+                  onClick={() => handleRemoveMember(user_id)}
                   variant="outlined"
                   color="error"
                   sx={{ width: '100px' }}
@@ -142,9 +125,13 @@ const SharingFunctionality = ({ sharedMembers, setSharedMembers }) => {
   );
 };
 
-// Define PropTypes for better type checking
 SharingFunctionality.propTypes = {
-  sharedMembers: PropTypes.arrayOf(PropTypes.string).isRequired,
+  sharedMembers: PropTypes.arrayOf(
+    PropTypes.shape({
+      user_id: PropTypes.string.isRequired,
+      cross_check_access: PropTypes.bool.isRequired,
+    })
+  ).isRequired,
   setSharedMembers: PropTypes.func.isRequired,
 };
 

@@ -177,27 +177,39 @@ const ProjectView = () => {
     setShowShare(!showShare);
   }
   const updateSharedList = () => {
-    console.log("Before updating:", projectData);
+    const prevMembers = projectData.shared_users
+    //assuming sharedMembers properly is updated
+    const currMembers = sharedMembers
+    const updateCrossCheckAccess = async (accessList) => {
+      try {
+        const response = await fetch('http://localhost:5001/api/access/update_cross_check_access', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(accessList),
+        });
 
-    // Format creation_time and exclude project_id
-    const { project_id, creation_time, ...restData } = projectData;
-    const updatedData = {
-      ...restData,
-      shared_users: sharedMembers,
-      creation_time: new Date(creation_time).toISOString()
+        if (!response.ok) {
+          throw new Error(`Error updating access: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('Access updated successfully:', data);
+        return data; // or handle the response data as needed
+      } catch (error) {
+        console.error('Error in updateCrossCheckAccess:', error);
+      }
     };
 
-    // Update the project data state
-    setProjectData((prevData) => ({
-      ...prevData,
-      shared_users: sharedMembers,
-      creation_time: updatedData.creation_time
-    }));
+    // Example usage:
+    const accessList = [
+      { user_id: '12345', cross_check_access: true },
+      { user_id: '67890', cross_check_access: false },
+    ];
 
-    // Use updatedData directly for updateProject to ensure correct data is used
-    updateProject(project_id, updatedData);
+    updateCrossCheckAccess(accessList);
 
-    console.log("After setting state with updatedData:", updatedData);
   };
 
   async function updateProject(projectId, updatedData) {
