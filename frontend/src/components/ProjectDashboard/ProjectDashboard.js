@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Paper, Typography, Box, Button, Divider, CircularProgress, useTheme
+  Paper, Typography, Box, Button, Divider, CircularProgress, useTheme, Dialog, DialogContent, DialogActions
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { styled } from '@mui/system';
@@ -25,6 +25,7 @@ const ProjectDashboard = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [projectsWithCross, setProjectsWithCross] = useState(new Set());
   const [loading, setLoading] = useState(true);
+  const [openDialog, setOpenDialog] = useState(false); // State for dialog visibility
 
   useEffect(() => {
     const fetchUserAndProjects = async () => {
@@ -70,7 +71,7 @@ const ProjectDashboard = () => {
         // Ensure the loading spinner stays for at least 2.5 seconds
         setTimeout(() => {
           setLoading(false);
-        }, 2500); // 2.5-second delay
+        }, 2000); // 2.5-second delay
       }
     };
 
@@ -83,6 +84,18 @@ const ProjectDashboard = () => {
     } else {
       navigate(`/form/${projectId}/${projectsWithCross.has(projectId)}`);
     }
+  };
+
+  const handleCreateProjectClick = () => {
+    if (isAdmin) {
+      navigate('/create-project');
+    } else {
+      setOpenDialog(true); // Open dialog for non-admin users
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
   };
 
   const renderProjectRows = (projects) => {
@@ -130,24 +143,22 @@ const ProjectDashboard = () => {
             <Typography variant="h4" sx={{ color: theme.palette.text.primary }}>
               My Projects
             </Typography>
-            {isAdmin && (
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => navigate('/create-project')}
-                sx={{
-                  backgroundColor: 'white',
-                  color: '#0b1225',
-                  fontWeight: 'bold',
-                  borderRadius: '5px',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                  },
-                }}
-              >
-                NEW PROJECT
-              </Button>
-            )}
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleCreateProjectClick}
+              sx={{
+                backgroundColor: 'white',
+                color: '#0b1225',
+                fontWeight: 'bold',
+                borderRadius: '5px',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                },
+              }}
+            >
+              NEW PROJECT
+            </Button>
           </Box>
 
           <Divider sx={{ marginBottom: '2rem' }} />
@@ -239,6 +250,20 @@ const ProjectDashboard = () => {
           )}
         </Box>
       )}
+
+      {/* Dialog for non-admin alert */}
+      <Dialog open={openDialog} onClose={handleCloseDialog}>
+        <DialogContent>
+          <Typography sx={{ fontSize: '1rem', color: theme.palette.text.primary }}>
+            You are not an admin; you cannot create a new project.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
