@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, TextField, Typography, Autocomplete, Button } from '@mui/material';
+import { Box, TextField, Typography, Autocomplete, Button, Switch, FormControlLabel } from '@mui/material';
 
 const SharingFunctionality = ({ sharedMembers, setSharedMembers }) => {
   const [allUsers, setAllUsers] = useState([]);
@@ -29,14 +29,23 @@ const SharingFunctionality = ({ sharedMembers, setSharedMembers }) => {
 
   // Handle adding members with only user_id (as string)
   const handleAddMember = (user) => {
-    if (!sharedMembers.includes(user.id)) {
-      // Add user_id as a string to sharedMembers
-      setSharedMembers([...sharedMembers, user.id]);
+    if (!sharedMembers.some((member) => member.id === user.id)) {
+      setSharedMembers([...sharedMembers, { id: user.id, crossCheck: false }]);
     }
   };
 
+  const toggleCrossCheck = (id) => {
+    setSharedMembers((prevMembers) =>
+      prevMembers.map((member) =>
+        member.id === id
+          ? { ...member, crossCheck: !member.crossCheck }
+          : member
+      )
+    );
+  };
+
   const handleRemoveMember = (id) => {
-    setSharedMembers((prevMembers) => prevMembers.filter((member) => member !== id));
+    setSharedMembers((prevMembers) => prevMembers.filter((member) => member.id !== id));
   };
 
   return (
@@ -64,17 +73,29 @@ const SharingFunctionality = ({ sharedMembers, setSharedMembers }) => {
       </Typography>
       {sharedMembers.length > 0 ? (
         <Box mt={2}>
-          {sharedMembers.map((id) => (
+          {sharedMembers.map((member) => (
             <Box
-              key={id}
+              key={member.id}
               sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}
             >
               <Typography sx={{ width: '300px' }}>
-                {allUsers.find((user) => user.id === id)?.name || 'Unknown User'} ({allUsers.find((user) => user.id === id)?.email || ''})
+                {allUsers.find((user) => user.id === member.id)?.name || 'Unknown User'} ({allUsers.find((user) => user.id === member.id)?.email || ''})
               </Typography>
 
+              <Box sx={{ width: '200px' }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={member.crossCheck}
+                      onChange={() => toggleCrossCheck(member.id)}
+                    />
+                  }
+                  label="Cross-Check Factors"
+                />
+              </Box>
+
               <Button
-                onClick={() => handleRemoveMember(id)}
+                onClick={() => handleRemoveMember(member.id)}
                 variant="outlined"
                 color="error"
                 sx={{ width: '100px' }}
