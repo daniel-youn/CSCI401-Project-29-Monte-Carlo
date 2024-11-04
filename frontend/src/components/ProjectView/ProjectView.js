@@ -30,6 +30,7 @@ import {
   Legend,
   Filler
 } from 'chart.js';
+import CrossCheckGraph from '../CrossCheckGraph/CrossCheckGraph'
 import AggregateFactorGraph from '../AggregateFactorGraph/AggregateFactorGraph';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
@@ -44,7 +45,9 @@ const ProjectView = () => {
   const [adminSimOutput, setAdminSimOutput] = useState(null);  // State to hold normal simulation data
   const [aggregateData, setAggregateData] = useState(null);
   const [showShare, setShowShare] = useState(false);
+  const [showCrossCheck, setShowCrossCheck] = useState(false);
   const [sharedMembers, setSharedMembers] = useState([]);
+  const [crossCheckData, setCrossCheckData] = useState(null);
   // Fetch project details when the component loads or when projectId changes
 
   const factorTitleMapping = {
@@ -135,6 +138,9 @@ const ProjectView = () => {
   const handleToggleOverlay = () => {
     setShowOverlay(prev => !prev);
   };
+  const handleShowCrossCheck = () => {
+    setShowCrossCheck(!showCrossCheck);
+  };
   const toggleShare = () => {
     console.log(projectData);
     setShowShare(!showShare);
@@ -190,69 +196,102 @@ const ProjectView = () => {
   const chartData = {
     labels: ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'], // Assuming 5 years
     datasets: [
-      // normal sin datasets
+      // Normal simulation datasets
       {
-        label: 'Estimated Revenue', // This is now the only visible legend item
+        label: 'Estimated Revenue',
         data: normalSimOutput?.summary_statistics.map(stat => stat.mean),
-        fill: '+1', // Fill the area between this dataset and the next (Std Down to Std Up)
-        borderColor: '#07ABAE', // Main line for "Estimated Revenue"
-        backgroundColor: 'rgba(7, 171, 174, 0.1)', // Translucent fill between std down and std up
+        fill: '+1',
+        borderColor: '#07ABAE',
+        backgroundColor: 'rgba(7, 171, 174, 0.1)',
         pointBackgroundColor: '#fff',
         pointBorderColor: '#07ABAE',
       },
       {
-        label: 'Std Down', // Dotted line for Std Down (not shown in the legend)
+        label: 'Std Down',
         data: normalSimOutput?.summary_statistics.map(stat => stat.mean - stat.std_dev),
-        fill: false, // No fill below this line
-        borderColor: '#07ABAE', // Same color as Estimated Revenue, but dotted
-        borderDash: [5, 5], // Dotted line style
-        pointBackgroundColor: 'rgba(0, 0, 0, 0)', // No points visible
+        fill: false,
+        borderColor: '#07ABAE',
+        borderDash: [5, 5],
+        pointBackgroundColor: 'rgba(0, 0, 0, 0)',
         pointBorderColor: 'rgba(0, 0, 0, 0)',
       },
       {
-        label: 'Std Up', // Dotted line for Std Up (not shown in the legend)
+        label: 'Std Up',
         data: normalSimOutput?.summary_statistics.map(stat => stat.mean + stat.std_dev),
-        fill: '-1', // Fill the area between this and the previous dataset (std up and std down)
-        borderColor: '#07ABAE', // Same color as Estimated Revenue, but dotted
-        backgroundColor: 'rgba(7, 171, 174, 0.1)', // Slightly different translucent color for std up
-        borderDash: [5, 5], // Dotted line style
-        pointBackgroundColor: 'rgba(0, 0, 0, 0)', // No points visible
+        fill: '-1',
+        borderColor: '#07ABAE',
+        backgroundColor: 'rgba(7, 171, 174, 0.1)',
+        borderDash: [5, 5],
+        pointBackgroundColor: 'rgba(0, 0, 0, 0)',
         pointBorderColor: 'rgba(0, 0, 0, 0)',
       },
 
-      // overlay or admin sim datasets
+      // Admin overlay datasets
       ...(showOverlay ? [
         {
-          label: 'Estimated Revenue Overlay', // This is now the only visible legend item
+          label: 'Estimated Revenue Overlay',
           data: adminSimOutput?.summary_statistics.map(stat => stat.mean),
-          fill: '+1', // Fill the area between this dataset and the next (Std Down to Std Up)
-          borderColor: '#4CAF50', // Main line for "Estimated Revenue"
-          backgroundColor: 'rgba(76, 175, 80, 0.1)', // Translucent fill between std down and std up
+          fill: '+1',
+          borderColor: '#4CAF50',
+          backgroundColor: 'rgba(76, 175, 80, 0.1)',
           pointBackgroundColor: '#fff',
           pointBorderColor: '#4CAF50',
         },
         {
-          label: 'Std Down', // Dotted line for Std Down (not shown in the legend)
+          label: 'Std Down',
           data: adminSimOutput?.summary_statistics.map(stat => stat.mean - stat.std_dev),
-          fill: false, // No fill below this line
-          borderColor: '#4CAF50', // Same color as Estimated Revenue, but dotted
-          borderDash: [5, 5], // Dotted line style
-          pointBackgroundColor: 'rgba(0, 0, 0, 0)', // No points visible
+          fill: false,
+          borderColor: '#4CAF50',
+          borderDash: [5, 5],
+          pointBackgroundColor: 'rgba(0, 0, 0, 0)',
           pointBorderColor: 'rgba(0, 0, 0, 0)',
         },
         {
-          label: 'Std Up', // Dotted line for Std Up (not shown in the legend)
+          label: 'Std Up',
           data: adminSimOutput?.summary_statistics.map(stat => stat.mean + stat.std_dev),
-          fill: '-1', // Fill the area between this and the previous dataset (std up and std down)
-          borderColor: '#4CAF50', // Same color as Estimated Revenue, but dotted
-          backgroundColor: 'rgba(76, 175, 80, 0.1)', // Slightly different translucent color for std up
-          borderDash: [5, 5], // Dotted line style
-          pointBackgroundColor: 'rgba(0, 0, 0, 0)', // No points visible
+          fill: '-1',
+          borderColor: '#4CAF50',
+          backgroundColor: 'rgba(76, 175, 80, 0.1)',
+          borderDash: [5, 5],
+          pointBackgroundColor: 'rgba(0, 0, 0, 0)',
+          pointBorderColor: 'rgba(0, 0, 0, 0)',
+        }
+      ] : []),
+
+      // Cross Check overlay datasets
+      ...(showCrossCheck ? [
+        {
+          label: 'Cross Check Overlay',
+          data: crossCheckData?.summary_statistics.map(stat => stat.mean),
+          fill: '+1',
+          borderColor: '#FF9800',
+          backgroundColor: 'rgba(255, 152, 0, 0.1)',
+          pointBackgroundColor: '#fff',
+          pointBorderColor: '#FF9800',
+        },
+        {
+          label: 'Cross Check Std Down',
+          data: crossCheckData?.summary_statistics.map(stat => stat.mean - stat.std_dev),
+          fill: false,
+          borderColor: '#FF9800',
+          borderDash: [5, 5],
+          pointBackgroundColor: 'rgba(0, 0, 0, 0)',
+          pointBorderColor: 'rgba(0, 0, 0, 0)',
+        },
+        {
+          label: 'Cross Check Std Up',
+          data: crossCheckData?.summary_statistics.map(stat => stat.mean + stat.std_dev),
+          fill: '-1',
+          borderColor: '#FF9800',
+          backgroundColor: 'rgba(255, 152, 0, 0.1)',
+          borderDash: [5, 5],
+          pointBackgroundColor: 'rgba(0, 0, 0, 0)',
           pointBorderColor: 'rgba(0, 0, 0, 0)',
         }
       ] : []),
     ],
   };
+
 
   const chartOptions = {
     responsive: true,
@@ -267,7 +306,7 @@ const ProjectView = () => {
         display: true,
         labels: {
           filter: function (item) {
-            return item.text === 'Estimated Revenue' || item.text === 'Estimated Revenue Overlay'; // Adjust this to your overlay label
+            return item.text === 'Estimated Revenue' || item.text === 'Estimated Revenue Overlay' || item.text === 'Cross Check Overlay'; // Adjust this to your overlay label
           },
         },
       },
@@ -393,9 +432,22 @@ const ProjectView = () => {
             }
             label="Overlay"
           />
+          <FormControlLabel
+            sx={{
+              paddingLeft: '1rem',
+            }}
+            control={
+              <Switch
+                checked={showCrossCheck}
+                onChange={handleShowCrossCheck}
+                color="primary"
+              />
+            }
+            label="Cross Check"
+          />
         </Box>
       </Box>
-    </Box>
+    </Box >
   );
 
   const renderSettings = () => (
