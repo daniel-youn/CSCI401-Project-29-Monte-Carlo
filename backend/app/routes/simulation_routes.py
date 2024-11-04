@@ -358,16 +358,11 @@ def get_aggregate_distribution(project_id):
     normal_sim_id = result['normal_sim_id']
     model_variables = list(model_variables_collection.find({'simulation_id': normal_sim_id}))
     if not model_variables:
-        return jsonify({"error": "Model variables not found for normal simulation"}), 404
+        return jsonify({"msg": "Model variables not found for normal simulation"}), 200
     
     cross_check_sim_id = result['cross_check_sim_id']
     cross_check_model_variables = list(model_variables_collection.find({'simulation_id': cross_check_sim_id}))
-    if not cross_check_model_variables:
-        return jsonify({"error": "Model variables not found for cross check simulation"}), 404
 
-    # add cross check model vars
-    model_variables.extend(cross_check_model_variables)
-    
     sample_size = 100000
     num_bins = 100
 
@@ -402,7 +397,22 @@ def get_aggregate_distribution(project_id):
     # Parallelize sampling
     with ThreadPoolExecutor() as executor:
         sampled_results = list(executor.map(sample_distributions, model_variables))
-    
+        
+        
+    def cc_sample_distributions(model):
+        initial_market_size_dist = get_distribution(model, "initial_market_size")
+        yoy_growth_rate_dist = get_distribution(model, "yoy_growth_rate")
+
+        # Sample in bulk using numpy
+        return {
+            'initial_market_size': initial_market_size_dist.rvs(sample_size),
+            'yoy_growth_rate': yoy_growth_rate_dist.rvs(sample_size),
+        }
+
+    # Parallelize sampling
+    with ThreadPoolExecutor() as executor:
+        cc_sampled_results = list(executor.map(cc_sample_distributions, cross_check_model_variables))
+
     # Aggregate samples
     wtp_standard_values = np.concatenate([result['wtp_standard'] for result in sampled_results])
     wtp_premium_values = np.concatenate([result['wtp_premium'] for result in sampled_results])
@@ -415,6 +425,9 @@ def get_aggregate_distribution(project_id):
     num_deals_year_5_values = np.concatenate([result['num_deals_year_5'] for result in sampled_results])
     discount_values = np.concatenate([result['discount'] for result in sampled_results])
     
+    initial_market_size_values = np.concatenate([result['initial_market_size'] for result in cc_sampled_results])
+    yoy_growth_rate_values = np.concatenate([result['yoy_growth_rate'] for result in cc_sampled_results])
+    
     # Function to compute histogram in parallel
     def compute_histogram(values):
         bin_size = (max(values) - min(values)) / num_bins
@@ -425,11 +438,12 @@ def get_aggregate_distribution(project_id):
             wtp_standard_values, wtp_premium_values, num_standard_users_values, 
             num_premium_users_values, num_deals_year_1_values, num_deals_year_2_values, 
             num_deals_year_3_values, num_deals_year_4_values, num_deals_year_5_values, 
-            discount_values
+            discount_values,initial_market_size_values,yoy_growth_rate_values
         ]))
 
     # Prepare the response
     return jsonify({
+        "msg": "success",
         "wtp_standard": {
             "x_values": histograms[0][1].tolist(),
             "y_values": histograms[0][0].tolist()
@@ -467,6 +481,14 @@ def get_aggregate_distribution(project_id):
             "y_values": histograms[8][0].tolist()
         },
         "discount": {
+            "x_values": histograms[9][1].tolist(),
+            "y_values": histograms[9][0].tolist()
+        },
+        "initial_market_size": {
+            "x_values": histograms[9][1].tolist(),
+            "y_values": histograms[9][0].tolist()
+        },
+        "yoy_growth_rate": {
             "x_values": histograms[9][1].tolist(),
             "y_values": histograms[9][0].tolist()
         }
