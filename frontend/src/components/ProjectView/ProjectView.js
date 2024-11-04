@@ -110,17 +110,19 @@ const ProjectView = () => {
         console.error('Error fetching cross check data:', error);
       }
     };
-        // Get simId from the projectResponse
-        const adminSimId = projectData.admin_sim_id;  // Use the admin_sim_id from the project data
-        if (!adminSimId) {
-          console.error('No admin_sim_id found in project data');
-          return;
-        }
-        const adminSimulationResponse = await fetch(`http://localhost:5001/api/output/outputs/simulation/${adminSimId}`);
-        const adminSimulationData = await adminSimulationResponse.json();
-        const lastAdminSimulation = adminSimulationData[adminSimulationData.length - 1];
-        setAdminSimOutput(lastAdminSimulation);
+    const getAdminOutput = async () => {
+      // Get simId from the projectResponse
+      const adminSimId = projectData.admin_sim_id;  // Use the admin_sim_id from the project data
+      if (!adminSimId) {
+        console.error('No admin_sim_id found in project data');
+        return;
+      }
+      const adminSimulationResponse = await fetch(`http://localhost:5001/api/output/outputs/simulation/${adminSimId}`);
+      const adminSimulationData = await adminSimulationResponse.json();
+      const lastAdminSimulation = adminSimulationData[adminSimulationData.length - 1];
+      setAdminSimOutput(lastAdminSimulation);
 
+    }
     const fetchSimulationData = async (simId, setSimOutput) => {
       if (!simId) return;
       try {
@@ -146,6 +148,8 @@ const ProjectView = () => {
         fetchSimulationData(projectDataCopy.normal_sim_id, setNormalSimOutput);
         fetchSimulationData(projectDataCopy.admin_sim_id, setAdminSimOutput);
         fetchCrossCheckDistribution(projectDataCopy.cross_check_sim_id);
+        getAdminOutput();
+        fetchAggregateDistribution();
 
       } catch (error) {
         console.error('Error fetching project data:', error);
@@ -153,7 +157,6 @@ const ProjectView = () => {
     };
 
     fetchProjectData();
-    fetchAggregateDistribution();
   }, [projectId]);
 
 
@@ -580,7 +583,7 @@ const ProjectView = () => {
       <Typography variant="h4" sx={{ marginBottom: '2rem', color: '#fff' }}>
         {projectData?.project_name || 'Loading...'}
       </Typography>
-      <OverlayFormSection projectId={projectId} aggregateData={aggregateData}/>
+      <OverlayFormSection projectId={projectId} aggregateData={aggregateData} />
     </Box>
   );
 
