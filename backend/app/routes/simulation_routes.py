@@ -450,7 +450,6 @@ def get_aggregate_distribution(project_id):
 
     # Prepare the response
     response = {
-        "msg": "success",
         "wtp_standard": {
             "x_values": histograms[0][1].tolist(),
             "y_values": histograms[0][0].tolist()
