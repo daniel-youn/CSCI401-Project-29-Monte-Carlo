@@ -90,7 +90,7 @@ const ProjectView = () => {
     }
     const fetchAggregateDistribution = async () => {
       try {
-        const response = await fetch(`http://localhost:5001/api/output/outputs/simulation/get_aggregate_distribution/${projectId}`);
+        const response = await fetch(`http://localhost:5001/api/simulation/get_aggregate_distribution/${projectId}`);
         if (!response.ok) throw new Error(`Error fetching aggregate data: ${response.statusText}`);
         const data = await response.json();
         setAggregateData(data);
