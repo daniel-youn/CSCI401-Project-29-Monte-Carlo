@@ -17,6 +17,8 @@ import {
   useTheme
 } from '@mui/material';
 import { Line } from 'react-chartjs-2';
+import axios from 'axios'; // Import axios
+import Cookies from 'js-cookie'; // Import js-cookie
 
 // Import and register Chart.js components
 import {
@@ -32,6 +34,7 @@ import {
 } from 'chart.js';
 import CrossCheckGraph from '../CrossCheckGraph/CrossCheckGraph'
 import AggregateFactorGraph from '../AggregateFactorGraph/AggregateFactorGraph';
+import OverlayFormSection from '../OverlayFormSection/OverlayFormSection';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
 const ProjectView = () => {
@@ -42,14 +45,31 @@ const ProjectView = () => {
   const [showOverlay, setShowOverlay] = useState(false);
   const [projectData, setProjectData] = useState(null);  // State to hold project details
   const [normalSimOutput, setNormalSimOutput] = useState(null);  // State to hold normal simulation data
-  const [adminSimOutput, setAdminSimOutput] = useState(null);  // State to hold normal simulation data
+  const [adminSimOutput, setAdminSimOutput] = useState(null);  // State to hold admin simulation data
   const [aggregateData, setAggregateData] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false); // State to track if user is admin
+
+  // Fetch user data to determine admin status
+  useEffect(() => {
+    const userId = Cookies.get('userId');
+    if (userId) {
+      const fetchUserData = async () => {
+        try {
+          const userResponse = await axios.get(`http://localhost:5001/api/user/users/${userId}`);
+          const userData = userResponse.data;
+          setIsAdmin(userData.is_admin); // Set admin flag based on user data
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      };
+      fetchUserData();
+    }
+  }, []);
   const [showShare, setShowShare] = useState(false);
   const [showCrossCheck, setShowCrossCheck] = useState(false);
   const [sharedMembers, setSharedMembers] = useState([]);
   const [crossCheckData, setCrossCheckData] = useState(null);
   // Fetch project details when the component loads or when projectId changes
-
   const factorTitleMapping = {
     discount: 'Expected Discount per Deal',
     num_deals_year_1: 'Number of Deals for Year 1',
@@ -68,7 +88,6 @@ const ProjectView = () => {
       console.error('No project ID found in URL');
       return;
     }
-
     const fetchAggregateDistribution = async () => {
       try {
         const response = await fetch(`http://localhost:5001/api/simulation/get_aggregate_distribution/${projectId}`);
@@ -91,6 +110,16 @@ const ProjectView = () => {
         console.error('Error fetching cross check data:', error);
       }
     };
+        // Get simId from the projectResponse
+        const adminSimId = projectData.admin_sim_id;  // Use the admin_sim_id from the project data
+        if (!adminSimId) {
+          console.error('No admin_sim_id found in project data');
+          return;
+        }
+        const adminSimulationResponse = await fetch(`http://localhost:5001/api/output/outputs/simulation/${adminSimId}`);
+        const adminSimulationData = await adminSimulationResponse.json();
+        const lastAdminSimulation = adminSimulationData[adminSimulationData.length - 1];
+        setAdminSimOutput(lastAdminSimulation);
 
     const fetchSimulationData = async (simId, setSimOutput) => {
       if (!simId) return;
@@ -196,7 +225,6 @@ const ProjectView = () => {
   const chartData = {
     labels: ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'], // Assuming 5 years
     datasets: [
-      // Normal simulation datasets
       {
         label: 'Estimated Revenue',
         data: normalSimOutput?.summary_statistics.map(stat => stat.mean),
@@ -419,6 +447,22 @@ const ProjectView = () => {
               <Typography sx={{ color: '#D5D5D5' }}>Loading chart data...</Typography>
             )}
           </Box>
+          {/* Conditionally render the overlay toggle if user is admin */}
+          {isAdmin && (
+            <FormControlLabel
+              sx={{
+                paddingLeft: '1rem',
+              }}
+              control={
+                <Switch
+                  checked={showOverlay}
+                  onChange={handleToggleOverlay}
+                  color="primary"
+                />
+              }
+              label="Overlay"
+            />
+          )}
           <FormControlLabel
             sx={{
               paddingLeft: '1rem',
@@ -452,6 +496,9 @@ const ProjectView = () => {
 
   const renderSettings = () => (
     <Box sx={{ padding: '2rem' }}>
+      <Typography variant="h4" sx={{ marginBottom: '2rem', color: '#fff' }}>
+        {projectData?.project_name || 'Loading...'}
+      </Typography>
       <Box
         sx={{
           backgroundColor: '#1e1e1e',
@@ -528,11 +575,21 @@ const ProjectView = () => {
 
   );
 
+  const renderOverlay = () => (
+    <Box sx={{ padding: '2rem' }}>
+      <Typography variant="h4" sx={{ marginBottom: '2rem', color: '#fff' }}>
+        {projectData?.project_name || 'Loading...'}
+      </Typography>
+      <OverlayFormSection projectId={projectId} aggregateData={aggregateData}/>
+    </Box>
+  );
+
   return (
     <Box>
       <Routes>
         <Route path="overview" element={renderOverview()} />
         <Route path="settings" element={renderSettings()} />
+        <Route path="overlay" element={renderOverlay()} />
         {/* You can add other routes like settings here */}
       </Routes>
     </Box>
