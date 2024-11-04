@@ -307,7 +307,7 @@ const GraphForm = ({ factorName = "factor_name", factorTitle = "Factor i", width
                   },
                   x: {
                     type: 'linear',
-                    min: Math.min(...chartData.labels),
+                    min: 0,
                     max: Math.max(...chartData.labels),
                   }
                 },
