@@ -81,6 +81,8 @@ const ProjectView = () => {
     num_standard_users: 'Number of Standard Users per Deal',
     wtp_premium: 'Annual Willingness-to-Pay per Premium User',
     wtp_standard: 'Annual Willingness-to-Pay per Standard User',
+    initial_market_size: 'Initial Market Size',
+    yoy_growth_rate: 'Year Over Year Growth Rate',
   };
 
   useEffect(() => {
@@ -93,7 +95,7 @@ const ProjectView = () => {
         const response = await fetch(`http://localhost:5001/api/simulation/get_aggregate_distribution/${projectId}`);
         if (!response.ok) throw new Error(`Error fetching aggregate data: ${response.statusText}`);
         const data = await response.json();
-        setAggregateData(data);
+        setAggregateData(data[0]);
       } catch (error) {
         console.error('Error fetching aggregate data:', error);
       }
@@ -105,8 +107,7 @@ const ProjectView = () => {
         const response = await fetch(`http://localhost:5001/api/output/outputs/simulation/${crossCheckID}`);
         if (!response.ok) throw new Error(`Error fetching cross check data: ${response.statusText}`);
         const data = await response.json();
-        console.log(data)
-        setCrossCheckData(data);
+        setCrossCheckData(data[0]);
       } catch (error) {
         console.error('Error fetching cross check data:', error);
       }
@@ -141,7 +142,6 @@ const ProjectView = () => {
         const projectDataCopy = await response.json();
 
         setProjectData(projectDataCopy);
-        setSharedMembers(projectDataCopy.shared_users);
 
         // Fetch normal, admin, and cross-check simulation data
         console.log(projectDataCopy)
@@ -177,17 +177,19 @@ const ProjectView = () => {
     setShowShare(!showShare);
   }
   const updateSharedList = () => {
-    const prevMembers = projectData.shared_users
-    //assuming sharedMembers properly is updated
-    const currMembers = sharedMembers
-    const updateCrossCheckAccess = async (accessList) => {
+    const updateCrossCheckAccess = async (accessList, projectId) => {
       try {
-        const response = await fetch('http://localhost:5001/api/access/update_cross_check_access', {
+        const structuredData = {
+          project_id: projectId,
+          users: accessList,
+        };
+
+        const response = await fetch('http://localhost:5001/api/project/projects/addUsers', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(accessList),
+          body: JSON.stringify(structuredData),
         });
 
         if (!response.ok) {
@@ -202,13 +204,7 @@ const ProjectView = () => {
       }
     };
 
-    // Example usage:
-    const accessList = [
-      { user_id: '12345', cross_check_access: true },
-      { user_id: '67890', cross_check_access: false },
-    ];
-
-    updateCrossCheckAccess(accessList);
+    updateCrossCheckAccess(sharedMembers, projectId);
 
   };
 
@@ -385,6 +381,10 @@ const ProjectView = () => {
       },
     },
   };
+  useEffect(() => {
+    console.log("crossCheckData:", crossCheckData);
+    console.log("summary_statistics:", crossCheckData?.summary_statistics);
+  }, [crossCheckData]);
 
   const renderOverview = () => (
     <Box sx={{ padding: '2rem' }}>
@@ -477,19 +477,6 @@ const ProjectView = () => {
               label="Overlay"
             />
           )}
-          <FormControlLabel
-            sx={{
-              paddingLeft: '1rem',
-            }}
-            control={
-              <Switch
-                checked={showOverlay}
-                onChange={handleToggleOverlay}
-                color="primary"
-              />
-            }
-            label="Overlay"
-          />
           <FormControlLabel
             sx={{
               paddingLeft: '1rem',
