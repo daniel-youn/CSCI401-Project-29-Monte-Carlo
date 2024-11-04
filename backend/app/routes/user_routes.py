@@ -130,19 +130,28 @@ def set_admin_role(user_id):
         # Catch any other exceptions and return a 500 response
         return jsonify({'message': f'An error occurred: {str(e)}'}), 500
 
-# # route for regi
-# @user_routes.route('/add', methods=['POST'])
-# def add_user():
-#     data = request.json
-#     try:
-#         user_data = user_schema.load(data)
+# set cross_check_access varible to given true or false value
+@user_routes.route('/users/setCrossCheckAccess/<user_id>', methods=['PUT'])
+def set_cross_check_access_role(user_id):
+    data = request.json
 
-#         # hash using werkzerg thing
-#         user_data['password'] = generate_password_hash(user_data['password'])
+    try:
+        project_id = data["project_id"]
+        cross_check_access = data["cross_check_access"]
+        
+        user_collection.update_one(
+            {"user_id": user_id, f"projects.{project_id}": {"$exists": True}},
+            {"$set": {f"projects.{project_id}.access_data.cross_check_access": cross_check_access}}
+        )
 
-#         # into mongodb
-#         result = user_collection.insert_one(user_data)
-#         return jsonify({'message': 'User added', 'id': str(result.inserted_id)}), 201
+        # Return a success response
+        return jsonify({'message': 'User cross check status set to ' + str(cross_check_access)}), 200
 
-#     except ValidationError as err:
-#         return jsonify(err.messages), 400
+    except ValidationError as err:
+        # Handle validation errors
+        return jsonify(err.messages), 400
+
+    except Exception as e:
+        # Catch any other exceptions and return a 500 response
+        return jsonify({'message': f'An error occurred: {str(e)}'}), 500
+    
