@@ -14,7 +14,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-const AggregateFactorGraph = ({ factorTitle = "Factor i", width = "100%", height = "300px", x_values, y_values }) => {
+const CrossCheckGraph = ({ width = "100%", height = "300px", x_values, y_values }) => {
   const theme = useTheme();
 
   const [chartData, setChartData] = useState({
@@ -64,7 +64,7 @@ const AggregateFactorGraph = ({ factorTitle = "Factor i", width = "100%", height
         align="left"         // Align the title to the left
         sx={{ marginBottom: '0.5rem', color: theme.palette.text.primary }}
       >
-        {factorTitle}
+        {"Cross Check"}
       </Typography>
 
       {x_values && y_values && (
@@ -95,7 +95,7 @@ const AggregateFactorGraph = ({ factorTitle = "Factor i", width = "100%", height
                     display: true,
                     title: {
                       display: true,
-                      text: factorTitle,  // Use factorTitle as x-axis label
+                      text: "Cross Check",  // Use factorTitle as x-axis label
                     },
                   }
                 },
@@ -113,4 +113,4 @@ const AggregateFactorGraph = ({ factorTitle = "Factor i", width = "100%", height
   );
 };
 
-export default AggregateFactorGraph;
+export default CrossCheckGraph;

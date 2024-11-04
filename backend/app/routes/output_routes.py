@@ -78,6 +78,6 @@ def get_output_by_simulation_id(simulation_id):
         if outputs:
             return jsonify(outputs), 200
         else:
-            return jsonify({'message': 'No outputs found for the given simulation ID'}), 404
+            return jsonify({'message': 'No outputs found for the given simulation ID'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400

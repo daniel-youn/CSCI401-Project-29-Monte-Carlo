@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
+import SharingFunctionality from '../SharingFunctionality/SharingFunctionality';
 import {
   Box,
   Typography,
@@ -31,6 +32,7 @@ import {
   Legend,
   Filler
 } from 'chart.js';
+import CrossCheckGraph from '../CrossCheckGraph/CrossCheckGraph'
 import AggregateFactorGraph from '../AggregateFactorGraph/AggregateFactorGraph';
 import OverlayFormSection from '../OverlayFormSection/OverlayFormSection';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
@@ -63,7 +65,10 @@ const ProjectView = () => {
       fetchUserData();
     }
   }, []);
-
+  const [showShare, setShowShare] = useState(false);
+  const [showCrossCheck, setShowCrossCheck] = useState(false);
+  const [sharedMembers, setSharedMembers] = useState([]);
+  const [crossCheckData, setCrossCheckData] = useState(null);
   // Fetch project details when the component loads or when projectId changes
   const factorTitleMapping = {
     discount: 'Expected Discount per Deal',
@@ -83,43 +88,28 @@ const ProjectView = () => {
       console.error('No project ID found in URL');
       return;
     }
-    console.log(projectId);
     const fetchAggregateDistribution = async () => {
       try {
         const response = await fetch(`http://localhost:5001/api/simulation/get_aggregate_distribution/${projectId}`);
-
-        // Check if the response is ok
-        if (!response.ok) {
-          throw new Error(`Error fetching data: ${response.statusText}`);
-        }
-
-        // Parse the JSON response
+        if (!response.ok) throw new Error(`Error fetching aggregate data: ${response.statusText}`);
         const data = await response.json();
-        // console.log(data);
-        // Set the distribution data in state
         setAggregateData(data);
       } catch (error) {
-        console.error('Error fetching aggregate data', error);
+        console.error('Error fetching aggregate data:', error);
       }
     };
-    const fetchProjectData = async () => {
+
+    const fetchCrossCheckDistribution = async (crossCheckID) => {
+      if (!crossCheckID) return;
       try {
-        // Fetch project details
-        const projectResponse = await fetch(`http://localhost:5001/api/project/projects/${projectId}`);
-        const projectData = await projectResponse.json();
-        setProjectData(projectData);
-
-        // Get simId from the projectResponse
-        const simId = projectData.normal_sim_id;  // Use the normal_sim_id from the project data
-        if (!simId) {
-          console.error('No normal_sim_id found in project data');
-          return;
-        }
-        const simulationResponse = await fetch(`http://localhost:5001/api/output/outputs/simulation/${simId}`);
-        const simulationData = await simulationResponse.json();
-        const lastSimulation = simulationData[simulationData.length - 1];
-        setNormalSimOutput(lastSimulation);
-
+        const response = await fetch(`http://localhost:5001/api/output/outputs/simulation/${crossCheckID}`);
+        if (!response.ok) throw new Error(`Error fetching cross check data: ${response.statusText}`);
+        const data = await response.json();
+        setCrossCheckData(data);
+      } catch (error) {
+        console.error('Error fetching cross check data:', error);
+      }
+    };
         // Get simId from the projectResponse
         const adminSimId = projectData.admin_sim_id;  // Use the admin_sim_id from the project data
         if (!adminSimId) {
@@ -131,14 +121,41 @@ const ProjectView = () => {
         const lastAdminSimulation = adminSimulationData[adminSimulationData.length - 1];
         setAdminSimOutput(lastAdminSimulation);
 
+    const fetchSimulationData = async (simId, setSimOutput) => {
+      if (!simId) return;
+      try {
+        const response = await fetch(`http://localhost:5001/api/output/outputs/simulation/${simId}`);
+        if (!response.ok) throw new Error(`Error fetching simulation data: ${response.statusText}`);
+        const data = await response.json();
+        setSimOutput(data[data.length - 1]);
       } catch (error) {
-        console.error('Error fetching project or simulation data:', error);
+        console.error('Error fetching simulation data:', error);
+      }
+    };
+
+    const fetchProjectData = async () => {
+      try {
+        const response = await fetch(`http://localhost:5001/api/project/projects/${projectId}`);
+        if (!response.ok) throw new Error(`Error fetching project data: ${response.statusText}`);
+        const projectDataCopy = await response.json();
+
+        setProjectData(projectDataCopy);
+        setSharedMembers(projectDataCopy.shared_users);
+
+        // Fetch normal, admin, and cross-check simulation data
+        fetchSimulationData(projectDataCopy.normal_sim_id, setNormalSimOutput);
+        fetchSimulationData(projectDataCopy.admin_sim_id, setAdminSimOutput);
+        fetchCrossCheckDistribution(projectDataCopy.cross_check_sim_id);
+
+      } catch (error) {
+        console.error('Error fetching project data:', error);
       }
     };
 
     fetchProjectData();
     fetchAggregateDistribution();
   }, [projectId]);
+
 
   // Redirect to /project-page/:projectId/overview if visiting /project-page/:projectId
   useEffect(() => {
@@ -150,73 +167,159 @@ const ProjectView = () => {
   const handleToggleOverlay = () => {
     setShowOverlay(prev => !prev);
   };
+  const handleShowCrossCheck = () => {
+    setShowCrossCheck(!showCrossCheck);
+  };
+  const toggleShare = () => {
+    console.log(projectData);
+    setShowShare(!showShare);
+  }
+  const updateSharedList = () => {
+    console.log("Before updating:", projectData);
+
+    // Format creation_time and exclude project_id
+    const { project_id, creation_time, ...restData } = projectData;
+    const updatedData = {
+      ...restData,
+      shared_users: sharedMembers,
+      creation_time: new Date(creation_time).toISOString()
+    };
+
+    // Update the project data state
+    setProjectData((prevData) => ({
+      ...prevData,
+      shared_users: sharedMembers,
+      creation_time: updatedData.creation_time
+    }));
+
+    // Use updatedData directly for updateProject to ensure correct data is used
+    updateProject(project_id, updatedData);
+
+    console.log("After setting state with updatedData:", updatedData);
+  };
+
+  async function updateProject(projectId, updatedData) {
+    try {
+      const response = await fetch(`http://localhost:5001/api/project/projects/${projectId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data.message);
+      } else if (response.status === 404) {
+        console.error('Project not found');
+      } else {
+        const errorData = await response.json();
+        console.error('Error:', errorData.error);
+      }
+    } catch (error) {
+      console.error('Fetch error:', error);
+    }
+  }
 
   const chartData = {
     labels: ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'], // Assuming 5 years
     datasets: [
-      // normal sim datasets
       {
-        label: 'Estimated Revenue', // This is now the only visible legend item
+        label: 'Estimated Revenue',
         data: normalSimOutput?.summary_statistics.map(stat => stat.mean),
-        fill: '+1', // Fill the area between this dataset and the next (Std Down to Std Up)
-        borderColor: '#07ABAE', // Main line for "Estimated Revenue"
-        backgroundColor: 'rgba(7, 171, 174, 0.1)', // Translucent fill between std down and std up
+        fill: '+1',
+        borderColor: '#07ABAE',
+        backgroundColor: 'rgba(7, 171, 174, 0.1)',
         pointBackgroundColor: '#fff',
         pointBorderColor: '#07ABAE',
       },
       {
-        label: 'Std Down', // Dotted line for Std Down (not shown in the legend)
+        label: 'Std Down',
         data: normalSimOutput?.summary_statistics.map(stat => stat.mean - stat.std_dev),
-        fill: false, // No fill below this line
-        borderColor: '#07ABAE', // Same color as Estimated Revenue, but dotted
-        borderDash: [5, 5], // Dotted line style
-        pointBackgroundColor: 'rgba(0, 0, 0, 0)', // No points visible
+        fill: false,
+        borderColor: '#07ABAE',
+        borderDash: [5, 5],
+        pointBackgroundColor: 'rgba(0, 0, 0, 0)',
         pointBorderColor: 'rgba(0, 0, 0, 0)',
       },
       {
-        label: 'Std Up', // Dotted line for Std Up (not shown in the legend)
+        label: 'Std Up',
         data: normalSimOutput?.summary_statistics.map(stat => stat.mean + stat.std_dev),
-        fill: '-1', // Fill the area between this and the previous dataset (std up and std down)
-        borderColor: '#07ABAE', // Same color as Estimated Revenue, but dotted
-        backgroundColor: 'rgba(7, 171, 174, 0.1)', // Slightly different translucent color for std up
-        borderDash: [5, 5], // Dotted line style
-        pointBackgroundColor: 'rgba(0, 0, 0, 0)', // No points visible
+        fill: '-1',
+        borderColor: '#07ABAE',
+        backgroundColor: 'rgba(7, 171, 174, 0.1)',
+        borderDash: [5, 5],
+        pointBackgroundColor: 'rgba(0, 0, 0, 0)',
         pointBorderColor: 'rgba(0, 0, 0, 0)',
       },
 
-      // overlay or admin sim datasets
+      // Admin overlay datasets
       ...(showOverlay ? [
         {
-          label: 'Estimated Revenue Overlay', // This is now the only visible legend item
+          label: 'Estimated Revenue Overlay',
           data: adminSimOutput?.summary_statistics.map(stat => stat.mean),
-          fill: '+1', // Fill the area between this dataset and the next (Std Down to Std Up)
-          borderColor: '#4CAF50', // Main line for "Estimated Revenue"
-          backgroundColor: 'rgba(76, 175, 80, 0.1)', // Translucent fill between std down and std up
+          fill: '+1',
+          borderColor: '#4CAF50',
+          backgroundColor: 'rgba(76, 175, 80, 0.1)',
           pointBackgroundColor: '#fff',
           pointBorderColor: '#4CAF50',
         },
         {
-          label: 'Std Down', // Dotted line for Std Down (not shown in the legend)
+          label: 'Std Down',
           data: adminSimOutput?.summary_statistics.map(stat => stat.mean - stat.std_dev),
-          fill: false, // No fill below this line
-          borderColor: '#4CAF50', // Same color as Estimated Revenue, but dotted
-          borderDash: [5, 5], // Dotted line style
-          pointBackgroundColor: 'rgba(0, 0, 0, 0)', // No points visible
+          fill: false,
+          borderColor: '#4CAF50',
+          borderDash: [5, 5],
+          pointBackgroundColor: 'rgba(0, 0, 0, 0)',
           pointBorderColor: 'rgba(0, 0, 0, 0)',
         },
         {
-          label: 'Std Up', // Dotted line for Std Up (not shown in the legend)
+          label: 'Std Up',
           data: adminSimOutput?.summary_statistics.map(stat => stat.mean + stat.std_dev),
-          fill: '-1', // Fill the area between this and the previous dataset (std up and std down)
-          borderColor: '#4CAF50', // Same color as Estimated Revenue, but dotted
-          backgroundColor: 'rgba(76, 175, 80, 0.1)', // Slightly different translucent color for std up
-          borderDash: [5, 5], // Dotted line style
-          pointBackgroundColor: 'rgba(0, 0, 0, 0)', // No points visible
+          fill: '-1',
+          borderColor: '#4CAF50',
+          backgroundColor: 'rgba(76, 175, 80, 0.1)',
+          borderDash: [5, 5],
+          pointBackgroundColor: 'rgba(0, 0, 0, 0)',
+          pointBorderColor: 'rgba(0, 0, 0, 0)',
+        }
+      ] : []),
+
+      // Cross Check overlay datasets
+      ...(showCrossCheck ? [
+        {
+          label: 'Cross Check Overlay',
+          data: crossCheckData?.summary_statistics.map(stat => stat.mean),
+          fill: '+1',
+          borderColor: '#FF9800',
+          backgroundColor: 'rgba(255, 152, 0, 0.1)',
+          pointBackgroundColor: '#fff',
+          pointBorderColor: '#FF9800',
+        },
+        {
+          label: 'Cross Check Std Down',
+          data: crossCheckData?.summary_statistics.map(stat => stat.mean - stat.std_dev),
+          fill: false,
+          borderColor: '#FF9800',
+          borderDash: [5, 5],
+          pointBackgroundColor: 'rgba(0, 0, 0, 0)',
+          pointBorderColor: 'rgba(0, 0, 0, 0)',
+        },
+        {
+          label: 'Cross Check Std Up',
+          data: crossCheckData?.summary_statistics.map(stat => stat.mean + stat.std_dev),
+          fill: '-1',
+          borderColor: '#FF9800',
+          backgroundColor: 'rgba(255, 152, 0, 0.1)',
+          borderDash: [5, 5],
+          pointBackgroundColor: 'rgba(0, 0, 0, 0)',
           pointBorderColor: 'rgba(0, 0, 0, 0)',
         }
       ] : []),
     ],
   };
+
 
   const chartOptions = {
     responsive: true,
@@ -231,7 +334,7 @@ const ProjectView = () => {
         display: true,
         labels: {
           filter: function (item) {
-            return item.text === 'Estimated Revenue' || item.text === 'Estimated Revenue Overlay'; // Adjust this to your overlay label
+            return item.text === 'Estimated Revenue' || item.text === 'Estimated Revenue Overlay' || item.text === 'Cross Check Overlay'; // Adjust this to your overlay label
           },
         },
       },
@@ -360,9 +463,35 @@ const ProjectView = () => {
               label="Overlay"
             />
           )}
+          <FormControlLabel
+            sx={{
+              paddingLeft: '1rem',
+            }}
+            control={
+              <Switch
+                checked={showOverlay}
+                onChange={handleToggleOverlay}
+                color="primary"
+              />
+            }
+            label="Overlay"
+          />
+          <FormControlLabel
+            sx={{
+              paddingLeft: '1rem',
+            }}
+            control={
+              <Switch
+                checked={showCrossCheck}
+                onChange={handleShowCrossCheck}
+                color="primary"
+              />
+            }
+            label="Cross Check"
+          />
         </Box>
       </Box>
-    </Box>
+    </Box >
   );
 
   const renderSettings = () => (
@@ -418,7 +547,7 @@ const ProjectView = () => {
         </TableContainer>
         {/* Example buttons */}
         <Box mt={2}>
-          <Button variant="contained" color="primary" sx={{ marginRight: '10px' }}>
+          <Button variant="contained" color="primary" sx={{ marginRight: '10px' }} onClick={() => toggleShare()}>
             Share to More Members
           </Button>
           <Button variant="contained" color="secondary" sx={{ marginRight: '10px' }}>
@@ -429,7 +558,21 @@ const ProjectView = () => {
           </Button>
         </Box>
       </Box>
+      {
+        showShare && (
+          <Box>
+            <SharingFunctionality
+              sharedMembers={sharedMembers}
+              setSharedMembers={setSharedMembers}
+            />
+            <Button onClick={() => updateSharedList()}>Update</Button>
+          </Box>
+
+        )
+      }
     </Box>
+
+
   );
 
   const renderOverlay = () => (
