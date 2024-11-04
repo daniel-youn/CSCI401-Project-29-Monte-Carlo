@@ -5,11 +5,13 @@ import { AppProvider } from '@toolpad/core/AppProvider';
 import { DashboardLayout } from '@toolpad/core/DashboardLayout';
 import { useLocation, useNavigate, Outlet, useParams } from 'react-router-dom';
 import Cookies from 'js-cookie';
+import axios from 'axios'; // Import axios
 import {
   GridViewRounded as OverviewIcon,
   Settings as SettingsIcon,
   InsertChartRounded as ChartIcon,
 } from '@mui/icons-material';
+import LayersIcon from '@mui/icons-material/Layers';
 
 const baseNavigation = [
   {
@@ -40,10 +42,11 @@ const theme = createTheme({
 function DashboardLayoutWrapper() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { projectId } = useParams();  // Capture the projectId from the URL
+  const { projectId } = useParams(); // Capture the projectId from the URL
 
   const [session, setSession] = useState(null);
   const [navigation, setNavigation] = useState(baseNavigation);
+  const [isAdmin, setIsAdmin] = useState(false); // State to track if user is admin
 
   // Check for user session from cookies
   useEffect(() => {
@@ -58,6 +61,23 @@ function DashboardLayoutWrapper() {
       });
     }
   }, []);
+
+  // Fetch user data to determine admin status
+  useEffect(() => {
+    if (session && session.user && session.user.name) {
+      const fetchUserData = async () => {
+        try {
+          const userId = session.user.name;
+          const userResponse = await axios.get(`http://localhost:5001/api/user/users/${userId}`);
+          const userData = userResponse.data;
+          setIsAdmin(userData.is_admin); // Set admin flag based on user data
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      };
+      fetchUserData();
+    }
+  }, [session]);
 
   const authentication = useMemo(() => {
     return {
@@ -85,19 +105,36 @@ function DashboardLayoutWrapper() {
   // Dynamically populate the navigation for the project page
   useEffect(() => {
     if (location.pathname.startsWith('/project-page') && projectId) {
-      // Add "Overview" and "Settings" relative to the specific project page
-      setNavigation([
+      // Build the navigation items
+      let navItems = [
         ...baseNavigation,
         { kind: 'divider' },
         { kind: 'header', title: 'My Project' },
         { segment: `project-page/${projectId}/overview`, title: 'Summary', icon: <ChartIcon /> },
-        { segment: `project-page/${projectId}/settings`, title: 'Settings', icon: <SettingsIcon /> },
-      ]);
+      ];
+
+      // Only include Overlay if user is admin
+      if (isAdmin) {
+        navItems.push({
+          segment: `project-page/${projectId}/overlay`,
+          title: 'Overlay',
+          icon: <LayersIcon />,
+        });
+      }
+
+      // Include Settings for all users
+      navItems.push({
+        segment: `project-page/${projectId}/settings`,
+        title: 'Settings',
+        icon: <SettingsIcon />,
+      });
+
+      setNavigation(navItems);
     } else {
       // Revert back to base navigation when leaving "/project-page"
       setNavigation(baseNavigation);
     }
-  }, [location.pathname, projectId]);
+  }, [location.pathname, projectId, isAdmin]); // Include isAdmin in dependency array
 
   return (
     <AppProvider
