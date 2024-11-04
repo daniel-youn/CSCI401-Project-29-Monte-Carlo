@@ -16,6 +16,7 @@ user_collection = db['users']
 def create_project():
     try:
         data = request.get_json()
+        print(data)
         # Step 1: Add user-defined values and default initial values
         project_data = {
             "project_name": data['project_name'],
@@ -84,11 +85,13 @@ def create_project():
         
         # TODO: update user projects
         for user in project_data['shared_users']:
-            # Use the provided crossCheck value instead of defaulting to False
+            user_id = user["user_id"]
+            cross_check_access = user["cross_check_access"]
+            
             access_data = {
-                "cross_check_access": False,  # Use provided value TODO: DO PROPER CHECKS
-                "form_submitted": False,       # Default value
-                "is_admin": False              # Default value
+                "cross_check_access": cross_check_access,  
+                "form_submitted": False,       
+                "is_admin": False              
             }
 
             # Prepare the project info to be added to the user
@@ -99,7 +102,7 @@ def create_project():
 
             # Update the user's projects in the database
             user_collection.update_one(
-                {"user_id": user},
+                {"user_id": user_id},
                 {"$set": {f"projects.{inserted_project_id}": project_info}},  # Use dot notation to set the new project
                 upsert=True  # Create a new document if no user found
             )
