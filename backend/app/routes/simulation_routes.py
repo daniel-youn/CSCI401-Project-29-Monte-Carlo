@@ -414,6 +414,7 @@ def get_aggregate_distribution(project_id):
         cc_sampled_results = list(executor.map(cc_sample_distributions, cross_check_model_variables))
 
     # Aggregate samples
+    
     wtp_standard_values = np.concatenate([result['wtp_standard'] for result in sampled_results])
     wtp_premium_values = np.concatenate([result['wtp_premium'] for result in sampled_results])
     num_standard_users_values = np.concatenate([result['num_standard_users'] for result in sampled_results])
@@ -425,11 +426,17 @@ def get_aggregate_distribution(project_id):
     num_deals_year_5_values = np.concatenate([result['num_deals_year_5'] for result in sampled_results])
     discount_values = np.concatenate([result['discount'] for result in sampled_results])
     
-    initial_market_size_values = np.concatenate([result['initial_market_size'] for result in cc_sampled_results])
-    yoy_growth_rate_values = np.concatenate([result['yoy_growth_rate'] for result in cc_sampled_results])
+    initial_market_size_values = []
+    yoy_growth_rate_values = []
+    cross_check_present = cross_check_model_variables is not None and len(cross_check_model_variables)>0
+    if cross_check_present:
+        initial_market_size_values = np.concatenate([result['initial_market_size'] for result in cc_sampled_results])
+        yoy_growth_rate_values = np.concatenate([result['yoy_growth_rate'] for result in cc_sampled_results])
     
     # Function to compute histogram in parallel
     def compute_histogram(values):
+        if values is None or len(values) == 0:
+            return []
         bin_size = (max(values) - min(values)) / num_bins
         return np.histogram(values, bins=np.arange(min(values), max(values), bin_size))
 
@@ -442,7 +449,7 @@ def get_aggregate_distribution(project_id):
         ]))
 
     # Prepare the response
-    return jsonify({
+    response = {
         "msg": "success",
         "wtp_standard": {
             "x_values": histograms[0][1].tolist(),
@@ -483,13 +490,18 @@ def get_aggregate_distribution(project_id):
         "discount": {
             "x_values": histograms[9][1].tolist(),
             "y_values": histograms[9][0].tolist()
-        },
-        "initial_market_size": {
-            "x_values": histograms[9][1].tolist(),
-            "y_values": histograms[9][0].tolist()
-        },
-        "yoy_growth_rate": {
-            "x_values": histograms[9][1].tolist(),
-            "y_values": histograms[9][0].tolist()
         }
-    }), 200
+    }
+    
+    # Conditionally add the last two fields if `cross_check_true` is True
+    if cross_check_present:
+        response["initial_market_size"] = {
+            "x_values": histograms[10][1].tolist(),
+            "y_values": histograms[10][0].tolist()
+        }
+        response["yoy_growth_rate"] = {
+            "x_values": histograms[11][1].tolist(),
+            "y_values": histograms[11][0].tolist()
+        }
+    
+    return jsonify(response), 200
