@@ -196,45 +196,62 @@ def delete_project(project_id):
         return jsonify({"error": "Project not found"}), 404
 
 # Add users to project
-@project_routes.route('/projects/addUsers/<project_id>/<user_id>', methods=['POST'])
-def add_user_to_project(project_id, user_id):
+@project_routes.route('/projects/addUsers', methods=['POST'])
+def add_user_to_project():
+    
     try:
-        data = request.get_json()  # Get data from request payload
-
-        # Find the project by its ID
-        project = projects_collection.find_one({"_id": ObjectId(project_id)})
-        user = user_collection.find_one({"user_id": user_id})
+        data = request.get_json()
+        project_id = data["project_id"]
+        users = data["users"]
         
-        if not user:
-            return jsonify({"error": "User not found"}), 404
+        project = projects_collection.find_one({"_id": ObjectId(project_id)})
+        
         if not project:
             return jsonify({"error": "Project not found"}), 404
-        if user_id in project['shared_users']:
-            return jsonify({"error": "User already in project"}), 400
-        if not user["is_admin"]:
-            return jsonify({"error": "User is not an admin"}), 400
         
-        # Add the user to the project
-        access_data = {
-            "cross_check_access": data.get('cross_check_access', False),  # Use provided value
-            "form_submitted": False,
-            "is_admin": False
-        }
+        # Loop through each user in the list and update their records
+        for user_data in users:
+            user_id = user_data["user_id"]
+            cross_check_access = user_data["cross_check_access"]
 
-        project_info = {
-            "project_id": str(project_id),
-            "access_data": access_data
-        }
+            # Fetch the user by user_id
+            user = user_collection.find_one({"user_id": user_id})
+            if not user:
+                return jsonify({"error": f"User with ID {user_id} not found"}), 404
 
-        # Update the user's projects in the database
-        user_collection.update_one(
-            {"user_id": user_id},
-            {"$set": {f"projects.{project_id}": project_info}},
-            upsert=True
-        )
+            # Check if the user is already part of the project
+            if user_id in project.get("shared_users", []):
+                continue  # Skip users already in the project
 
-        projects_collection.update_one({"_id": ObjectId(project_id)}, {"$addToSet": {"shared_users": user_id}})
-        return jsonify({"message": "User added to project"}), 200
-    
+            # Construct access data for this user
+            access_data = {
+                "cross_check_access": cross_check_access,
+                "form_submitted": False,
+                "is_admin": False
+            }
+
+            # Construct project info for the user's document
+            project_info = {
+                "project_id": str(project_id),
+                "access_data": access_data
+            }
+
+            # Update the user's projects in the database
+            user_collection.update_one(
+                {"user_id": user_id},
+                {"$set": {f"projects.{project_id}": project_info}},
+                upsert=True
+            )
+
+            # Add the user to the shared_users list in the project
+            projects_collection.update_one(
+                {"_id": ObjectId(project_id)},
+                {"$addToSet": {"shared_users": user_id}}
+            )
+        
+        return jsonify({"message": "Users added to project"}), 200
+
     except ValidationError as err:
         return jsonify({"error": err.messages}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
