@@ -68,65 +68,65 @@ const ProjectView = () => {
       console.error('No project ID found in URL');
       return;
     }
-    console.log(projectId)
+
     const fetchAggregateDistribution = async () => {
       try {
         const response = await fetch(`http://localhost:5001/api/simulation/get_aggregate_distribution/${projectId}`);
-
-        // Check if the response is ok
-        if (!response.ok) {
-          throw new Error(`Error fetching data: ${response.statusText}`);
-        }
-
-        // Parse the JSON response
+        if (!response.ok) throw new Error(`Error fetching aggregate data: ${response.statusText}`);
         const data = await response.json();
-        // console.log(data);
-        // Set the distribution data in state
         setAggregateData(data);
       } catch (error) {
-        console.error('Error fetching aggregate data', error);
+        console.error('Error fetching aggregate data:', error);
       }
     };
+
+    const fetchCrossCheckDistribution = async (crossCheckID) => {
+      if (!crossCheckID) return;
+      try {
+        const response = await fetch(`http://localhost:5001/api/output/outputs/simulation/${crossCheckID}`);
+        if (!response.ok) throw new Error(`Error fetching cross check data: ${response.statusText}`);
+        const data = await response.json();
+        setCrossCheckData(data);
+      } catch (error) {
+        console.error('Error fetching cross check data:', error);
+      }
+    };
+
+    const fetchSimulationData = async (simId, setSimOutput) => {
+      if (!simId) return;
+      try {
+        const response = await fetch(`http://localhost:5001/api/output/outputs/simulation/${simId}`);
+        if (!response.ok) throw new Error(`Error fetching simulation data: ${response.statusText}`);
+        const data = await response.json();
+        setSimOutput(data[data.length - 1]);
+      } catch (error) {
+        console.error('Error fetching simulation data:', error);
+      }
+    };
+
     const fetchProjectData = async () => {
       try {
-        // Fetch project details
-        const projectResponse = await fetch(`http://localhost:5001/api/project/projects/${projectId}`);
-        const projectData = await projectResponse.json();
-        setProjectData(projectData);
-        setSharedMembers(projectData.shared_users)
-        // Get simId from the projectResponse
-        const simId = projectData.normal_sim_id;  // Use the normal_sim_id from the project data
-        if (!simId) {
-          console.error('No normal_sim_id found in project data');
-          return;
-        }
-        const simulationResponse = await fetch(`http://localhost:5001/api/output/outputs/simulation/${simId}`);
-        const simulationData = await simulationResponse.json();
-        const lastSimulation = simulationData[simulationData.length - 1];
-        setNormalSimOutput(lastSimulation);
+        const response = await fetch(`http://localhost:5001/api/project/projects/${projectId}`);
+        if (!response.ok) throw new Error(`Error fetching project data: ${response.statusText}`);
+        const projectDataCopy = await response.json();
 
+        setProjectData(projectDataCopy);
+        setSharedMembers(projectDataCopy.shared_users);
 
-        // Get simId from the projectResponse
-        const adminSimId = projectData.admin_sim_id;  // Use the admin_sim_id from the project data
-        if (!adminSimId) {
-          console.error('No admin_sim_id found in project data');
-          return;
-        }
-        const adminSimulationResponse = await fetch(`http://localhost:5001/api/output/outputs/simulation/${adminSimId}`);
-        const adminSimulationData = await adminSimulationResponse.json();
-        const lastAdminSimulation = adminSimulationData[adminSimulationData.length - 1];
-        setAdminSimOutput(lastAdminSimulation);
-
-
+        // Fetch normal, admin, and cross-check simulation data
+        fetchSimulationData(projectDataCopy.normal_sim_id, setNormalSimOutput);
+        fetchSimulationData(projectDataCopy.admin_sim_id, setAdminSimOutput);
+        fetchCrossCheckDistribution(projectDataCopy.cross_check_sim_id);
 
       } catch (error) {
-        console.error('Error fetching project or simulation data:', error);
+        console.error('Error fetching project data:', error);
       }
     };
 
     fetchProjectData();
     fetchAggregateDistribution();
   }, [projectId]);
+
 
   // Redirect to /project-page/:projectId/overview if visiting /project-page/:projectId
   useEffect(() => {
