@@ -105,14 +105,13 @@ const ProjectView = () => {
         const response = await fetch(`http://localhost:5001/api/output/outputs/simulation/${crossCheckID}`);
         if (!response.ok) throw new Error(`Error fetching cross check data: ${response.statusText}`);
         const data = await response.json();
+        console.log(data)
         setCrossCheckData(data);
       } catch (error) {
         console.error('Error fetching cross check data:', error);
       }
     };
-    const getAdminOutput = async () => {
-      // Get simId from the projectResponse
-      const adminSimId = projectData.admin_sim_id;  // Use the admin_sim_id from the project data
+    const getAdminOutput = async (adminSimId) => {
       if (!adminSimId) {
         console.error('No admin_sim_id found in project data');
         return;
@@ -123,13 +122,13 @@ const ProjectView = () => {
       setAdminSimOutput(lastAdminSimulation);
 
     }
-    const fetchSimulationData = async (simId, setSimOutput) => {
+    const fetchSimulationData = async (simId) => {
       if (!simId) return;
       try {
         const response = await fetch(`http://localhost:5001/api/output/outputs/simulation/${simId}`);
         if (!response.ok) throw new Error(`Error fetching simulation data: ${response.statusText}`);
         const data = await response.json();
-        setSimOutput(data[data.length - 1]);
+        setNormalSimOutput(data[data.length - 1]);
       } catch (error) {
         console.error('Error fetching simulation data:', error);
       }
@@ -145,10 +144,10 @@ const ProjectView = () => {
         setSharedMembers(projectDataCopy.shared_users);
 
         // Fetch normal, admin, and cross-check simulation data
-        fetchSimulationData(projectDataCopy.normal_sim_id, setNormalSimOutput);
-        fetchSimulationData(projectDataCopy.admin_sim_id, setAdminSimOutput);
+        console.log(projectDataCopy)
+        fetchSimulationData(projectDataCopy.normal_sim_id);
         fetchCrossCheckDistribution(projectDataCopy.cross_check_sim_id);
-        getAdminOutput();
+        getAdminOutput(projectDataCopy.admin_sim_id);
         fetchAggregateDistribution();
 
       } catch (error) {
