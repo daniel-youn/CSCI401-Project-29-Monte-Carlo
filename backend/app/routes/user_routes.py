@@ -136,19 +136,16 @@ def set_cross_check_access_role(user_id):
     data = request.json
 
     try:
-        # Find the user by user_id
-        user = user_collection.find_one({'user_id': user_id}, {'_id': False})
-        if not user:
-            return jsonify({'message': 'User not found'}), 404
-
-        # Update the is_admin field with the provided value
+        project_id = data["project_id"]
+        cross_check_access = data["cross_check_access"]
+        
         user_collection.update_one(
-            {'user_id': user_id},
-            {'$set': {'cross_check_access': data['cross_check_access']}}
+            {"user_id": user_id, f"projects.{project_id}": {"$exists": True}},
+            {"$set": {f"projects.{project_id}.access_data.cross_check_access": cross_check_access}}
         )
 
         # Return a success response
-        return jsonify({'message': 'User cross check status updated successfully'}), 200
+        return jsonify({'message': 'User cross check status set to ' + str(cross_check_access)}), 200
 
     except ValidationError as err:
         # Handle validation errors
@@ -157,19 +154,4 @@ def set_cross_check_access_role(user_id):
     except Exception as e:
         # Catch any other exceptions and return a 500 response
         return jsonify({'message': f'An error occurred: {str(e)}'}), 500
-# # route for regi
-# @user_routes.route('/add', methods=['POST'])
-# def add_user():
-#     data = request.json
-#     try:
-#         user_data = user_schema.load(data)
-
-#         # hash using werkzerg thing
-#         user_data['password'] = generate_password_hash(user_data['password'])
-
-#         # into mongodb
-#         result = user_collection.insert_one(user_data)
-#         return jsonify({'message': 'User added', 'id': str(result.inserted_id)}), 201
-
-#     except ValidationError as err:
-#         return jsonify(err.messages), 400
+    

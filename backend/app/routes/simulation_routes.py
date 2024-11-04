@@ -137,11 +137,7 @@ def input_data():
                 {"user_id": user_id, "simulation_id": sim_id},
                 {"$set": {"factors": factors}}
             )
-        
-        # Handle cross-check if necessary
-        access_data = project.get("access_data", {})
-        cross_check_access = access_data.get("cross_check_access", False)
-        
+            
         # Call the normalFactorRunSim function to run the simulation
         output_id, sim_id_or_output_id = normalFactorRunSim(sim_id, project_id)
         
@@ -149,6 +145,42 @@ def input_data():
         user = user_collection.find_one({"user_id": user_id})
         if not user:
             return jsonify({"error": "User not found"}), 404
+        
+        
+        
+        
+        
+        
+        # Handle cross-check if necessary
+        
+        
+        cross_check_access = user['projects'][project_id]['access_data']['cross_check_access']
+
+        cross_check_output_id = "cross check sim was not run"
+        cross_check_sim_id = "cross check sim was not run"
+        if cross_check_access:
+            cross_check_sim_id = project.get("cross_check_sim_id")
+            
+            # Update or create the model variables for the simulation
+            cross_check_model_vars = model_variables_collection.find_one({"user_id": user_id, "simulation_id": cross_check_sim_id})
+            
+            if not cross_check_model_vars:
+                # Create new model variable data structure
+                new_model_variable = {
+                    "user_id": user_id,
+                    "simulation_id": cross_check_sim_id,
+                    "factors": factors,
+                }
+                model_variables_collection.insert_one(new_model_variable)
+            else:
+                # Update the factors in the existing model variable document
+                model_variables_collection.update_one(
+                    {"user_id": user_id, "simulation_id": sim_id},
+                    {"$set": {"factors": factors}}
+                )
+            
+            cross_check_output_id = crossCheckSim(cross_check_sim_id, project_id)
+        
         
         # Update the 'form_submitted' field for the specific project in the user's projects
         user_collection.update_one(
@@ -161,7 +193,12 @@ def input_data():
         return jsonify({
             'message': 'Simulation completed and form submitted successfully.',
             'id': str(output_id),
-            'id_type': sim_id_or_output_id
+            'id_type': sim_id_or_output_id,
+            
+            'output_id': str(output_id),
+            'simulation_id': str(sim_id),
+            'cross_check_output_id': str(cross_check_output_id),
+            "cross_check_sim_id": str(cross_check_sim_id)
         }), 200
     
     except ValidationError as ve:
@@ -169,7 +206,69 @@ def input_data():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-def normalFactorRunSim(simulation_id, project_id, cross_check_access=False):
+
+def crossCheckSim(simulation_id, project_id):
+    # Get simulation data
+    simulation = simulation_collection.find_one({'simulation_id': simulation_id}, {'_id': False})
+    if not simulation:
+        return jsonify({'message': 'Simulation not found'}), 404
+    
+    # Step 2: Fetch project and model variables
+    model_vars_list = list(model_variables_collection.find({"simulation_id": simulation_id}))
+    if not model_vars_list:
+        return jsonify({'message': 'No model variables found'}), 404
+            
+    num_users = len(model_vars_list)
+    num_simulations = project_collection.find_one({'_id': ObjectId(project_id)})['num_simulations']
+
+    intial_som_size_dists = [get_distribution(model, "initial_market_size") for model in model_vars_list]
+    yoy_growth_rate_dists = [get_distribution(model, "yoy_growth_rate") for model in model_vars_list]
+    
+    sim_data = [[] for _ in range(5)]
+    for _ in range(num_simulations):
+        random_index = np.random.randint(0, num_users)
+        market_size = intial_som_size_dists[random_index].rvs()
+        for i in range(1,6):
+            yoy_growth_rate = yoy_growth_rate_dists[random_index].rvs()
+            market_size *= 1 + yoy_growth_rate
+            sim_data[i-1].append(market_size)
+            
+    def compute_statistics_for_year(data):
+        return {
+            'mean': np.mean(data),
+            'median': np.median(data),
+            'std_dev': np.std(data),
+            'min': np.min(data),
+            'max': np.max(data),
+            'percentile_5': np.percentile(data, 5),
+            'percentile_95': np.percentile(data, 95)
+        }
+    
+    sim_results = [compute_statistics_for_year(data) for data in sim_data]
+    
+    output_id = db["outputs"].update_one(
+    {'simulation_id': simulation_id},  # Query filter to match the document
+    {
+        '$set': {
+            'summary_statistics': sim_results
+        }
+    },
+        upsert=True  # Insert if no matching document is found
+    ).upserted_id
+    
+    print(f"lets see what the output id is=========================: {output_id}")
+    
+    if output_id:
+        print(f"Inserted new document with ID: {output_id}")
+    else:
+        print(f"Updated existing document with simulation_id: {simulation_id}")
+        output_id = db["outputs"].find_one({'simulation_id': simulation_id}, {'_id': 1})['_id']
+    
+
+    return output_id
+
+
+def normalFactorRunSim(simulation_id, project_id):
     # Get simulation data
     simulation = simulation_collection.find_one({'simulation_id': simulation_id}, {'_id': False})
     if not simulation:
@@ -183,17 +282,11 @@ def normalFactorRunSim(simulation_id, project_id, cross_check_access=False):
     num_users = len(model_vars_list)
     num_simulations = project_collection.find_one({'_id': ObjectId(project_id)})['num_simulations']
     
-    intial_som_size = None
-    if cross_check_access:
-        random_index_initial_som_size = np.random.randint(0, num_users)
-        intial_som_size = get_distribution(model_vars_list[random_index_initial_som_size], "initial_som_size").rvs()
-        
-            
     def compute_for_year(year):
         sim_data = []
-        cross_check_data = []
 
         # Pre-fetch the distributions outside the loop to avoid redundant calls
+        # TODO: could move everything except the num_deals_per_year_ out of the function to optimize
         wtp_standard_dists = [get_distribution(model, "willingness_to_pay_standard") for model in model_vars_list]
         wtp_premium_dists = [get_distribution(model, "willingness_to_pay_premium") for model in model_vars_list]
         num_standard_users_dists = [get_distribution(model, "num_standard_users_per_deal") for model in model_vars_list]
@@ -201,11 +294,6 @@ def normalFactorRunSim(simulation_id, project_id, cross_check_access=False):
         num_deals_dists = [get_distribution(model, "num_deals_per_year_" + str(year)) for model in model_vars_list]
         discount_dists = [get_distribution(model, "expected_discount_per_deal") for model in model_vars_list]
         
-        yoy_growth_rate_dists = None
-        
-        if cross_check_access:
-            yoy_growth_rate_dists = [get_distribution(model, "yoy_growth_rate") for model in model_vars_list]
-
         # Generate all samples at once using vectorized operations
         for _ in range(num_simulations):
             random_index = np.random.randint(0, num_users)
@@ -223,85 +311,43 @@ def normalFactorRunSim(simulation_id, project_id, cross_check_access=False):
             year_revenue = deal_size * num_deals * (1 - discount)
 
             sim_data.append(year_revenue)
-            
-            #cross check calculations
-            yoy_growth_rate = None
-            if cross_check_access and yoy_growth_rate_dists is not None:
-                yoy_growth_rate = yoy_growth_rate_dists[random_index].rvs()
-                SOM = intial_som_size * (1 + yoy_growth_rate)
-                cross_check_data.append(SOM)
 
-        return sim_data, cross_check_data
+        return sim_data
     
     def compute_statistics_for_year(year):
-        sim_data, cross_check_data = compute_for_year(year)
-        
-        sim_data_np = np.array(sim_data)
-        cross_check_data_np = np.array(cross_check_data) if cross_check_data else None  # Handle empty cross_check_data
-        
-        statistics = {
-            'sim_data': {
-                'mean': np.mean(sim_data_np),
-                'median': np.median(sim_data_np),
-                'std_dev': np.std(sim_data_np),
-                'min': np.min(sim_data_np),
-                'max': np.max(sim_data_np),
-                'percentile_5': np.percentile(sim_data_np, 5),
-                'percentile_95': np.percentile(sim_data_np, 95)
-            }
+        data = np.array(compute_for_year(year))
+        return {
+            'mean': np.mean(data),
+            'median': np.median(data),
+            'std_dev': np.std(data),
+            'min': np.min(data),
+            'max': np.max(data),
+            'percentile_5': np.percentile(data, 5),
+            'percentile_95': np.percentile(data, 95)
         }
-        
-        if cross_check_data_np is not None and len(cross_check_data_np) > 0:
-            statistics['cross_check_data'] = {
-                'mean': np.mean(cross_check_data_np),
-                'median': np.median(cross_check_data_np),
-                'std_dev': np.std(cross_check_data_np),
-                'min': np.min(cross_check_data_np),
-                'max': np.max(cross_check_data_np),
-                'percentile_5': np.percentile(cross_check_data_np, 5),
-                'percentile_95': np.percentile(cross_check_data_np, 95)
-            }
-
-        return statistics
 
     # Parallelize computation across 5 years
     sim_results = Parallel(n_jobs=-1)(delayed(compute_statistics_for_year)(year) for year in range(1, 6))
     
-    assert len(sim_results['sim_data']) == 5
+    assert len(sim_results) == 5
     
-    # TODO: cleanup the old unused output objects
     output_id = db["outputs"].update_one(
     {'simulation_id': simulation_id},  # Query filter to match the document
     {
         '$set': {
-            'summary_statistics': sim_results['sim_data']
+            'summary_statistics': sim_results
         }
     },
         upsert=True  # Insert if no matching document is found
     ).upserted_id
     
-    # add cross check data if available
-    if cross_check_access:
-        db["outputs"].update_one(
-            {'simulation_id': simulation_id},
-            {
-                '$set': {
-                    'cross_check_data': sim_results['cross_check_data']
-                }
-            },
-            upsert=True
-        )
-        
-
     if output_id:
         print(f"Inserted new document with ID: {output_id}")
     else:
         print(f"Updated existing document with simulation_id: {simulation_id}")
+        output_id = db["outputs"].find_one({'simulation_id': simulation_id}, {'_id': 1})['_id']
     
-    res_id = output_id if output_id else simulation_id
-    sim_id_or_output_id = "output_id" if output_id else "simulation_id"
-            
-    return res_id, sim_id_or_output_id
+    return output_id, "output_id"
 
 @simulation_routes.route('/get_aggregate_distribution/<project_id>', methods=['GET'])
 def get_aggregate_distribution(project_id):
@@ -313,10 +359,19 @@ def get_aggregate_distribution(project_id):
     model_variables = list(model_variables_collection.find({'simulation_id': normal_sim_id}))
     if not model_variables:
         return jsonify({"error": "Model variables not found for normal simulation"}), 404
+    
+    cross_check_sim_id = result['cross_check_sim_id']
+    cross_check_model_variables = list(model_variables_collection.find({'simulation_id': cross_check_sim_id}))
+    if not cross_check_model_variables:
+        return jsonify({"error": "Model variables not found for cross check simulation"}), 404
 
+    # add cross check model vars
+    model_variables.extend(cross_check_model_variables)
+    
     sample_size = 100000
     num_bins = 100
 
+    # TODO: fiish aggregate thing
     # Function to sample distributions
     def sample_distributions(model):
         wtp_standard_dist = get_distribution(model, "willingness_to_pay_standard")
@@ -372,47 +427,6 @@ def get_aggregate_distribution(project_id):
             num_deals_year_3_values, num_deals_year_4_values, num_deals_year_5_values, 
             discount_values
         ]))
-        
-        
-    # TODO: use or not use idk what they want for num deals distribution
-    # # Function to compute histogram in parallel
-    # def compute_histogram(values, factor_name):
-    #     # Check if the factor name starts with 'num_deals'
-    #     min_val = min(values)
-    #     max_val = max(values)
-    #     # if factor_name.startswith("num_deals"):
-    #     #     min_val = 0
-    #     #     max_val = 300
-    #     bin_size = (max_val - min_val) / num_bins
-    #     return np.histogram(values, bins=np.arange(min_val, max_val + bin_size, bin_size))
-
-    # # Define your factor names in the same order as the values
-    # factor_names = [
-    #     "wtp_standard",
-    #     "wtp_premium",
-    #     "num_standard_users",
-    #     "num_premium_users",
-    #     "num_deals_year_1",
-    #     "num_deals_year_2",
-    #     "num_deals_year_3",
-    #     "num_deals_year_4",
-    #     "num_deals_year_5",
-    #     "discount"
-    # ]
-    
-    # with ThreadPoolExecutor() as executor:
-    #     histograms = list(executor.map(compute_histogram, [
-    #         wtp_standard_values,
-    #         wtp_premium_values,
-    #         num_standard_users_values,
-    #         num_premium_users_values,
-    #         num_deals_year_1_values,
-    #         num_deals_year_2_values,
-    #         num_deals_year_3_values,
-    #         num_deals_year_4_values,
-    #         num_deals_year_5_values,
-    #         discount_values
-    #     ], factor_names))
 
     # Prepare the response
     return jsonify({
