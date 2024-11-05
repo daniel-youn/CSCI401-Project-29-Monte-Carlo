@@ -18,7 +18,10 @@ const OverlayGraphForm = ({
   factorName = "factor_name",
   factorTitle = "Factor i",
   onFormChange,
+  percentageInput = false,
   aggregateData = null,
+  width="40rem",
+  height="30rem",
 }) => {
   const theme = useTheme();
 
@@ -28,6 +31,8 @@ const OverlayGraphForm = ({
   const [chartData, setChartData] = useState({
     datasets: [],
   });
+
+  const [errorMessage, setErrorMessage] = useState('');
 
   const distributionOptions = [
     { value: 'normal', label: 'Normal Distribution' },
@@ -39,25 +44,36 @@ const OverlayGraphForm = ({
     const newDistributionType = e.target.value;
     setDistributionType(newDistributionType);
   
-    // Reset input values to undefined
+    // Reset input values
     const resetValues = {
-      mean: undefined,
-      stddev: undefined,
-      min_val: undefined,
-      max_val: undefined,
-      mode: undefined,
+      mean: '',
+      stddev: '',
+      min_val: '',
+      max_val: '',
+      mode: '',
       distribution_type: newDistributionType,
     };
     setValues(resetValues);
   
-    // Notify parent component with the updated values
+    // Notify parent component
     onFormChange(resetValues);
   };
     
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    const parsedValue = value === '' ? undefined : parseFloat(value);
-    const updatedValues = { ...values, [name]: parsedValue };
+    let parsedValue = parseFloat(value);
+  
+    if (value === '' || isNaN(parsedValue) || parsedValue < 0) {
+      setErrorMessage('Value cannot be negative.');
+      parsedValue = '';
+    } else if (percentageInput && parsedValue > 1) {
+      setErrorMessage('Please enter a value between 0.00 and 1.00.');
+      parsedValue = '';
+    } else {
+      setErrorMessage('');
+    }
+    
+    const updatedValues = { ...values, [name]: parsedValue === '' ? '' : parsedValue };
     setValues(updatedValues);
     onFormChange(updatedValues);
   };
@@ -75,23 +91,9 @@ const OverlayGraphForm = ({
       const aggXValues = aggregateData.x_values.map(parseFloat);
       const aggYValues = aggregateData.y_values.map(parseFloat);
   
-      // Calculate bin widths
-      const binWidths = aggXValues.map((x, index) => {
-        if (index === aggXValues.length - 1) {
-          return aggXValues[index] - aggXValues[index - 1]; // Last bin width
-        } else {
-          return aggXValues[index + 1] - x;
-        }
-      });
-  
-      // Calculate the area under the histogram
-      let totalArea = 0;
-      for (let i = 0; i < aggYValues.length; i++) {
-        totalArea += aggYValues[i] * binWidths[i];
-      }
-  
-      // Normalize y-values to convert counts to PDF
-      const normalizedYValues = aggYValues.map((y, index) => y / totalArea);
+      // Normalize y-values
+      const totalArea = aggYValues.reduce((sum, y) => sum + y, 0);
+      const normalizedYValues = aggYValues.map(y => y / totalArea);
   
       const aggDataPoints = aggXValues.map((x, index) => ({
         x: x,
@@ -111,82 +113,76 @@ const OverlayGraphForm = ({
     }
   
     // User input data handling
-    let userDataAvailable = false;
+    if (distributionType && values) {
+      let userDataPoints = [];
+      if (distributionType === 'normal' && values.mean !== '' && values.stddev !== '') {
+        const mean = parseFloat(values.mean);
+        const stddev = parseFloat(values.stddev);
+        const startX = Math.max(0, mean - 3 * stddev);
+        const endX = mean + 3 * stddev;
+        const step = (endX - startX) / numPoints;
+    
+        userDataPoints = Array.from({ length: numPoints }, (_, i) => {
+          const x = startX + i * step;
+          const z = (x - mean) / stddev;
+          const y = Math.exp(-0.5 * z * z) / (stddev * Math.sqrt(2 * Math.PI));
+          return { x, y };
+        });
   
-    if (distributionType === 'normal' && values.mean !== '' && values.stddev !== '') {
-      userDataAvailable = true;
-      const mean = parseFloat(values.mean);
-      const stddev = parseFloat(values.stddev);
-  
-      const startX = mean - 3 * stddev;
-      const endX = mean + 3 * stddev;
-      const step = (endX - startX) / numPoints;
-  
-      const userDataPoints = Array.from({ length: numPoints }, (_, i) => {
-        const x = startX + i * step;
-        const z = (x - mean) / stddev;
-        const y = Math.exp(-0.5 * z * z) / (stddev * Math.sqrt(2 * Math.PI));
-        return { x, y };
-      });
-  
-      xMin = xMin !== null ? Math.min(xMin, startX) : startX;
-      xMax = xMax !== null ? Math.max(xMax, endX) : endX;
-  
-      datasets.push({
-        label: 'User Distribution',
-        data: userDataPoints,
-        borderColor: theme.palette.primary.main,
-        backgroundColor: 'rgba(0, 188, 212, 0.2)',
-        fill: true,
-      });
-    } else if (distributionType === 'uniform' && values.min_val !== '' && values.max_val !== '') {
-      userDataAvailable = true;
-      const min_val = parseFloat(values.min_val);
-      const max_val = parseFloat(values.max_val);
-      const uniformHeight = 1 / (max_val - min_val);
-  
-      const userDataPoints = Array.from({ length: numPoints }, (_, i) => {
-        const x = min_val + ((max_val - min_val) / numPoints) * i;
-        const y = x >= min_val && x <= max_val ? uniformHeight : 0;
-        return { x, y };
-      });
-  
-      xMin = xMin !== null ? Math.min(xMin, min_val) : min_val;
-      xMax = xMax !== null ? Math.max(xMax, max_val) : max_val;
-  
-      datasets.push({
-        label: 'User Distribution',
-        data: userDataPoints,
-        borderColor: theme.palette.primary.main,
-        backgroundColor: 'rgba(0, 188, 212, 0.2)',
-        fill: true,
-      });
-    } else if (
-      distributionType === 'triangular' &&
-      values.min_val !== '' &&
-      values.max_val !== '' &&
-      values.mode !== ''
-    ) {
-      userDataAvailable = true;
-      const min_val = parseFloat(values.min_val);
-      const max_val = parseFloat(values.max_val);
-      const mode = parseFloat(values.mode);
-  
-      const userDataPoints = Array.from({ length: numPoints }, (_, i) => {
-        const x = min_val + ((max_val - min_val) / numPoints) * i;
-        let y = 0;
-        if (x < min_val || x > max_val) {
-          y = 0;
-        } else if (x < mode) {
-          y = (2 * (x - min_val)) / ((max_val - min_val) * (mode - min_val));
+        xMin = xMin !== null ? Math.min(xMin, startX) : startX;
+        xMax = xMax !== null ? Math.max(xMax, endX) : endX;
+      } else if (distributionType === 'uniform' && values.min_val !== '' && values.max_val !== '') {
+        const min_val = parseFloat(values.min_val);
+        const max_val = parseFloat(values.max_val);
+        if (min_val > max_val) {
+          setErrorMessage('Minimum value cannot be greater than Maximum value.');
+          return;
         } else {
-          y = (2 * (max_val - x)) / ((max_val - min_val) * (max_val - mode));
+          setErrorMessage('');
         }
-        return { x, y };
-      });
+        const uniformHeight = 1 / (max_val - min_val);
+    
+        userDataPoints = Array.from({ length: numPoints }, (_, i) => {
+          const x = min_val + ((max_val - min_val) / numPoints) * i;
+          const y = uniformHeight;
+          return { x, y };
+        });
   
-      xMin = xMin !== null ? Math.min(xMin, min_val) : min_val;
-      xMax = xMax !== null ? Math.max(xMax, max_val) : max_val;
+        xMin = xMin !== null ? Math.min(xMin, min_val) : min_val;
+        xMax = xMax !== null ? Math.max(xMax, max_val) : max_val;
+      } else if (
+        distributionType === 'triangular' &&
+        values.min_val !== '' &&
+        values.max_val !== '' &&
+        values.mode !== ''
+      ) {
+        const min_val = parseFloat(values.min_val);
+        const max_val = parseFloat(values.max_val);
+        const mode = parseFloat(values.mode);
+        if (min_val > max_val) {
+          setErrorMessage('Minimum value cannot be greater than Maximum value.');
+          return;
+        } else if (mode < min_val || mode > max_val) {
+          setErrorMessage('Mode must be between Minimum and Maximum values.');
+          return;
+        } else {
+          setErrorMessage('');
+        }
+    
+        userDataPoints = Array.from({ length: numPoints }, (_, i) => {
+          const x = min_val + ((max_val - min_val) / numPoints) * i;
+          let y = 0;
+          if (x < mode) {
+            y = (2 * (x - min_val)) / ((max_val - min_val) * (mode - min_val));
+          } else {
+            y = (2 * (max_val - x)) / ((max_val - min_val) * (max_val - mode));
+          }
+          return { x, y };
+        });
+  
+        xMin = xMin !== null ? Math.min(xMin, min_val) : min_val;
+        xMax = xMax !== null ? Math.max(xMax, max_val) : max_val;
+      }
   
       datasets.push({
         label: 'User Distribution',
@@ -197,7 +193,7 @@ const OverlayGraphForm = ({
       });
     }
   
-    // Update xRange only if xMin and xMax are valid numbers
+    // Update xRange
     if (xMin !== null && xMax !== null && isFinite(xMin) && isFinite(xMax)) {
       setXRange({ min: xMin, max: xMax });
     } else {
@@ -215,6 +211,10 @@ const OverlayGraphForm = ({
   }, [values, distributionType, aggregateData]);
 
   const renderInputs = () => {
+    const commonInputProps = { type: 'number', step: 'any', min: 0 };
+    if (percentageInput) {
+      commonInputProps.max = 1;
+    }
     switch (distributionType) {
       case 'normal':
         return (
@@ -225,7 +225,7 @@ const OverlayGraphForm = ({
               value={values.mean}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
-              inputProps={{ type: 'number', step: 'any' }}
+              inputProps={commonInputProps}
             />
             <TextField
               label="Standard Deviation"
@@ -233,7 +233,7 @@ const OverlayGraphForm = ({
               value={values.stddev}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
-              inputProps={{ type: 'number', step: 'any' }}
+              inputProps={commonInputProps}
             />
           </>
         );
@@ -246,7 +246,7 @@ const OverlayGraphForm = ({
               value={values.min_val}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
-              inputProps={{ type: 'number', step: 'any' }}
+              inputProps={commonInputProps}
             />
             <TextField
               label="Maximum Value"
@@ -254,7 +254,7 @@ const OverlayGraphForm = ({
               value={values.max_val}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
-              inputProps={{ type: 'number', step: 'any' }}
+              inputProps={commonInputProps}
             />
           </>
         );
@@ -267,7 +267,7 @@ const OverlayGraphForm = ({
               value={values.min_val}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
-              inputProps={{ type: 'number', step: 'any' }}
+              inputProps={commonInputProps}
             />
             <TextField
               label="Maximum Value"
@@ -275,7 +275,7 @@ const OverlayGraphForm = ({
               value={values.max_val}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
-              inputProps={{ type: 'number', step: 'any' }}
+              inputProps={commonInputProps}
             />
             <TextField
               label="Mode"
@@ -283,7 +283,7 @@ const OverlayGraphForm = ({
               value={values.mode}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
-              inputProps={{ type: 'number', step: 'any' }}
+              inputProps={commonInputProps}
             />
           </>
         );
@@ -298,15 +298,20 @@ const OverlayGraphForm = ({
         padding: '2rem',
         backgroundColor: theme.palette.background.paper,
         color: theme.palette.text.primary,
-        width: '100%',
+        width: `${width}px`,
+        height: `${height}px`,
         overflow: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
       }}
     >
       <Typography variant="h5" align="center" sx={{ marginBottom: '1rem' }}>
         {factorTitle}
       </Typography>
+
+      {percentageInput && (
+        <Typography variant="body2" align="center" color="textSecondary" sx={{ marginBottom: '1rem' }}>
+          Please enter a value between 0.00 and 1.00.
+        </Typography>
+      )}
 
       <Box sx={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
         <TextField
@@ -324,50 +329,64 @@ const OverlayGraphForm = ({
         </TextField>
       </Box>
 
-      {chartData.datasets.length > 0 && (
-        <Box
-          sx={{
-            marginBottom: '2rem',
-            flexGrow: 1,
-            minHeight: '200px',
-          }}
-        >
-        <Line
-          data={chartData}
-          options={{
-            maintainAspectRatio: false,
-            scales: {
-              x: {
-                type: 'linear',
-                position: 'bottom',
-                ...(xRange.min !== null && xRange.max !== null
-                  ? { suggestedMin: xRange.min, suggestedMax: xRange.max }
-                  : {}),
-                ticks: {
-                  maxTicksLimit: 10,
-                  callback: function (value) {
-                    return parseFloat(value).toFixed(1);
+      {distributionType && (
+        <>
+          <Box
+            sx={{
+              marginBottom: '2rem',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              width: `${width * 0.8}px`,
+              height: `${height * 0.4}px`,
+            }}
+          >
+            <Box sx={{ width: '100%', height: '100%' }}>
+              <Line
+                data={chartData}
+                options={{
+                  maintainAspectRatio: false,
+                  scales: {
+                    x: {
+                      type: 'linear',
+                      position: 'bottom',
+                      ...(xRange.min !== null && xRange.max !== null
+                        ? { suggestedMin: xRange.min, suggestedMax: xRange.max }
+                        : {}),
+                      ticks: {
+                        maxTicksLimit: 10,
+                        callback: function (value) {
+                          return parseFloat(value).toFixed(1);
+                        },
+                      },
+                    },              
+                    y: {
+                      beginAtZero: true,
+                      display: false,
+                    },
                   },
-                },
-              },              
-              y: {
-                beginAtZero: true,
-                display: false,
-              },
-            },
-            plugins: {
-              legend: {
-                display: true,
-              },
-            },
-          }}
-        />
-        </Box>
-      )}
+                  plugins: {
+                    legend: {
+                      display: true,
+                    },
+                  },
+                }}
+              />
+            </Box>
+          </Box>
 
-      <Grid container spacing={2} justifyContent="center">
-        {renderInputs()}
-      </Grid>
+          <Grid container spacing={2} justifyContent="center">
+            {renderInputs()}
+          </Grid>
+
+          {/* Error Message */}
+          {errorMessage && (
+            <Typography variant="body2" color="error" align="center" sx={{ marginTop: '1rem' }}>
+              {errorMessage}
+            </Typography>
+          )}
+        </>
+      )}
     </Paper>
   );
 };

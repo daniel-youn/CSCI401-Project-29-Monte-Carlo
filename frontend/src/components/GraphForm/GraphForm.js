@@ -81,9 +81,9 @@ const GraphForm = ({
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    const parsedValue = parseFloat(value);
-
-    if (parsedValue === '' || isNaN(parsedValue) || parsedValue < 0) {
+    let parsedValue = parseFloat(value);
+  
+    if (value === '' || isNaN(parsedValue) || parsedValue < 0) {
       setErrorMessage('Value cannot be negative.');
       parsedValue = '';
     } else if (percentageInput && parsedValue > 1) {
@@ -93,17 +93,17 @@ const GraphForm = ({
       setErrorMessage('');
     }
     
-    const updatedValues = { ...values, [name]: isNaN(parsedValue) ? '' : parsedValue };
+    const updatedValues = { ...values, [name]: parsedValue === '' ? '' : parsedValue };
     setValues(updatedValues);
     onFormChange(updatedValues);
   };
-
+  
   const emptyChartData = () => ({
-    labels: Array.from({ length: 100 }, (_, i) => i),
+    labels: [],
     datasets: [
       {
         label: 'Distribution',
-        data: Array(100).fill(null),
+        data: [],
         borderColor: theme.palette.primary.main,
         backgroundColor: 'rgba(0, 188, 212, 0.2)',
         fill: true
@@ -114,21 +114,21 @@ const GraphForm = ({
   const generateDistributionShape = () => {
     let data = [];
     const numPoints = 100;
-
+  
     if (distributionType === 'normal' && values.mean && values.stddev) {
       const mean = parseFloat(values.mean);
       const stddev = parseFloat(values.stddev);
       const startX = Math.max(0, mean - 3 * stddev);
       const endX = mean + 3 * stddev;
       const step = (endX - startX) / numPoints;
-
+  
       const labels = Array.from({ length: numPoints }, (_, i) => (startX + i * step).toFixed(2));
-
+  
       data = labels.map(x => {
         const z = (x - mean) / stddev;
         return Math.exp(-0.5 * z * z) / (stddev * Math.sqrt(2 * Math.PI));
       });
-
+  
       setChartData({
         labels: labels,
         datasets: [
@@ -152,9 +152,9 @@ const GraphForm = ({
       }
       const uniformHeight = max_val - min_val !== 0 ? 1 / (max_val - min_val) : 0;
       const labels = Array.from({ length: numPoints }, (_, i) => (min_val + ((max_val - min_val) / numPoints) * i).toFixed(2));
-
+  
       data = labels.map(x => (x >= min_val && x <= max_val ? uniformHeight : 0));
-
+  
       setChartData({
         labels: labels,
         datasets: [
@@ -182,7 +182,7 @@ const GraphForm = ({
         setErrorMessage('');
       }
       const labels = Array.from({ length: numPoints }, (_, i) => (min_val + ((max_val - min_val) / numPoints) * i).toFixed(2));
-
+  
       data = labels.map(x => {
         const val = parseFloat(x);
         if (val < min_val || val > max_val) return 0;
@@ -190,7 +190,7 @@ const GraphForm = ({
         if (val < mode) return (2 * (val - min_val)) / ((max_val - min_val) * (mode - min_val));
         return (2 * (max_val - val)) / ((max_val - min_val) * (max_val - mode));
       });
-
+  
       setChartData({
         labels: labels,
         datasets: [
@@ -204,12 +204,11 @@ const GraphForm = ({
           }
         ]
       });
-    }
-      else {
-        setChartData(emptyChartData());
+    } else {
+      setChartData(emptyChartData());
     }
   };
-
+  
   useEffect(() => {
     generateDistributionShape();
   }, [values, distributionType]);
@@ -383,10 +382,6 @@ const GraphForm = ({
           )}
         </>
       )}
-
-      <Grid container spacing={2} justifyContent="center">
-        {renderInputs()}
-      </Grid>
     </Paper>
   );
 };
