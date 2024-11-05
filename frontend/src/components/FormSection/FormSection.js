@@ -179,6 +179,7 @@ const FormSection = ({ renderCrossCheck = false, projectID = "N/A" }) => {
             factorTitle="Expected Discount per Deal"
             width={"40rem"}
             height={"30rem"}
+            percentageInput={true} // Added this line
             onFormChange={(data) => handleFormChange('expected_discount_per_deal', data)}
           />
         </Grid>
