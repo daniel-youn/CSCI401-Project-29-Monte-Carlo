@@ -6,6 +6,9 @@ from pymongo.errors import DuplicateKeyError
 from app.schemas.projects_schema import projects_schema  # Adjust the import as necessary
 from app.schemas.simulation_schema import simulation_schema
 from app import db
+from app.routes.simulation_routes import normalFactorRunSim, crossCheckSim, get_distribution
+from app.routes.simulation_routes import model_variables_collection, simulation_collection, project_collection
+
 
 project_routes = Blueprint('project_routes', __name__)
 projects_collection = db['project_schema']
@@ -276,34 +279,32 @@ def remove_user_from_project():
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        print(f"Initial shared_users list: {project.get('shared_users', [])}")
-
-        # Adjust the $pull to match on user_id within the shared_users field
-        result = projects_collection.update_one(
+        # Remove the user from the project's shared_users list
+        projects_collection.update_one(
             {"_id": ObjectId(project_id)},
             {"$pull": {"shared_users": {"user_id": user_id}}}
         )
-        print(f"Update result for shared_users removal: {result.raw_result}")
 
-        # Verify if the user was removed from shared_users
-        updated_project = projects_collection.find_one({"_id": ObjectId(project_id)})
-        print(f"Updated shared_users list: {updated_project.get('shared_users', [])}")
-
-        # Print user's projects structure before unset
-        print(f"User's projects before unset: {user.get('projects', {})}")
-
-        # Remove the project from the user's projects list
-        result = user_collection.update_one(
+        # Remove the project from the user's projects
+        user_collection.update_one(
             {"user_id": user_id},
             {"$unset": {f"projects.{project_id}": ""}}
         )
-        print(f"Update result for user's projects removal: {result.raw_result}")
 
-        # Verify if the project entry was removed from the user document
-        updated_user = user_collection.find_one({"user_id": user_id})
-        print(f"Updated user's projects field: {updated_user.get('projects', {})}")
+        # Delete the user's model variables associated with the project's simulations
+        normal_sim_id = project.get("normal_sim_id")
+        cross_check_sim_id = project.get("cross_check_sim_id")
 
-        return jsonify({"message": "User removed from project"}), 200
+        model_variables_collection.delete_many({
+            "user_id": user_id,
+            "simulation_id": {"$in": [normal_sim_id, cross_check_sim_id]}
+        })
+
+        # Re-run the simulations to update the results
+        normalFactorRunSim(normal_sim_id, project_id)
+        crossCheckSim(cross_check_sim_id, project_id)
+
+        return jsonify({"message": "User removed from project and simulations updated"}), 200
 
     except ValidationError as err:
         return jsonify({"error": err.messages}), 400
