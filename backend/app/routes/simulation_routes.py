@@ -504,3 +504,4 @@ def get_aggregate_distribution(project_id):
         }
     
     return jsonify(response), 200
+
