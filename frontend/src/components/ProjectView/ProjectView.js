@@ -253,6 +253,25 @@ const ProjectView = () => {
     }
   };
 
+  const handleRemoveUser = async (userId) => {
+    try {
+      const response = await axios.post('http://localhost:5001/api/project/projects/removeUser', {
+        project_id: projectId,
+        user_id: userId,
+      });
+      if (response.status === 200) {
+        setSnackbar({ open: true, message: 'User removed successfully!', severity: 'success' });
+        // Refresh the project data after removing the user
+        window.location.reload();
+      } else {
+        setSnackbar({ open: true, message: 'Failed to remove the user.', severity: 'error' });
+      }
+    } catch (error) {
+      console.error('Error removing user:', error);
+      setSnackbar({ open: true, message: 'An error occurred while removing the user.', severity: 'error' });
+    }
+  };
+
   const chartData = {
     labels: ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'], // Assuming 5 years
     datasets: [
@@ -550,6 +569,7 @@ const ProjectView = () => {
                 <TableCell sx={{ color: '#D5D5D5' }}>User ID</TableCell>
                 <TableCell sx={{ color: '#D5D5D5' }}>Email</TableCell>
                 <TableCell sx={{ color: '#D5D5D5' }}>Cross Check Access</TableCell>
+                <TableCell sx={{ color: '#D5D5D5' }}>Actions</TableCell> {/* New column for actions */}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -560,11 +580,19 @@ const ProjectView = () => {
                   <TableCell sx={{ color: '#D5D5D5' }}>
                     {user.cross_check_access ? 'Yes' : 'No'}
                   </TableCell>
+                  <TableCell sx={{ color: '#D5D5D5' }}>
+                    <Button
+                      color="error"
+                      onClick={() => handleRemoveUser(user.user_id)}
+                    >
+                      Remove
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
               {!projectData?.shared_users?.length && (
                 <TableRow>
-                  <TableCell colSpan={3} sx={{ color: '#D5D5D5', textAlign: 'center' }}>
+                  <TableCell colSpan={4} sx={{ color: '#D5D5D5', textAlign: 'center' }}>
                     No shared users
                   </TableCell>
                 </TableRow>
@@ -641,6 +669,7 @@ const ProjectView = () => {
       </Snackbar>
     </Box>
   );
+  
 
   const renderOverlay = () => (
     <Box sx={{ padding: '2rem' }}>

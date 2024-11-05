@@ -258,3 +258,54 @@ def add_user_to_project():
         return jsonify({"error": err.messages}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@project_routes.route('/projects/removeUser', methods=['POST'])
+def remove_user_from_project():
+    try:
+        data = request.get_json()
+        project_id = data["project_id"]
+        user_id = data["user_id"]
+
+        # Check if the project exists
+        project = projects_collection.find_one({"_id": ObjectId(project_id)})
+        if not project:
+            return jsonify({"error": "Project not found"}), 404
+
+        # Check if the user exists
+        user = user_collection.find_one({"user_id": user_id})
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        print(f"Initial shared_users list: {project.get('shared_users', [])}")
+
+        # Adjust the $pull to match on user_id within the shared_users field
+        result = projects_collection.update_one(
+            {"_id": ObjectId(project_id)},
+            {"$pull": {"shared_users": {"user_id": user_id}}}
+        )
+        print(f"Update result for shared_users removal: {result.raw_result}")
+
+        # Verify if the user was removed from shared_users
+        updated_project = projects_collection.find_one({"_id": ObjectId(project_id)})
+        print(f"Updated shared_users list: {updated_project.get('shared_users', [])}")
+
+        # Print user's projects structure before unset
+        print(f"User's projects before unset: {user.get('projects', {})}")
+
+        # Remove the project from the user's projects list
+        result = user_collection.update_one(
+            {"user_id": user_id},
+            {"$unset": {f"projects.{project_id}": ""}}
+        )
+        print(f"Update result for user's projects removal: {result.raw_result}")
+
+        # Verify if the project entry was removed from the user document
+        updated_user = user_collection.find_one({"user_id": user_id})
+        print(f"Updated user's projects field: {updated_user.get('projects', {})}")
+
+        return jsonify({"message": "User removed from project"}), 200
+
+    except ValidationError as err:
+        return jsonify({"error": err.messages}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
