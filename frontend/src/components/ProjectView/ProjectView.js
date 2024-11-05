@@ -14,11 +14,17 @@ import {
   TableHead,
   TableRow,
   Paper,
-  useTheme
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import { Line } from 'react-chartjs-2';
-import axios from 'axios'; // Import axios
-import Cookies from 'js-cookie'; // Import js-cookie
+import axios from 'axios';
+import Cookies from 'js-cookie';
 
 // Import and register Chart.js components
 import {
@@ -32,7 +38,6 @@ import {
   Legend,
   Filler
 } from 'chart.js';
-import CrossCheckGraph from '../CrossCheckGraph/CrossCheckGraph'
 import AggregateFactorGraph from '../AggregateFactorGraph/AggregateFactorGraph';
 import OverlayFormSection from '../OverlayFormSection/OverlayFormSection';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
@@ -41,7 +46,7 @@ const ProjectView = () => {
   const { projectId } = useParams();  // Get projectId from the URL
   const navigate = useNavigate();
   const location = useLocation();
-  const theme = useTheme();
+  // Removed: const theme = useTheme();
   const [showOverlay, setShowOverlay] = useState(false);
   const [projectData, setProjectData] = useState(null);  // State to hold project details
   const [normalSimOutput, setNormalSimOutput] = useState(null);  // State to hold normal simulation data
@@ -65,10 +70,25 @@ const ProjectView = () => {
       fetchUserData();
     }
   }, []);
+  
   const [showShare, setShowShare] = useState(false);
   const [showCrossCheck, setShowCrossCheck] = useState(false);
   const [sharedMembers, setSharedMembers] = useState([]);
   const [crossCheckData, setCrossCheckData] = useState(null);
+  
+  // State for delete confirmation dialog and snackbar notifications
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false); // For confirmation dialog
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' }); // For notifications
+
+  // Define handler functions for opening and closing the delete dialog
+  const handleOpenDeleteDialog = () => {
+    setOpenDeleteDialog(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setOpenDeleteDialog(false);
+  };
+
   // Fetch project details when the component loads or when projectId changes
   const factorTitleMapping = {
     discount: 'Expected Discount per Deal',
@@ -112,17 +132,23 @@ const ProjectView = () => {
         console.error('Error fetching cross check data:', error);
       }
     };
+    
     const getAdminOutput = async (adminSimId) => {
       if (!adminSimId) {
         console.error('No admin_sim_id found in project data');
         return;
       }
-      const adminSimulationResponse = await fetch(`http://localhost:5001/api/output/outputs/simulation/${adminSimId}`);
-      const adminSimulationData = await adminSimulationResponse.json();
-      const lastAdminSimulation = adminSimulationData[adminSimulationData.length - 1];
-      setAdminSimOutput(lastAdminSimulation);
-
+      try {
+        const adminSimulationResponse = await fetch(`http://localhost:5001/api/output/outputs/simulation/${adminSimId}`);
+        if (!adminSimulationResponse.ok) throw new Error(`Error fetching admin simulation data: ${adminSimulationResponse.statusText}`);
+        const adminSimulationData = await adminSimulationResponse.json();
+        const lastAdminSimulation = adminSimulationData[adminSimulationData.length - 1];
+        setAdminSimOutput(lastAdminSimulation);
+      } catch (error) {
+        console.error('Error fetching admin simulation data:', error);
+      }
     }
+    
     const fetchSimulationData = async (simId) => {
       if (!simId) return;
       try {
@@ -158,7 +184,6 @@ const ProjectView = () => {
     fetchProjectData();
   }, [projectId]);
 
-
   // Redirect to /project-page/:projectId/overview if visiting /project-page/:projectId
   useEffect(() => {
     if (location.pathname === `/project-page/${projectId}`) {
@@ -169,13 +194,16 @@ const ProjectView = () => {
   const handleToggleOverlay = () => {
     setShowOverlay(prev => !prev);
   };
+  
   const handleShowCrossCheck = () => {
     setShowCrossCheck(!showCrossCheck);
   };
+  
   const toggleShare = () => {
     console.log(projectData);
     setShowShare(!showShare);
   }
+  
   const updateSharedList = () => {
     const updateCrossCheckAccess = async (accessList, projectId) => {
       try {
@@ -205,32 +233,25 @@ const ProjectView = () => {
     };
 
     updateCrossCheckAccess(sharedMembers, projectId);
-
   };
 
-  async function updateProject(projectId, updatedData) {
+  const handleDeleteProject = async () => {
     try {
-      const response = await fetch(`http://localhost:5001/api/project/projects/${projectId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatedData),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log(data.message);
-      } else if (response.status === 404) {
-        console.error('Project not found');
+      // Assuming your backend is hosted at the same domain. Adjust the URL if different.
+      const response = await axios.delete(`http://localhost:5001/api/project/projects/${projectId}`);
+      
+      if (response.status === 200) {
+        setSnackbar({ open: true, message: 'Project deleted successfully!', severity: 'success' });
+        // Navigate to the projects list or homepage after deletion
+        navigate('/'); // Adjust the path as needed
       } else {
-        const errorData = await response.json();
-        console.error('Error:', errorData.error);
+        setSnackbar({ open: true, message: 'Failed to delete the project.', severity: 'error' });
       }
     } catch (error) {
-      console.error('Fetch error:', error);
+      console.error('Error deleting project:', error);
+      setSnackbar({ open: true, message: 'An error occurred while deleting the project.', severity: 'error' });
     }
-  }
+  };
 
   const chartData = {
     labels: ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'], // Assuming 5 years
@@ -381,6 +402,7 @@ const ProjectView = () => {
       },
     },
   };
+  
   useEffect(() => {
     console.log("crossCheckData:", crossCheckData);
     console.log("summary_statistics:", crossCheckData?.summary_statistics);
@@ -552,15 +574,23 @@ const ProjectView = () => {
         </TableContainer>
         {/* Example buttons */}
         <Box mt={2}>
-          <Button variant="contained" color="primary" sx={{ marginRight: '10px' }} onClick={() => toggleShare()}>
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{ marginRight: '10px' }}
+            onClick={() => toggleShare()}
+          >
             Share to More Members
           </Button>
-          <Button variant="contained" color="secondary" sx={{ marginRight: '10px' }}>
-            Publish Project
-          </Button>
-          <Button variant="outlined" color="error">
-            Delete Project
-          </Button>
+          {isAdmin && ( // Only show the delete button if the user is an admin
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={handleOpenDeleteDialog}
+            >
+              Delete Project
+            </Button>
+          )}
         </Box>
       </Box>
       {
@@ -574,9 +604,43 @@ const ProjectView = () => {
           </Box>
         )
       }
+      
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={openDeleteDialog}
+        onClose={handleCloseDeleteDialog}
+        aria-labelledby="delete-project-dialog-title"
+        aria-describedby="delete-project-dialog-description"
+      >
+        <DialogTitle id="delete-project-dialog-title">Delete Project</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-project-dialog-description">
+            Are you sure you want to delete the project "{projectData?.project_name}"? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={() => { handleDeleteProject(); handleCloseDeleteDialog(); }} color="error" autoFocus>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Snackbar for Notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
-  
 
   const renderOverlay = () => (
     <Box sx={{ padding: '2rem' }}>

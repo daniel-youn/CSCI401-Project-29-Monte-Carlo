@@ -45,15 +45,25 @@ const ProjectDashboard = () => {
         setProjectsWithCross(new Set(projectsWithCrossCheckAccess));
 
         const projectPromises = Object.entries(userData.projects).map(async ([projectId, project]) => {
-          const projectResponse = await axios.get(`http://localhost:5001/api/project/projects/${projectId}`);
-          return {
-            ...projectResponse.data,
-            form_submitted: project.access_data.form_submitted,
-          };
+          try {
+            const projectResponse = await axios.get(`http://localhost:5001/api/project/projects/${projectId}`);
+            return {
+              ...projectResponse.data,
+              form_submitted: project.access_data.form_submitted,
+            };
+          } catch (error) {
+            if (error.response && error.response.status === 404) {
+              console.warn(`Project with ID ${projectId} not found, skipping.`);
+              return null; // Skip this project
+            } else {
+              throw error; // Re-throw other errors
+            }
+          }
         });
         
-        const projects = await Promise.all(projectPromises);
+        const projects = (await Promise.all(projectPromises)).filter(Boolean);
 
+        console.log('useradmin: ', userData.is_admin);
         if (userData.is_admin) {
           setProjects(projects);
         } else {
@@ -129,7 +139,7 @@ const ProjectDashboard = () => {
             <Typography variant="h4" sx={{ color: theme.palette.text.primary }}>
               My Projects
             </Typography>
-            {isAdmin && (
+            {isAdmin&& (
               <Button
                 variant="contained"
                 color="primary"
