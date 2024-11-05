@@ -517,7 +517,7 @@ const ProjectView = () => {
             Admin: {projectData?.admin_user_id || 'Loading...'}
           </Typography>
           <Typography variant="body1" sx={{ color: '#D5D5D5', marginTop: '1rem' }}>
-            Shared Users: {projectData?.shared_users?.join(', ') || 'None'}
+            Shared Users: {projectData?.shared_users?.length > 0 ? projectData.shared_users.length : 'None'}
           </Typography>
         </Box>
         {/* Table for Shared Users */}
@@ -525,20 +525,24 @@ const ProjectView = () => {
           <Table aria-label="shared members table">
             <TableHead>
               <TableRow>
-                <TableCell sx={{ color: '#D5D5D5' }}>User</TableCell>
+                <TableCell sx={{ color: '#D5D5D5' }}>User ID</TableCell>
                 <TableCell sx={{ color: '#D5D5D5' }}>Email</TableCell>
+                <TableCell sx={{ color: '#D5D5D5' }}>Cross Check Access</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {projectData?.shared_users?.map((user, index) => (
                 <TableRow key={index}>
-                  <TableCell sx={{ color: '#D5D5D5' }}>{user}</TableCell>
-                  <TableCell sx={{ color: '#D5D5D5' }}>{user}</TableCell> {/* Assuming user is both name and email */}
+                  <TableCell sx={{ color: '#D5D5D5' }}>{user.user_id}</TableCell>
+                  <TableCell sx={{ color: '#D5D5D5' }}>{user.email}</TableCell>
+                  <TableCell sx={{ color: '#D5D5D5' }}>
+                    {user.cross_check_access ? 'Yes' : 'No'}
+                  </TableCell>
                 </TableRow>
               ))}
               {!projectData?.shared_users?.length && (
                 <TableRow>
-                  <TableCell colSpan={2} sx={{ color: '#D5D5D5', textAlign: 'center' }}>
+                  <TableCell colSpan={3} sx={{ color: '#D5D5D5', textAlign: 'center' }}>
                     No shared users
                   </TableCell>
                 </TableRow>
@@ -568,13 +572,11 @@ const ProjectView = () => {
             />
             <Button onClick={() => updateSharedList()}>Update</Button>
           </Box>
-
         )
       }
     </Box>
-
-
   );
+  
 
   const renderOverlay = () => (
     <Box sx={{ padding: '2rem' }}>
