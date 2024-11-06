@@ -16,9 +16,9 @@ const FormPage = () => {
       const response = await fetch(`http://localhost:5001/api/user/users/${userId}`);
       const userData = await response.json();
       console.log("User Data:", userData);
-      
+
       // Replace this with your actual condition based on user data
-      return userData.hasCrossCheckAccess;  // Assuming `hasCrossCheckAccess` is a field in `userData`
+      return userData.projects[projectId].access_data.cross_check_access;  // Assuming `hasCrossCheckAccess` is a field in `userData`
     } catch (error) {
       console.error("Error checking cross-check access:", error);
       return false;
