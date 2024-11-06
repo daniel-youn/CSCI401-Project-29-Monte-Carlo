@@ -88,6 +88,11 @@ def get_distribution(model_variables, factor_name):
     elif distribution_type == 'normal':
         mean = factor_params["mean"]
         stddev = factor_params["stddev"]
+        min_val = factor_params["min_val"]
+        max_val = factor_params["max_val"]
+        if min_val is not None and max_val is not None and min_val != "" and max_val != "":
+            mean = (min_val + max_val) / 2
+            stddev = (max_val - min_val) / 4  # Approximation
         return norm(loc=mean, scale=stddev)
     elif distribution_type == 'triangular':
         mode = factor_params["mode"]
