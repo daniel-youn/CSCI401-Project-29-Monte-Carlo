@@ -70,12 +70,12 @@ const ProjectView = () => {
       fetchUserData();
     }
   }, []);
-  
+
   const [showShare, setShowShare] = useState(false);
   const [showCrossCheck, setShowCrossCheck] = useState(false);
   const [sharedMembers, setSharedMembers] = useState([]);
   const [crossCheckData, setCrossCheckData] = useState(null);
-  
+
   // State for delete confirmation dialog and snackbar notifications
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false); // For confirmation dialog
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' }); // For notifications
@@ -115,7 +115,7 @@ const ProjectView = () => {
         const response = await fetch(`http://localhost:5001/api/simulation/get_aggregate_distribution/${projectId}`);
         if (!response.ok) throw new Error(`Error fetching aggregate data: ${response.statusText}`);
         const data = await response.json();
-        setAggregateData(data[0]);
+        setAggregateData(data);
       } catch (error) {
         console.error('Error fetching aggregate data:', error);
       }
@@ -132,7 +132,7 @@ const ProjectView = () => {
         console.error('Error fetching cross check data:', error);
       }
     };
-    
+
     const getAdminOutput = async (adminSimId) => {
       if (!adminSimId) {
         console.error('No admin_sim_id found in project data');
@@ -148,7 +148,7 @@ const ProjectView = () => {
         console.error('Error fetching admin simulation data:', error);
       }
     }
-    
+
     const fetchSimulationData = async (simId) => {
       if (!simId) return;
       try {
@@ -194,16 +194,16 @@ const ProjectView = () => {
   const handleToggleOverlay = () => {
     setShowOverlay(prev => !prev);
   };
-  
+
   const handleShowCrossCheck = () => {
     setShowCrossCheck(!showCrossCheck);
   };
-  
+
   const toggleShare = () => {
     console.log(projectData);
     setShowShare(!showShare);
   }
-  
+
   const updateSharedList = () => {
     const updateCrossCheckAccess = async (accessList, projectId) => {
       try {
@@ -239,7 +239,7 @@ const ProjectView = () => {
     try {
       // Assuming your backend is hosted at the same domain. Adjust the URL if different.
       const response = await axios.delete(`http://localhost:5001/api/project/projects/${projectId}`);
-      
+
       if (response.status === 200) {
         setSnackbar({ open: true, message: 'Project deleted successfully!', severity: 'success' });
         // Navigate to the projects list or homepage after deletion
@@ -421,7 +421,7 @@ const ProjectView = () => {
       },
     },
   };
-  
+
   useEffect(() => {
     console.log("crossCheckData:", crossCheckData);
     console.log("summary_statistics:", crossCheckData?.summary_statistics);
@@ -632,7 +632,7 @@ const ProjectView = () => {
           </Box>
         )
       }
-      
+
       {/* Confirmation Dialog */}
       <Dialog
         open={openDeleteDialog}
@@ -655,7 +655,7 @@ const ProjectView = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      
+
       {/* Snackbar for Notifications */}
       <Snackbar
         open={snackbar.open}
@@ -669,7 +669,7 @@ const ProjectView = () => {
       </Snackbar>
     </Box>
   );
-  
+
 
   const renderOverlay = () => (
     <Box sx={{ padding: '2rem' }}>
