@@ -96,7 +96,13 @@ const ProjectDashboard = () => {
     if (isAdmin || isFormSubmitted) {
       navigate(`/project-page/${projectId}/overview`);
     } else {
-      navigate(`/form/${projectId}/${projectsWithCross.has(projectId)}`);
+      // Otherwise, go to the Form Page (for pending projects)
+      if (projectsWithCross.has(projectId)) {
+        navigate(`/form/${projectId}/${true}`);
+      }
+      else {
+        navigate(`/form/${projectId}/${false}`);
+      }
     }
   };
 

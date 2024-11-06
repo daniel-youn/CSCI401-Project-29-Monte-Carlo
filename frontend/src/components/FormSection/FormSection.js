@@ -5,10 +5,11 @@ import GraphForm from '../GraphForm/GraphForm';
 import MonteCarloServices from '../../apis/MonteCarloServices';
 import Cookies from 'js-cookie';
 
-const FormSection = ({ renderCrossCheck = false, projectID = "N/A" }) => {
+const FormSection = () => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const { projectId } = useParams();
+  const { projectId, hasCrossCheck } = useParams();
+  const isCrossCheckEnabled = hasCrossCheck === "true";
   const [formData, setFormData] = useState({
     willingness_to_pay_standard: {},
     willingness_to_pay_premium: {},
@@ -79,8 +80,6 @@ const FormSection = ({ renderCrossCheck = false, projectID = "N/A" }) => {
       ...prevState,
       [key]: data
     }));
-
-
   };
 
   const isFormComplete = (form) => {
@@ -234,7 +233,7 @@ const FormSection = ({ renderCrossCheck = false, projectID = "N/A" }) => {
             onFormChange={(data) => handleFormChange('num_deals_year_5', data)}
           />
         </Grid>
-        {renderCrossCheck && (
+        {isCrossCheckEnabled && (
           <>
             <Grid item xs={12} md={6}>
               <GraphForm
