@@ -20,7 +20,7 @@ def create_user():
             'last_name': data['last_name'],
             'email': data['email'],
             'user_id': data['email'],  # Set user_id to the email
-            'password': generate_password_hash(data['password']),  # Hash the password
+            'password': generate_password_hash(data['password'], method='pbkdf2:sha256'),  # Hash the password
             'isAdmin': False,  # Default value for is_admin
             'simulations': [],  # Initialize with an empty list of simulations
             'settings': {},  # Initialize with empty settings
@@ -55,7 +55,7 @@ def update_user(user_id):
     
     # If password is provided, hash the new password
     if 'password' in updates:
-        updates['password'] = generate_password_hash(updates['password'])
+        updates['password'] = generate_password_hash(updates['password'], method='pbkdf2:sha256')
 
     result = user_collection.update_one({'user_id': user_id}, {'$set': updates})
     
