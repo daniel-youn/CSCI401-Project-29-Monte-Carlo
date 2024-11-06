@@ -259,12 +259,13 @@ def crossCheckSim(simulation_id, project_id):
         upsert=True  # Insert if no matching document is found
     ).upserted_id
     
-    print(f"lets see what the output id is=========================: {output_id}")
+    # print(f"lets see what the output id is=========================: {output_id}")
     
     if output_id:
-        print(f"Inserted new document with ID: {output_id}")
+        # print(f"Inserted new document with ID: {output_id}")
+        pass
     else:
-        print(f"Updated existing document with simulation_id: {simulation_id}")
+        # print(f"Updated existing document with simulation_id: {simulation_id}")
         output_id = db["outputs"].find_one({'simulation_id': simulation_id}, {'_id': 1})['_id']
     
 
@@ -345,9 +346,10 @@ def normalFactorRunSim(simulation_id, project_id):
     ).upserted_id
     
     if output_id:
-        print(f"Inserted new document with ID: {output_id}")
+        # print(f"Inserted new document with ID: {output_id}")
+        pass
     else:
-        print(f"Updated existing document with simulation_id: {simulation_id}")
+        # print(f"Updated existing document with simulation_id: {simulation_id}")
         output_id = db["outputs"].find_one({'simulation_id': simulation_id}, {'_id': 1})['_id']
     
     return output_id, "output_id"

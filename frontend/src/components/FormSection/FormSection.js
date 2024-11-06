@@ -21,7 +21,7 @@ const FormSection = ({ renderCrossCheck = false, projectID = "N/A" }) => {
     num_deals_year_5: {},
     expected_discount_per_deal: {},
     initial_market_size: {},
-    year_over_year_growth_rate: {}
+    yoy_growth_rate: {}
   });
 
   const [errorMessage, setErrorMessage] = useState('');
@@ -70,6 +70,8 @@ const FormSection = ({ renderCrossCheck = false, projectID = "N/A" }) => {
 
   useEffect(() => {
     getUserID();
+    console.log("============ form data =================")
+    console.log(formData)
   }, []);
 
   const handleFormChange = (key, data) => {
@@ -77,6 +79,8 @@ const FormSection = ({ renderCrossCheck = false, projectID = "N/A" }) => {
       ...prevState,
       [key]: data
     }));
+
+
   };
 
   const isFormComplete = (form) => {
@@ -108,7 +112,7 @@ const FormSection = ({ renderCrossCheck = false, projectID = "N/A" }) => {
           num_deals_per_year_5: formData.num_deals_year_5,
           expected_discount_per_deal: formData.expected_discount_per_deal,
           initial_market_size: formData.initial_market_size,
-          yoy_growth_rate: formData.year_over_year_growth_rate
+          yoy_growth_rate: formData.yoy_growth_rate
         }
       };
 
@@ -134,6 +138,8 @@ const FormSection = ({ renderCrossCheck = false, projectID = "N/A" }) => {
     return null; // Prevents rendering the component if the user is an admin
   }
 
+  console.log("============ form data =================")
+  console.log(formData)
   return (
     <Box sx={{ bgcolor: theme.palette.background.default, padding: '3rem', minHeight: '100vh' }}>
       <Grid container spacing={4}>
@@ -241,11 +247,11 @@ const FormSection = ({ renderCrossCheck = false, projectID = "N/A" }) => {
             </Grid>
             <Grid item xs={12} md={6}>
               <GraphForm
-                factorName='year_over_year_growth_rate'
+                factorName='yoy_growth_rate'
                 factorTitle="Year-over-Year Growth Rate"
                 width={"40rem"}
                 height={"30rem"}
-                onFormChange={(data) => handleFormChange('year_over_year_growth_rate', data)}
+                onFormChange={(data) => handleFormChange('yoy_growth_rate', data)}
               />
             </Grid>
           </>
