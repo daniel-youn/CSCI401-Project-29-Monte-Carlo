@@ -46,13 +46,14 @@ const ProjectView = () => {
   const { projectId } = useParams();  // Get projectId from the URL
   const navigate = useNavigate();
   const location = useLocation();
-  // Removed: const theme = useTheme();
   const [showOverlay, setShowOverlay] = useState(false);
   const [projectData, setProjectData] = useState(null);  // State to hold project details
   const [normalSimOutput, setNormalSimOutput] = useState(null);  // State to hold normal simulation data
   const [adminSimOutput, setAdminSimOutput] = useState(null);  // State to hold admin simulation data
   const [aggregateData, setAggregateData] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false); // State to track if user is admin
+
+  const [sharedUsersData, setSharedUsersData] = useState([]); // State to hold shared users' data
 
   // Fetch user data to determine admin status
   useEffect(() => {
@@ -105,81 +106,101 @@ const ProjectView = () => {
     yoy_growth_rate: 'Year Over Year Growth Rate',
   };
 
+  // Move fetchProjectData outside of useEffect
+  const fetchProjectData = async () => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/project/projects/${projectId}`);
+      if (!response.ok) throw new Error(`Error fetching project data: ${response.statusText}`);
+      const projectDataCopy = await response.json();
+
+      setProjectData(projectDataCopy);
+
+      // Fetch normal, admin, and cross-check simulation data
+      console.log(projectDataCopy);
+      fetchSimulationData(projectDataCopy.normal_sim_id);
+      fetchCrossCheckDistribution(projectDataCopy.cross_check_sim_id);
+      getAdminOutput(projectDataCopy.admin_sim_id);
+      fetchAggregateDistribution();
+
+      // Now, fetch user data for shared_users
+      if (projectDataCopy.shared_users && projectDataCopy.shared_users.length > 0) {
+        const sharedUsersList = projectDataCopy.shared_users;
+        const userPromises = sharedUsersList.map(async (user) => {
+          const res = await fetch(`http://localhost:5001/api/user/users/${user.user_id}`);
+          const userData = await res.json();
+          return {
+            ...user,
+            email: userData.email,
+          };
+        });
+        const sharedUsers = await Promise.all(userPromises);
+        setSharedUsersData(sharedUsers);
+      } else {
+        setSharedUsersData([]);
+      }
+
+    } catch (error) {
+      console.error('Error fetching project data:', error);
+    }
+  };
+
+  // Other functions that need to be defined outside of useEffect
+  const fetchAggregateDistribution = async () => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/simulation/get_aggregate_distribution/${projectId}`);
+      if (!response.ok) throw new Error(`Error fetching aggregate data: ${response.statusText}`);
+      const data = await response.json();
+      setAggregateData(data);
+    } catch (error) {
+      console.error('Error fetching aggregate data:', error);
+    }
+  };
+
+  const fetchCrossCheckDistribution = async (crossCheckID) => {
+    if (!crossCheckID) return;
+    try {
+      const response = await fetch(`http://localhost:5001/api/output/outputs/simulation/${crossCheckID}`);
+      if (!response.ok) throw new Error(`Error fetching cross check data: ${response.statusText}`);
+      const data = await response.json();
+      setCrossCheckData(data[0]);
+    } catch (error) {
+      console.error('Error fetching cross check data:', error);
+    }
+  };
+
+  const getAdminOutput = async (adminSimId) => {
+    if (!adminSimId) {
+      console.error('No admin_sim_id found in project data');
+      return;
+    }
+    try {
+      const adminSimulationResponse = await fetch(`http://localhost:5001/api/output/outputs/simulation/${adminSimId}`);
+      if (!adminSimulationResponse.ok) throw new Error(`Error fetching admin simulation data: ${adminSimulationResponse.statusText}`);
+      const adminSimulationData = await adminSimulationResponse.json();
+      const lastAdminSimulation = adminSimulationData[adminSimulationData.length - 1];
+      setAdminSimOutput(lastAdminSimulation);
+    } catch (error) {
+      console.error('Error fetching admin simulation data:', error);
+    }
+  };
+
+  const fetchSimulationData = async (simId) => {
+    if (!simId) return;
+    try {
+      const response = await fetch(`http://localhost:5001/api/output/outputs/simulation/${simId}`);
+      if (!response.ok) throw new Error(`Error fetching simulation data: ${response.statusText}`);
+      const data = await response.json();
+      setNormalSimOutput(data[data.length - 1]);
+    } catch (error) {
+      console.error('Error fetching simulation data:', error);
+    }
+  };
+
   useEffect(() => {
     if (!projectId) {
       console.error('No project ID found in URL');
       return;
     }
-    const fetchAggregateDistribution = async () => {
-      try {
-        const response = await fetch(`http://localhost:5001/api/simulation/get_aggregate_distribution/${projectId}`);
-        if (!response.ok) throw new Error(`Error fetching aggregate data: ${response.statusText}`);
-        const data = await response.json();
-        setAggregateData(data);
-      } catch (error) {
-        console.error('Error fetching aggregate data:', error);
-      }
-    };
-
-    const fetchCrossCheckDistribution = async (crossCheckID) => {
-      if (!crossCheckID) return;
-      try {
-        const response = await fetch(`http://localhost:5001/api/output/outputs/simulation/${crossCheckID}`);
-        if (!response.ok) throw new Error(`Error fetching cross check data: ${response.statusText}`);
-        const data = await response.json();
-        setCrossCheckData(data[0]);
-      } catch (error) {
-        console.error('Error fetching cross check data:', error);
-      }
-    };
-
-    const getAdminOutput = async (adminSimId) => {
-      if (!adminSimId) {
-        console.error('No admin_sim_id found in project data');
-        return;
-      }
-      try {
-        const adminSimulationResponse = await fetch(`http://localhost:5001/api/output/outputs/simulation/${adminSimId}`);
-        if (!adminSimulationResponse.ok) throw new Error(`Error fetching admin simulation data: ${adminSimulationResponse.statusText}`);
-        const adminSimulationData = await adminSimulationResponse.json();
-        const lastAdminSimulation = adminSimulationData[adminSimulationData.length - 1];
-        setAdminSimOutput(lastAdminSimulation);
-      } catch (error) {
-        console.error('Error fetching admin simulation data:', error);
-      }
-    }
-
-    const fetchSimulationData = async (simId) => {
-      if (!simId) return;
-      try {
-        const response = await fetch(`http://localhost:5001/api/output/outputs/simulation/${simId}`);
-        if (!response.ok) throw new Error(`Error fetching simulation data: ${response.statusText}`);
-        const data = await response.json();
-        setNormalSimOutput(data[data.length - 1]);
-      } catch (error) {
-        console.error('Error fetching simulation data:', error);
-      }
-    };
-
-    const fetchProjectData = async () => {
-      try {
-        const response = await fetch(`http://localhost:5001/api/project/projects/${projectId}`);
-        if (!response.ok) throw new Error(`Error fetching project data: ${response.statusText}`);
-        const projectDataCopy = await response.json();
-
-        setProjectData(projectDataCopy);
-
-        // Fetch normal, admin, and cross-check simulation data
-        console.log(projectDataCopy)
-        fetchSimulationData(projectDataCopy.normal_sim_id);
-        fetchCrossCheckDistribution(projectDataCopy.cross_check_sim_id);
-        getAdminOutput(projectDataCopy.admin_sim_id);
-        fetchAggregateDistribution();
-
-      } catch (error) {
-        console.error('Error fetching project data:', error);
-      }
-    };
 
     fetchProjectData();
   }, [projectId]);
@@ -202,7 +223,7 @@ const ProjectView = () => {
   const toggleShare = () => {
     console.log(projectData);
     setShowShare(!showShare);
-  }
+  };
 
   const updateSharedList = () => {
     const updateCrossCheckAccess = async (accessList, projectId) => {
@@ -226,13 +247,28 @@ const ProjectView = () => {
 
         const data = await response.json();
         console.log('Access updated successfully:', data);
+
         return data; // or handle the response data as needed
       } catch (error) {
         console.error('Error in updateCrossCheckAccess:', error);
       }
     };
 
-    updateCrossCheckAccess(sharedMembers, projectId);
+    updateCrossCheckAccess(sharedMembers, projectId)
+      .then(() => {
+        // Show success notification
+        setSnackbar({ open: true, message: 'Users added successfully!', severity: 'success' });
+        // Refresh project data to update the shared users list
+        fetchProjectData();
+        // Reset sharedMembers
+        setSharedMembers([]);
+        // Hide the sharing functionality component
+        setShowShare(false);
+      })
+      .catch((error) => {
+        // Show error notification
+        setSnackbar({ open: true, message: 'Failed to add users.', severity: 'error' });
+      });
   };
 
   const handleDeleteProject = async () => {
@@ -262,7 +298,7 @@ const ProjectView = () => {
       if (response.status === 200) {
         setSnackbar({ open: true, message: 'User removed successfully!', severity: 'success' });
         // Refresh the project data after removing the user
-        window.location.reload();
+        fetchProjectData();
       } else {
         setSnackbar({ open: true, message: 'Failed to remove the user.', severity: 'error' });
       }
@@ -558,7 +594,7 @@ const ProjectView = () => {
             Admin: {projectData?.admin_user_id || 'Loading...'}
           </Typography>
           <Typography variant="body1" sx={{ color: '#D5D5D5', marginTop: '1rem' }}>
-            Shared Users: {projectData?.shared_users?.length > 0 ? projectData.shared_users.length : 'None'}
+            Shared Users: {sharedUsersData.length > 0 ? sharedUsersData.length : 'None'}
           </Typography>
         </Box>
         {/* Table for Shared Users */}
@@ -573,7 +609,7 @@ const ProjectView = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {projectData?.shared_users?.map((user, index) => (
+              {sharedUsersData.map((user, index) => (
                 <TableRow key={index}>
                   <TableCell sx={{ color: '#D5D5D5' }}>{user.user_id}</TableCell>
                   <TableCell sx={{ color: '#D5D5D5' }}>{user.email}</TableCell>
@@ -590,7 +626,7 @@ const ProjectView = () => {
                   </TableCell>
                 </TableRow>
               ))}
-              {!projectData?.shared_users?.length && (
+              {!sharedUsersData.length && (
                 <TableRow>
                   <TableCell colSpan={4} sx={{ color: '#D5D5D5', textAlign: 'center' }}>
                     No shared users
@@ -628,7 +664,14 @@ const ProjectView = () => {
               sharedMembers={sharedMembers}
               setSharedMembers={setSharedMembers}
             />
-            <Button onClick={() => updateSharedList()}>Update</Button>
+            <Button
+              variant="contained"
+              color="primary"
+              sx={{ mt: 2 }}
+              onClick={() => updateSharedList()}
+            >
+              Update
+            </Button>
           </Box>
         )
       }

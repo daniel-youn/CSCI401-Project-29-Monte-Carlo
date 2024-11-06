@@ -201,10 +201,8 @@ def delete_project(project_id):
     else:
         return jsonify({"error": "Project not found"}), 404
 
-# Add users to project
 @project_routes.route('/projects/addUsers', methods=['POST'])
 def add_user_to_project():
-    
     try:
         data = request.get_json()
         project_id = data["project_id"]
@@ -226,7 +224,8 @@ def add_user_to_project():
                 return jsonify({"error": f"User with ID {user_id} not found"}), 404
 
             # Check if the user is already part of the project
-            if user_id in project.get("shared_users", []):
+            shared_users = project.get("shared_users", [])
+            if any(u['user_id'] == user_id for u in shared_users):
                 continue  # Skip users already in the project
 
             # Construct access data for this user
@@ -249,10 +248,10 @@ def add_user_to_project():
                 upsert=True
             )
 
-            # Add the user to the shared_users list in the project
+            # Add the user to the shared_users list in the project as a dictionary
             projects_collection.update_one(
                 {"_id": ObjectId(project_id)},
-                {"$addToSet": {"shared_users": user_id}}
+                {"$addToSet": {"shared_users": {"user_id": user_id, "cross_check_access": cross_check_access}}}
             )
         
         return jsonify({"message": "Users added to project"}), 200
@@ -261,6 +260,7 @@ def add_user_to_project():
         return jsonify({"error": err.messages}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @project_routes.route('/projects/removeUser', methods=['POST'])
 def remove_user_from_project():

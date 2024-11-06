@@ -37,14 +37,23 @@ const ProjectDashboard = () => {
 
         const userResponse = await axios.get(`http://localhost:5001/api/user/users/${userId}`);
         const userData = userResponse.data;
-        
-        const projectsWithCrossCheckAccess = Object.entries(userData.projects)
+
+        // Log userData to verify
+        console.log('User Data:', userData);
+
+        // Ensure is_admin is a boolean
+        const userIsAdmin = !!userData.is_admin;
+
+        setIsAdmin(userIsAdmin);
+
+        // Handle projects with cross-check access
+        const projectsWithCrossCheckAccess = Object.entries(userData.projects || {})
           .filter(([projectId, project]) => project.access_data.cross_check_access)
           .map(([projectId]) => projectId);
-        
+
         setProjectsWithCross(new Set(projectsWithCrossCheckAccess));
 
-        const projectPromises = Object.entries(userData.projects).map(async ([projectId, project]) => {
+        const projectPromises = Object.entries(userData.projects || {}).map(async ([projectId, project]) => {
           try {
             const projectResponse = await axios.get(`http://localhost:5001/api/project/projects/${projectId}`);
             return {
@@ -60,11 +69,10 @@ const ProjectDashboard = () => {
             }
           }
         });
-        
+
         const projects = (await Promise.all(projectPromises)).filter(Boolean);
 
-        console.log('useradmin: ', userData.is_admin);
-        if (userData.is_admin) {
+        if (userIsAdmin) {
           setProjects(projects);
         } else {
           const pending = projects.filter((project) => !project.form_submitted);
@@ -72,8 +80,6 @@ const ProjectDashboard = () => {
           setPendingProjects(pending);
           setCompletedProjects(completed);
         }
-
-        setIsAdmin(userData.is_admin);
       } catch (error) {
         console.error('Error fetching user or projects:', error);
       } finally {
@@ -139,7 +145,7 @@ const ProjectDashboard = () => {
             <Typography variant="h4" sx={{ color: theme.palette.text.primary }}>
               My Projects
             </Typography>
-            {isAdmin&& (
+            {isAdmin && (
               <Button
                 variant="contained"
                 color="primary"
