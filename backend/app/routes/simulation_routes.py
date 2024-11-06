@@ -100,6 +100,8 @@ def input_data():
     try:
         # Parse request data
         data = request.get_json()
+        print("================================================")
+        print(data)
         user_id = data["user_id"]
         project_id = data["project_id"]
         factors = data["factors"]
@@ -151,6 +153,12 @@ def input_data():
         
         
         
+        # Update the 'form_submitted' field for the specific project in the user's projects
+        user_collection.update_one(
+            {"user_id": user_id, f"projects.{project_id}": {"$exists": True}},
+            {"$set": {f"projects.{project_id}.access_data.form_submitted": True}}
+        )
+        
         # Handle cross-check if necessary
         
         
@@ -182,11 +190,6 @@ def input_data():
             cross_check_output_id = crossCheckSim(cross_check_sim_id, project_id)
         
         
-        # Update the 'form_submitted' field for the specific project in the user's projects
-        user_collection.update_one(
-            {"user_id": user_id, f"projects.{project_id}": {"$exists": True}},
-            {"$set": {f"projects.{project_id}.access_data.form_submitted": True}}
-        )
     
         
         # Return success response
