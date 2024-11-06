@@ -21,7 +21,7 @@ def create_user():
             'email': data['email'],
             'user_id': data['email'],  # Set user_id to the email
             'password': generate_password_hash(data['password'], method='pbkdf2:sha256'),  # Hash the password
-            'isAdmin': False,  # Default value for is_admin
+            'is_admin': False,  # Default value for is_admin
             'simulations': [],  # Initialize with an empty list of simulations
             'settings': {},  # Initialize with empty settings
             'projects': {}  # Initialize with empty projects
@@ -112,6 +112,9 @@ def set_admin_role(user_id):
         user = user_collection.find_one({'user_id': user_id}, {'_id': False})
         if not user:
             return jsonify({'message': 'User not found'}), 404
+        
+        if data['is_admin'] != True and data['is_admin'] != False:
+            return jsonify({'message': 'Invalid value for is_admin. Must be a bool value'}), 400
 
         # Update the is_admin field with the provided value
         user_collection.update_one(
