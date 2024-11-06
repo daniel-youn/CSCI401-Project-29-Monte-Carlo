@@ -100,8 +100,8 @@ def input_data():
     try:
         # Parse request data
         data = request.get_json()
-        print("================================================")
-        print(data)
+        # print("================================================")
+        # print(data)
         user_id = data["user_id"]
         project_id = data["project_id"]
         factors = data["factors"]
