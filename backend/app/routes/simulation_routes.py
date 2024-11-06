@@ -345,6 +345,14 @@ def normalFactorRunSim(simulation_id, project_id):
         upsert=True  # Insert if no matching document is found
     ).upserted_id
     
+    result = project_collection.update_one(
+        {'_id': ObjectId(project_id)},
+        {'$set': {
+            'revenue_mean_5th_year': sim_results[4]["mean"],
+            'revenue_std_5th_year': sim_results[4]["std_dev"]
+        }}
+    )
+    
     if output_id:
         # print(f"Inserted new document with ID: {output_id}")
         pass
