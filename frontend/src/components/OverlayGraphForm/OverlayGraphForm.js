@@ -90,10 +90,24 @@ const OverlayGraphForm = ({
     if (aggDataAvailable) {
       const aggXValues = aggregateData.x_values.map(parseFloat);
       const aggYValues = aggregateData.y_values.map(parseFloat);
-  
-      // Normalize y-values
-      const totalArea = aggYValues.reduce((sum, y) => sum + y, 0);
-      const normalizedYValues = aggYValues.map(y => y / totalArea);
+
+      // Calculate bin widths
+      const binWidths = aggXValues.map((x, index) => {
+        if (index === aggXValues.length - 1) {
+          return aggXValues[index] - aggXValues[index - 1]; // Last bin width
+        } else {
+          return aggXValues[index + 1] - x;
+        }
+      });
+
+      // Calculate the area under the histogram
+      let totalArea = 0;
+      for (let i = 0; i < aggYValues.length; i++) {
+        totalArea += aggYValues[i] * binWidths[i];
+      }
+
+      // Normalize y-values to convert counts to PDF
+      const normalizedYValues = aggYValues.map((y, index) => y / totalArea);
   
       const aggDataPoints = aggXValues.map((x, index) => ({
         x: x,

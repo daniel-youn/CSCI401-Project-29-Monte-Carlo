@@ -154,6 +154,7 @@ const OverlayFormSection = ({ renderCrossCheck = false, projectID = "N/A", aggre
             factorName='expected_discount_per_deal'
             factorTitle="Expected Discount per Deal"
             aggregateData={aggregateData?.discount}
+            percentageInput={true}
             onFormChange={(data) => handleFormChange('expected_discount_per_deal', data)}
           />
         </Grid>
