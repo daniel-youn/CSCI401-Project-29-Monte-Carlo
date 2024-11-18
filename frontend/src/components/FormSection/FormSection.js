@@ -114,6 +114,7 @@ const FormSection = () => {
           yoy_growth_rate: formData.yoy_growth_rate
         }
       };
+      console.log(finalFormData)
 
       setErrorMessage('');
       MonteCarloServices.runSimulationWithInputData(finalFormData)

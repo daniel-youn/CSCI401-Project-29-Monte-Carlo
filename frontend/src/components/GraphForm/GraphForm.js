@@ -1,3 +1,4 @@
+// GraphForm.js
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, MenuItem, TextField, Grid, Paper, useTheme } from '@mui/material';
 import { Line } from 'react-chartjs-2';
@@ -25,7 +26,7 @@ const GraphForm = ({
   const theme = useTheme(); // To use consistent theme styles
 
   const [distributionType, setDistributionType] = useState('');
-  const [values, setValues] = useState({ mean: '', stddev: '', min_val: '', max_val: '', mode: '' });
+  const [values, setValues] = useState({ min_val: '', max_val: '', mode: '', mean: 0, stddev: 0 }); // Reintroduced mean and stddev
   const [chartData, setChartData] = useState({
     labels: [],
     datasets: [
@@ -48,41 +49,44 @@ const GraphForm = ({
   ];
 
   const handleDistributionChange = (e) => {
-    setDistributionType(e.target.value);
-    const defaultValues = { mean: '', stddev: '', min_val: '', max_val: '', mode: '' };
+    const selectedType = e.target.value;
+    setDistributionType(selectedType);
+    const defaultValues = { min_val: '', max_val: '', mode: '', mean: 0, stddev: 0 };
 
-    if (e.target.value === "uniform") {
+    if (selectedType === "uniform") {
       setValues({
         ...defaultValues,
         min_val: values.min_val,
         max_val: values.max_val,
-        distribution_type: e.target.value
+        distribution_type: selectedType
       });
-    } else if (e.target.value === "normal") {
+    } else if (selectedType === "normal") {
       setValues({
         ...defaultValues,
-        mean: values.mean,
-        stddev: values.stddev,
-        distribution_type: e.target.value
+        min_val: values.min_val,
+        max_val: values.max_val,
+        mean: 0, // Initialize mean as 0
+        stddev: 0, // Initialize stddev as 0
+        distribution_type: selectedType
       });
-    } else if (e.target.value === "triangular") {
+    } else if (selectedType === "triangular") {
       setValues({
         ...defaultValues,
         min_val: values.min_val,
         max_val: values.max_val,
         mode: values.mode,
-        distribution_type: e.target.value
+        distribution_type: selectedType
       });
     }
 
     setChartData(emptyChartData());
-    onFormChange({ ...values, distribution_type: e.target.value });
+    // Removed onFormChange call here to prevent sending stale state
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     let parsedValue = parseFloat(value);
-  
+
     if (value === '' || isNaN(parsedValue) || parsedValue < 0) {
       setErrorMessage('Value cannot be negative.');
       parsedValue = '';
@@ -92,12 +96,12 @@ const GraphForm = ({
     } else {
       setErrorMessage('');
     }
-    
+
     const updatedValues = { ...values, [name]: parsedValue === '' ? '' : parsedValue };
     setValues(updatedValues);
-    onFormChange(updatedValues);
+    // Removed onFormChange call here to prevent sending stale state
   };
-  
+
   const emptyChartData = () => ({
     labels: [],
     datasets: [
@@ -114,21 +118,39 @@ const GraphForm = ({
   const generateDistributionShape = () => {
     let data = [];
     const numPoints = 100;
-  
-    if (distributionType === 'normal' && values.mean && values.stddev) {
-      const mean = parseFloat(values.mean);
-      const stddev = parseFloat(values.stddev);
-      const startX = Math.max(0, mean - 3 * stddev);
-      const endX = mean + 3 * stddev;
+
+    if (distributionType === 'normal' && values.min_val !== '' && values.max_val !== '') {
+      const min_val = parseFloat(values.min_val);
+      const max_val = parseFloat(values.max_val);
+
+      if (min_val >= max_val) {
+        setErrorMessage('Minimum value must be less than Maximum value.');
+        return;
+      } else {
+        setErrorMessage('');
+      }
+
+      // Calculate mean and stddev based on min_val and max_val
+      const mean = (min_val + max_val) / 2;
+      const stddev = (max_val - min_val) / 6; // Assuming min_val = mean - 3*stddev, max_val = mean + 3*stddev
+
+      const startX = min_val;
+      const endX = max_val;
       const step = (endX - startX) / numPoints;
-  
+
       const labels = Array.from({ length: numPoints }, (_, i) => (startX + i * step).toFixed(2));
-  
+
       data = labels.map(x => {
         const z = (x - mean) / stddev;
         return Math.exp(-0.5 * z * z) / (stddev * Math.sqrt(2 * Math.PI));
       });
-  
+
+      setValues(prevValues => ({
+        ...prevValues,
+        mean: mean, // Update mean
+        stddev: stddev // Update stddev
+      }));
+
       setChartData({
         labels: labels,
         datasets: [
@@ -141,7 +163,7 @@ const GraphForm = ({
           }
         ]
       });
-    } else if (distributionType === 'uniform' && values.min_val && values.max_val) {
+    } else if (distributionType === 'uniform' && values.min_val !== '' && values.max_val !== '') {
       const min_val = parseFloat(values.min_val);
       const max_val = parseFloat(values.max_val);
       if (min_val > max_val) {
@@ -152,9 +174,9 @@ const GraphForm = ({
       }
       const uniformHeight = max_val - min_val !== 0 ? 1 / (max_val - min_val) : 0;
       const labels = Array.from({ length: numPoints }, (_, i) => (min_val + ((max_val - min_val) / numPoints) * i).toFixed(2));
-  
+
       data = labels.map(x => (x >= min_val && x <= max_val ? uniformHeight : 0));
-  
+
       setChartData({
         labels: labels,
         datasets: [
@@ -168,7 +190,7 @@ const GraphForm = ({
           }
         ]
       });
-    } else if (distributionType === 'triangular' && values.min_val && values.max_val && values.mode) {
+    } else if (distributionType === 'triangular' && values.min_val !== '' && values.max_val !== '' && values.mode !== '') {
       const min_val = parseFloat(values.min_val);
       const max_val = parseFloat(values.max_val);
       const mode = parseFloat(values.mode);
@@ -182,7 +204,7 @@ const GraphForm = ({
         setErrorMessage('');
       }
       const labels = Array.from({ length: numPoints }, (_, i) => (min_val + ((max_val - min_val) / numPoints) * i).toFixed(2));
-  
+
       data = labels.map(x => {
         const val = parseFloat(x);
         if (val < min_val || val > max_val) return 0;
@@ -190,7 +212,7 @@ const GraphForm = ({
         if (val < mode) return (2 * (val - min_val)) / ((max_val - min_val) * (mode - min_val));
         return (2 * (max_val - val)) / ((max_val - min_val) * (max_val - mode));
       });
-  
+
       setChartData({
         labels: labels,
         datasets: [
@@ -208,7 +230,12 @@ const GraphForm = ({
       setChartData(emptyChartData());
     }
   };
-  
+
+  // Use useEffect to call onFormChange whenever 'values' change
+  useEffect(() => {
+    onFormChange(values);
+  }, [values, onFormChange]);
+
   useEffect(() => {
     generateDistributionShape();
   }, [values, distributionType]);
@@ -223,20 +250,37 @@ const GraphForm = ({
         return (
           <>
             <TextField
-              label="Mean"
-              name="mean"
-              value={values.mean}
+              label="Minimum Value"
+              name="min_val"
+              value={values.min_val}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
               inputProps={commonInputProps}
             />
             <TextField
-              label="Standard Deviation"
-              name="stddev"
-              value={values.stddev}
+              label="Maximum Value"
+              name="max_val"
+              value={values.max_val}
               onChange={handleInputChange}
               sx={{ margin: 1, width: '26%' }}
               inputProps={commonInputProps}
+            />
+            {/* Display mean and stddev as read-only */}
+            <TextField
+              label="Mean"
+              name="mean"
+              value={values.mean}
+              disabled
+              sx={{ margin: 1, width: '26%' }}
+              inputProps={{ ...commonInputProps, readOnly: true }}
+            />
+            <TextField
+              label="Standard Deviation"
+              name="stddev"
+              value={values.stddev}
+              disabled
+              sx={{ margin: 1, width: '26%' }}
+              inputProps={{ ...commonInputProps, readOnly: true }}
             />
           </>
         );
